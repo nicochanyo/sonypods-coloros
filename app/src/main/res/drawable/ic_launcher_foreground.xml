@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Sleek thicker headband yoke -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3.6"
+        android:strokeLineCap="round"
+        android:pathData="M37.5,55.5 V52.2 A16.5,15.5 0 0,1 70.5,52.2 V55.5" />
+
+    <!-- Crown cushion accent along exact headband ellipse -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5.6"
+        android:strokeLineCap="round"
+        android:pathData="M43.4,40.4 A16.5,15.5 0 0,1 64.6,40.4" />
+
+    <!-- Left sculpted outer earcup -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M39.4,53.8 C35.9,53.8 34.2,56.8 34.2,61.6 C34.2,66.4 35.9,69.4 39.4,69.4 C40.1,69.4 40.5,68.9 40.5,68.2 V55.0 C40.5,54.3 40.1,53.8 39.4,53.8 Z" />
+
+    <!-- Left inner earpad -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M41.8,55.7 C43.0,55.7 43.8,56.8 43.8,58.5 V64.7 C43.8,66.4 43.0,67.5 41.8,67.5 Z" />
+
+    <!-- Right sculpted outer earcup -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M68.6,53.8 C72.1,53.8 73.8,56.8 73.8,61.6 C73.8,66.4 72.1,69.4 68.6,69.4 C67.9,69.4 67.5,68.9 67.5,68.2 V55.0 C67.5,54.3 67.9,53.8 68.6,53.8 Z" />
+
+    <!-- Right inner earpad -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M66.2,55.7 C65.0,55.7 64.2,56.8 64.2,58.5 V64.7 C64.2,66.4 65.0,67.5 66.2,67.5 Z" />
+
+    <!-- Crisp thicker white sound/ANC arcs -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:pathData="M47.8,60.4 A7.0,7.0 0 0,1 60.2,60.4" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M50.5,65.1 A4.2,4.2 0 0,1 57.5,65.1" />
+</vector>

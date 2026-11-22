@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SonyPods ColorOS</string>
+    <string name="xposed_description">为 ColorOS 系统整合 Sony 耳机电量、降噪、开盖弹窗与音量条控制</string>
+
+    <!-- Bottom Navigation & Header -->
+    <string name="nav_headset">耳机</string>
+    <string name="nav_integration">系统整合</string>
+    <string name="nav_about">关于</string>
+
+    <string name="page_title_headset">SonyPods ColorOS</string>
+    <string name="page_subtitle_headset">电量状态与附加功能</string>
+    <string name="page_headset_sub_v2">实时电量、环境音微调与图标设置</string>
+    <string name="page_title_integration">系统整合</string>
+    <string name="page_subtitle_integration">系统通道、弹窗与作用域管理</string>
+    <string name="page_title_about">关于</string>
+    <string name="page_subtitle_about">版本信息、外观与诊断</string>
+
+    <!-- Top Status Card -->
+    <string name="status_title_active">模块已启用</string>
+    <string name="status_title_inactive">模块未启用</string>
+    <string name="status_sub_active">v1.0.0 · API 102</string>
+    <string name="status_sub_inactive">请在 LSPosed 勾选作用域并重启蓝牙</string>
+    <string name="badge_api_102">API 102</string>
+
+    <string name="chip_version">v1.0.0</string>
+    <string name="chip_coloros">ColorOS 16/17</string>
+    <string name="chip_lsposed">API 102</string>
+
+    <!-- Tab 0: Live Headset Control -->
+    <string name="section_live_headset">当前设备</string>
+    <string name="headset_disconnected_title">未连接 Sony 耳机</string>
+    <string name="headset_disconnected_sub">连接支持的 Sony 耳机后将显示状态</string>
+    <string name="badge_proto_none">未连接</string>
+
+    <string name="battery_left">左耳</string>
+    <string name="battery_right">右耳</string>
+    <string name="battery_case">充电盒</string>
+    <string name="battery_unknown">--%</string>
+    <string name="battery_charging_fmt" formatted="false">%d%% ⚡</string>
+    <string name="battery_normal_fmt" formatted="false">%d%%</string>
+    <string name="badge_color_fmt">配色 0x%1$02X</string>
+    <string name="readout_anc_format">当前模式：%1$s</string>
+
+    <string name="mode_anc">降噪</string>
+    <string name="mode_ambient">环境音</string>
+    <string name="mode_off">关闭</string>
+
+    <string name="sub_ambient_fine">环境音设置</string>
+    <string name="pref_asm_level_title">通透强度</string>
+    <string name="pref_asm_level_hint">可调范围 1 ~ 20，数值越大收音越清晰</string>
+    <string name="pref_voice_focus_title">专注语音</string>
+    <string name="pref_voice_focus_summary">开启环境音时强化人声并降低背景噪音</string>
+
+    <string name="section_extra_params">附加功能</string>
+    <string name="pref_speak_to_chat_title">说话时自动暂停</string>
+    <string name="pref_speak_to_chat_summary">开口说话时自动切为环境音并暂停播放</string>
+    <string name="pref_dsee_title">DSEE 音质还原</string>
+    <string name="pref_dsee_summary">实时补偿压缩音源的高频细节</string>
+
+    <string name="section_control_prefs">切换与接管</string>
+    <string name="pref_cycle_mode_title">模式循环顺序</string>
+    <string name="pref_cycle_mode_summary">通过快捷入口切换时的循环方式</string>
+    <string name="cycle_mode_3way">降噪 ⇄ 环境音 ⇄ 关闭</string>
+    <string name="cycle_mode_2way">降噪 ⇄ 环境音</string>
+    <string name="dialog_cycle_mode_title">选择切换顺序</string>
+
+    <string name="pref_handover_title">Sound Connect 自动让位</string>
+    <string name="pref_handover_summary">打开官方 App 时暂时释放连接，离开后自动恢复</string>
+
+    <string name="btn_apply_defaults">应用环境音默认值</string>
+    <string name="btn_refresh_state">重新读取状态</string>
+    <string name="btn_open_native_panel">打开耳机控制卡</string>
+
+    <!-- Tab 0: Artwork -->
+    <string name="section_artwork">设备图标</string>
+    <string name="pref_sync_catalog_title">更新 Sony 图标库</string>
+    <string name="pref_sync_catalog_sub_empty">尚未更新，目前使用内置矢量图标</string>
+    <string name="pref_sync_catalog_sub_count">已缓存 %1$d 款耳机图标</string>
+    <string name="pref_custom_artwork_title">选择自定义 PNG 图标</string>
+    <string name="pref_custom_artwork_sub_none">跟随系统默认</string>
+    <string name="pref_custom_artwork_sub_set">已应用自定义图片</string>
+    <string name="pref_clear_artwork_title">恢复默认图标</string>
+    <string name="pref_clear_artwork_summary">移除自定义图片并重新匹配耳机型号</string>
+    <string name="pref_model_override_title">手动指定型号</string>
+    <string name="model_override_auto">自动识别</string>
+    <string name="dialog_model_override_title">指定耳机型号</string>
+    <string name="dialog_model_override_hint">留空则自动识别（如 WF-1000XM4、WH-1000XM5）</string>
+
+    <!-- Tab 1: ColorOS System Integration -->
+    <string name="section_bt_bridge">蓝牙整合</string>
+    <string name="pref_bridge_enabled_title">系统状态同步</string>
+    <string name="pref_bridge_v2_summary">实时同步左右耳与充电盒电量、佩戴与降噪状态</string>
+    <string name="pref_vendor_bypass_title">解锁原生耳机支持</string>
+    <string name="pref_vendor_bypass_summary">解除厂商白名单限制，让蓝牙设置识别 Sony 耳机</string>
+    <string name="pref_suppress_pairing_title">屏蔽系统默认配对弹窗</string>
+    <string name="pref_suppress_pairing_summary">隐藏 Android 快速配对与系统快速连接提示</string>
+
+    <string name="section_settings_ui">界面与弹窗</string>
+    <string name="pref_mydevices_panel_title">系统耳机详情页</string>
+    <string name="pref_mydevices_v2_summary">整合蓝牙详情页、设备空间与快捷功能卡片</string>
+    <string name="pref_native_artwork_title">应用 Sony 专属图标</string>
+    <string name="pref_native_artwork_summary">在弹窗、详情页、流体云与音频切换器显示 Sony 图标</string>
+    <string name="pref_melody_channel_title">OPPO 欢律直连通道</string>
+    <string name="pref_melody_channel_summary">通过欢律服务接管音量条降噪面板与音频切换图标</string>
+    <string name="pref_open_popup_title">开盖自动弹窗</string>
+    <string name="pref_open_popup_summary">以 ColorOS 原生弹窗卡片显示配对或电量状态</string>
+    <string name="pref_open_popup_mode_title">弹窗触发模式</string>
+    <string name="pref_open_popup_mode_summary">选择仅在配对模式显示，或连上时同步显示电量</string>
+    <string name="dialog_open_popup_mode_title">弹窗触发模式</string>
+    <string name="popup_mode_pairing_only">仅配对模式</string>
+    <string name="popup_mode_pairing_and_connect">配对与连接电量</string>
+    <string name="popup_mode_pairing_only_desc">仅配对模式（默认）</string>
+    <string name="popup_mode_pairing_and_connect_desc">配对模式＋已配对连接电量</string>
+    <string name="pref_fluid_capsule_title">流体云状态胶囊</string>
+    <string name="pref_fluid_capsule_summary">通过系统服务显示耳机电量与状态胶囊</string>
+
+    <string name="section_systemui_notif">控制中心</string>
+    <string name="pref_qs_tile_title">蓝牙磁贴电量显示</string>
+    <string name="pref_qs_tile_v2_summary">在控制中心蓝牙磁贴副标题显示三段电量与降噪模式</string>
+
+    <string name="section_restart_scope">作用域与快捷操作</string>
+    <string name="root_status_checking">检查 Root 权限中…</string>
+    <string name="root_status_ready">已获取 Root 权限，可直接重启作用域</string>
+    <string name="root_status_unavailable">未获取 Root 权限（请在管理器授权）</string>
+    <string name="pref_restart_core_title">重启核心作用域</string>
+    <string name="pref_restart_core_summary">重新加载蓝牙、设备空间、无线设置、欢律与配件服务</string>
+    <string name="pref_restart_custom_title">选择重启项目…</string>
+    <string name="pref_restart_custom_summary">手动勾选需要重新启动的系统组件</string>
+    <string name="pref_clear_md_cache_title">清除图标缓存并重启</string>
+    <string name="pref_clear_md_cache_summary">更新或替换图片后强制重新加载图标</string>
+    <string name="pref_preview_open_popup_title">预览开盖弹窗</string>
+    <string name="pref_preview_open_popup_summary">立即显示 ColorOS 开盖卡片以确认外观与电量</string>
+    <string name="btn_reset_page">恢复默认</string>
+
+    <string name="dialog_restart_custom_title">选择要重启的应用</string>
+    <string name="dialog_restart_confirm_sysui">重启系统界面会使桌面与锁屏短暂重载，确定继续？</string>
+    <string name="btn_restart_selected">立即重启</string>
+
+    <string name="scope_pkg_bluetooth">蓝牙 (com.android.bluetooth)</string>
+    <string name="scope_pkg_mydevices">设备服务 (com.heytap.mydevices)</string>
+    <string name="scope_pkg_wireless">无线设置 (com.oplus.wirelesssettings)</string>
+    <string name="scope_pkg_melody">OPPO 欢律 (com.oplus.melody)</string>
+    <string name="scope_pkg_accessory">配件服务 (com.heytap.accessory)</string>
+    <string name="scope_pkg_settings">系统设置 (com.android.settings)</string>
+    <string name="scope_pkg_systemui">系统界面 (com.android.systemui · 将重载界面)</string>
+    <string name="scope_pkg_soundconnect">Sony Sound Connect (com.sony.songpal.mdr)</string>
+
+    <!-- Tab 2: About & Environment -->
+    <string name="about_hero_desc">在 ColorOS 上为 Sony 耳机补齐原生电量、降噪控制、音量条切换、流体云与开盖弹窗体验。</string>
+    <string name="about_free_notice">免费开源 · LibXposed API 102</string>
+
+    <string name="section_environment">运行环境</string>
+    <string name="about_sys_ver_title">系统版本</string>
+    <string name="about_device_title">设备型号</string>
+    <string name="about_env_channel_title">配置同步</string>
+    <string name="channel_xsp">LSPosed 远程同步</string>
+    <string name="channel_private_warn">仅限本地（模块未生效）</string>
+    <string name="about_scope_title">建议作用域</string>
+    <string name="about_scope_value">com.android.bluetooth, com.heytap.mydevices, com.oplus.wirelesssettings, com.oplus.melody, com.android.settings, com.android.systemui, com.heytap.accessory, com.sony.songpal.mdr</string>
+
+    <string name="section_appearance">外观与语言</string>
+    <string name="about_language_title">界面语言</string>
+    <string name="about_language_summary">默认依系统语言自动切换</string>
+    <string name="dialog_language_title">界面语言</string>
+    <string name="lang_system">跟随系统</string>
+    <string name="lang_system_fmt">跟随系统（%1$s）</string>
+    <string name="lang_zh_tw">繁體中文</string>
+    <string name="lang_zh_cn">简体中文</string>
+    <string name="lang_en">English</string>
+
+    <string name="about_dark_mode_title">深色模式</string>
+    <string name="about_dark_mode_summary">选择跟随系统、浅色或深色界面</string>
+    <string name="dialog_dark_mode_title">深色模式</string>
+    <string name="dark_mode_system">跟随系统</string>
+    <string name="dark_mode_light">浅色</string>
+    <string name="dark_mode_dark">深色</string>
+
+    <string name="about_monet_title">动态取色</string>
+    <string name="about_monet_summary">将按钮与开关强调色跟随系统壁纸</string>
+
+    <string name="section_debug">诊断与维护</string>
+    <string name="about_changelog_title">更新日志</string>
+    <string name="about_changelog_summary">查看各版本更新内容</string>
+    <string name="about_check_update_title">检查更新</string>
+    <string name="about_check_update_summary">从 LSPosed 模块仓库检查新版本</string>
+    <string name="chip_update_checking">检查中…</string>
+    <string name="chip_update_latest">已是最新</string>
+    <string name="chip_update_available_fmt">新版 %1$s</string>
+    <string name="toast_update_checking">正在从 LSPosed 仓库检查更新…</string>
+    <string name="toast_update_failed">无法连接至 LSPosed 仓库，请稍后再试</string>
+    <string name="dialog_update_available_title_fmt">发现新版本 %1$s</string>
+    <string name="dialog_update_latest_title">已是最新版本</string>
+    <string name="dialog_update_latest_msg_fmt">当前已安装版本（%1$s）与 LSPosed 模块仓库最新版本（%2$s）一致。</string>
+    <string name="dialog_update_ver_compare_fmt">当前版本 %1$s → 最新版本 %2$s</string>
+    <string name="btn_update_download">下载更新 APK</string>
+    <string name="btn_update_open_repo">打开 LSPosed 仓库页</string>
+    <string name="dialog_changelog_title">更新日志</string>
+    <string name="changelog_v100_title">v1.0.0</string>
+    <string name="changelog_v100_body" formatted="false">• 完整整合 ColorOS 16/17 原生耳机管线、设备空间与流体云状态胶囊\n• 支持 Sony Tandem V1/V2 双耳与充电盒实时电量、双耳异步出盒同步与热更新\n• 支持原生控制中心、音量条与详情页切换降噪／环境音／关闭、通透强度（1~20）、关注语音、智能免摘、DSEE 与 LDAC/AAC 编码切换\n• 支持 BLE 高速配对模式检测弹窗、屏蔽原生配对框及 Sound Connect 自动让位\n• 内置 Sony 官方透明图标库与从 LSPosed 模块仓库检查更新功能</string>
+    <string name="about_debug_mode_title">详细调试日志</string>
+    <string name="about_debug_mode_summary">在系统日志记录协议与 Hook 详细信息</string>
+    <string name="about_view_logs_title">查看模块状态快照</string>
+    <string name="about_view_logs_summary">查看当前连接参数与已加载的配置</string>
+    <string name="about_reset_all_title">重置全部设置</string>
+    <string name="about_reset_all_summary">将模块与整合配置恢复为默认值</string>
+
+    <string name="section_credits">作者与致谢</string>
+    <string name="about_author_title">作者：o永夜o (@nicochanyo)</string>
+    <string name="about_author_summary">模块制作与 ColorOS 系统整合 · 前往酷安主页</string>
+    <string name="credit_sonypods_title">Mercury000 / SonyPods</string>
+    <string name="credit_sonypods_summary">参考 Sony 耳机通信与指令定义</string>
+    <string name="credit_huaweipods_title">ByteJuno / HuaweiPods-ColorOS</string>
+    <string name="credit_huaweipods_summary">参考 ColorOS 系统耳机整合架构</string>
+
+    <!-- Dialogs & Toasts -->
+    <string name="dialog_logs_title">状态与诊断</string>
+    <string name="btn_close">关闭</string>
+    <string name="btn_cancel">取消</string>
+    <string name="dialog_reset_all_title">重置全部设置？</string>
+    <string name="dialog_reset_all_msg">所有整合开关与耳机偏好将恢复默认值。</string>
+    <string name="btn_confirm_reset">确认重置</string>
+
+    <string name="toast_reset_done">已恢复默认</string>
+    <string name="toast_command_sent">已应用设置</string>
+    <string name="toast_open_link_failed">无法打开链接</string>
+    <string name="toast_restarting_scopes">正在重启作用域…</string>
+    <string name="toast_restart_done">重启完成</string>
+    <string name="toast_restart_failed">重启失败：%1$s</string>
+    <string name="toast_syncing_catalog">正在更新 Sony 图标库…</string>
+    <string name="toast_sync_ok">已更新 %1$d 款耳机图标</string>
+    <string name="toast_sync_failed">更新失败：%1$s</string>
+    <string name="toast_custom_art_saved">已应用自定义图标（清除缓存并重启后生效）</string>
+    <string name="toast_custom_art_failed">无法读取所选图片</string>
+    <string name="toast_custom_art_cleared">已恢复默认图标</string>
+    <string name="toast_native_panel_failed">无法打开控制卡，请确认耳机已连接并已重启作用域</string>
+    <string name="toast_preview_popup_failed">无法显示开盖弹窗预览</string>
+</resources>

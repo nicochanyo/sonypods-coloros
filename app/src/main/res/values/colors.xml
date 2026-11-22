@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="coui_bg">#F5F6F8</color>
+    <color name="coui_card">#FFFFFF</color>
+    <color name="coui_subcard">#F3F5F9</color>
+    <color name="coui_nav_bg">#FFFFFFFF</color>
+    <color name="coui_nav_border">#16000000</color>
+    <color name="coui_nav_shadow_ambient">#26000000</color>
+    <color name="coui_nav_shadow_spot">#5C000000</color>
+    <color name="coui_nav_scrim_mid">#0C000000</color>
+    <color name="coui_nav_scrim_end">#22000000</color>
+    <color name="coui_badge_bg">#EFEFF4</color>
+    <color name="coui_badge_fg">#5C5C66</color>
+    <color name="coui_text_primary">#1A1A1A</color>
+    <color name="coui_text_secondary">#7A7A82</color>
+    <color name="coui_text_tertiary">#9999A1</color>
+    <color name="coui_accent">#0066FF</color>
+    <color name="coui_accent_pressed">#0052CC</color>
+    <color name="coui_accent_tonal">#1F0066FF</color>
+    <color name="coui_btn_secondary_bg">#EBECEF</color>
+    <color name="coui_btn_secondary_pressed">#DCDDE2</color>
+    <color name="coui_divider">#12000000</color>
+    <color name="coui_ripple">#12000000</color>
+    <color name="coui_switch_off">#D5D7DC</color>
+    <color name="coui_seekbar_track">#E4E6EB</color>
+    <color name="coui_thumb_stroke">#1A000000</color>
+    <color name="coui_status_ok_bg">#E8F8EE</color>
+    <color name="coui_status_ok_fg">#1EA855</color>
+    <color name="coui_status_warn_bg">#FFF3E0</color>
+    <color name="coui_status_warn_fg">#D97706</color>
+</resources>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.CouiSonyPods.Light" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#F5F6F8</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:colorAccent">#0066FF</item>
+        <item name="couiBg">#F5F6F8</item>
+        <item name="couiCard">#FFFFFF</item>
+        <item name="couiSubcard">#F3F5F9</item>
+        <item name="couiNavBg">#FFFFFFFF</item>
+        <item name="couiNavBorder">#16000000</item>
+        <item name="couiNavPill">#1F0066FF</item>
+        <item name="couiBadgeBg">#EFEFF4</item>
+        <item name="couiBadgeFg">#5C5C66</item>
+        <item name="couiTextPrimary">#1A1A1A</item>
+        <item name="couiTextSecondary">#7A7A82</item>
+        <item name="couiTextTertiary">#9999A1</item>
+        <item name="couiAccent">#0066FF</item>
+        <item name="couiOnAccent">#FFFFFFFF</item>
+        <item name="couiAccentTonal">#1F0066FF</item>
+        <item name="couiBtnSecondaryBg">#EBECEF</item>
+        <item name="couiDivider">#12000000</item>
+        <item name="couiRipple">#12000000</item>
+        <item name="couiSwitchOff">#D5D7DC</item>
+        <item name="couiSeekbarTrack">#E4E6EB</item>
+        <item name="couiThumbStroke">#1A000000</item>
+    </style>
+
+    <style name="Theme.CouiSonyPods.Dark" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#000000</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:colorAccent">#3B82FF</item>
+        <item name="couiBg">#000000</item>
+        <item name="couiCard">#1C1C1E</item>
+        <item name="couiSubcard">#242428</item>
+        <item name="couiNavBg">#F2222226</item>
+        <item name="couiNavBorder">#20FFFFFF</item>
+        <item name="couiNavPill">#2E3B82FF</item>
+        <item name="couiBadgeBg">#2C2C30</item>
+        <item name="couiBadgeFg">#AEAEB2</item>
+        <item name="couiTextPrimary">#F2F2F7</item>
+        <item name="couiTextSecondary">#8E8E93</item>
+        <item name="couiTextTertiary">#636366</item>
+        <item name="couiAccent">#3B82FF</item>
+        <item name="couiOnAccent">#FFFFFFFF</item>
+        <item name="couiAccentTonal">#2E3B82FF</item>
+        <item name="couiBtnSecondaryBg">#2C2C2E</item>
+        <item name="couiDivider">#1AFFFFFF</item>
+        <item name="couiRipple">#1FFFFFFF</item>
+        <item name="couiSwitchOff">#3A3A3C</item>
+        <item name="couiSeekbarTrack">#38383A</item>
+        <item name="couiThumbStroke">#33FFFFFF</item>
+    </style>
+
+    <style name="Theme.CouiSonyPods.Popup.Light" parent="Theme.CouiSonyPods.Light">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.42</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+    </style>
+
+    <style name="Theme.CouiSonyPods.Popup.Dark" parent="Theme.CouiSonyPods.Dark">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.55</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+    </style>
+
+    <style name="Theme.CouiSonyPods" parent="Theme.CouiSonyPods.Light" />
+    <style name="Theme.CouiSonyPods.Popup" parent="Theme.CouiSonyPods.Popup.Light" />
+</resources>

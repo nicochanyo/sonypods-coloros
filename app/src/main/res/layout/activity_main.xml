@@ -1,0 +1,3283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/couiBg"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:orientation="vertical">
+
+        <!-- ColorOS 17 Large Fluid Header -->
+        <LinearLayout
+            android:id="@+id/layoutHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="40dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="22dp">
+
+            <TextView
+                android:id="@+id/tvPageTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="true"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:text="@string/page_title_headset"
+                android:textColor="?attr/couiTextPrimary"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvPageSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:includeFontPadding="true"
+                android:paddingTop="1dp"
+                android:paddingBottom="2dp"
+                android:text="@string/page_subtitle_headset"
+                android:textColor="?attr/couiTextSecondary"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Multi-Tab Content Area -->
+        <FrameLayout
+            android:id="@+id/layoutPageContainer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipChildren="true">
+
+            <!-- ==================== TAB 0: HEADSET CONTROL ==================== -->
+            <ScrollView
+                android:id="@+id/pageHeadset"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:overScrollMode="always"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="116dp">
+
+                    <!-- Top Status Card -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="18dp"
+                        android:paddingTop="16dp"
+                        android:paddingEnd="18dp"
+                        android:paddingBottom="16dp">
+
+                        <ImageView
+                            android:id="@+id/ivStatusIcon"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:src="@drawable/ic_status_active" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="10dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvStatusTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/status_title_active"
+                                android:textColor="?attr/couiTextPrimary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvStatusSubtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/status_sub_active"
+                                android:textColor="?attr/couiTextSecondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_api_badge"
+                            android:fontFamily="sans-serif-medium"
+                            android:paddingStart="9dp"
+                            android:paddingTop="4dp"
+                            android:paddingEnd="9dp"
+                            android:paddingBottom="4dp"
+                            android:singleLine="true"
+                            android:text="@string/badge_api_102"
+                            android:textColor="?attr/couiBadgeFg"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Section: Live Connected Sony Headset -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_live_headset"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <!-- Headset Header Row with Authentic Artwork Thumbnail -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/ivArtworkPreview"
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_marginEnd="14dp"
+                                android:background="@drawable/bg_coui_subcard"
+                                android:padding="4dp"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/ic_row_headphones" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvHeadsetName"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/headset_disconnected_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="17sp" />
+
+                                <TextView
+                                    android:id="@+id/tvHeadsetMac"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/headset_disconnected_sub"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvProtocolBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingEnd="10dp"
+                                android:paddingBottom="4dp"
+                                android:singleLine="true"
+                                android:tag="accent_chip"
+                                android:text="@string/badge_proto_none"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- 3-Segment Battery Capsules -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_coui_subcard"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:paddingTop="10dp"
+                                android:paddingBottom="10dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/battery_left"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tvBatteryLeft"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/battery_unknown"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="16sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="3dp"
+                                android:layout_marginEnd="3dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_coui_subcard"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:paddingTop="10dp"
+                                android:paddingBottom="10dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/battery_right"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tvBatteryRight"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/battery_unknown"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="16sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_coui_subcard"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:paddingTop="10dp"
+                                android:paddingBottom="10dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/battery_case"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tvBatteryCase"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/battery_unknown"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="16sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Read-Only Native Channel Status Pill + Launch Action (ANC controlled via ColorOS Native UI) -->
+                        <TextView
+                            android:id="@+id/tvCurrentAncBadge"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_coui_subcard"
+                            android:fontFamily="sans-serif-medium"
+                            android:gravity="center"
+                            android:paddingStart="12dp"
+                            android:paddingTop="9dp"
+                            android:paddingEnd="12dp"
+                            android:paddingBottom="9dp"
+                            android:text="@string/headset_disconnected_sub"
+                            android:textColor="?attr/couiTextSecondary"
+                            android:textSize="12sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnRefreshState"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_marginEnd="6dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_coui_btn_secondary"
+                                android:fontFamily="sans-serif-medium"
+                                android:stateListAnimator="@null"
+                                android:text="@string/btn_refresh_state"
+                                android:textAllCaps="false"
+                                android:textColor="?attr/couiTextPrimary"
+                                android:textSize="14sp" />
+
+                            <Button
+                                android:id="@+id/btnOpenNativePanel"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_marginStart="6dp"
+                                android:layout_weight="1.35"
+                                android:background="@drawable/bg_coui_btn_primary"
+                                android:fontFamily="sans-serif-medium"
+                                android:stateListAnimator="@null"
+                                android:tag="accent_btn"
+                                android:text="@string/btn_open_native_panel"
+                                android:textAllCaps="false"
+                                android:textColor="?attr/couiOnAccent"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <!-- Section: Sony Extra Parameters (not exposed in ColorOS built-in UI) -->
+                        <LinearLayout
+                            android:id="@+id/layoutHeadsetControls"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:letterSpacing="0.03"
+                                android:tag="accent_text"
+                                android:text="@string/section_extra_params"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="11sp" />
+
+                            <!-- Ambient Sound Tuning Subcard -->
+                            <LinearLayout
+                                android:id="@+id/layoutAmbientSub"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:background="@drawable/bg_coui_subcard"
+                                android:orientation="vertical"
+                                android:paddingStart="14dp"
+                                android:paddingTop="12dp"
+                                android:paddingEnd="14dp"
+                                android:paddingBottom="14dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:letterSpacing="0.03"
+                                    android:tag="accent_text"
+                                    android:text="@string/sub_ambient_fine"
+                                    android:textColor="?attr/couiAccent"
+                                    android:textSize="11sp" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <ImageView
+                                        android:layout_width="20dp"
+                                        android:layout_height="20dp"
+                                        android:layout_marginEnd="10dp"
+                                        android:src="@drawable/ic_row_ambient"
+                                        android:tag="accent_icon" />
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:text="@string/pref_asm_level_title"
+                                        android:textColor="?attr/couiTextPrimary"
+                                        android:textSize="14sp" />
+
+                                    <TextView
+                                        android:id="@+id/tvAsmLevelVal"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:background="@drawable/bg_coui_chip"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:paddingStart="9dp"
+                                        android:paddingTop="3dp"
+                                        android:paddingEnd="9dp"
+                                        android:paddingBottom="3dp"
+                                        android:tag="accent_chip"
+                                        android:text="15"
+                                        android:textColor="?attr/couiAccent"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="30dp"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_asm_level_hint"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+
+                                <io.github.nicochanyo.sonypods.CouiPillSeekBar
+                                    android:id="@+id/sbAsmLevel"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="34dp"
+                                    android:layout_marginTop="8dp"
+                                    android:max="19"
+                                    android:progress="14" />
+
+                                <View
+                                    android:layout_width="match_parent"
+                                    android:layout_height="0.5dp"
+                                    android:layout_marginTop="10dp"
+                                    android:layout_marginBottom="10dp"
+                                    android:background="?attr/couiDivider" />
+
+                                <LinearLayout
+                                    android:id="@+id/rowVoiceFocus"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:paddingTop="2dp"
+                                    android:paddingBottom="2dp">
+
+                                    <ImageView
+                                        android:layout_width="20dp"
+                                        android:layout_height="20dp"
+                                        android:layout_marginEnd="10dp"
+                                        android:src="@drawable/ic_row_voice"
+                                        android:tag="accent_icon" />
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginEnd="10dp"
+                                        android:layout_weight="1"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:fontFamily="sans-serif-medium"
+                                            android:text="@string/pref_voice_focus_title"
+                                            android:textColor="?attr/couiTextPrimary"
+                                            android:textSize="14sp" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="2dp"
+                                            android:text="@string/pref_voice_focus_summary"
+                                            android:textColor="?attr/couiTextSecondary"
+                                            android:textSize="12sp" />
+                                    </LinearLayout>
+
+                                    <Switch
+                                        android:id="@+id/swVoiceFocus"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:background="@null"
+                                        android:clickable="false"
+                                        android:focusable="false"
+                                        android:showText="false"
+                                        android:splitTrack="false"
+                                        android:switchMinWidth="44dp"
+                                        android:thumb="@drawable/coui_switch_thumb"
+                                        android:track="@drawable/coui_switch_track" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Smart Features Sub-Rows -->
+                            <LinearLayout
+                                android:id="@+id/rowSpeakToChat"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:background="@drawable/bg_coui_item_ripple"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="4dp"
+                                android:paddingTop="10dp"
+                                android:paddingEnd="4dp"
+                                android:paddingBottom="10dp">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_marginEnd="14dp"
+                                    android:src="@drawable/ic_row_voice"
+                                    android:tag="accent_icon" />
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="10dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:text="@string/pref_speak_to_chat_title"
+                                        android:textColor="?attr/couiTextPrimary"
+                                        android:textSize="15sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="@string/pref_speak_to_chat_summary"
+                                        android:textColor="?attr/couiTextSecondary"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+
+                                <Switch
+                                    android:id="@+id/swSpeakToChat"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@null"
+                                    android:clickable="false"
+                                    android:focusable="false"
+                                    android:showText="false"
+                                    android:splitTrack="false"
+                                    android:switchMinWidth="44dp"
+                                    android:thumb="@drawable/coui_switch_thumb"
+                                    android:track="@drawable/coui_switch_track" />
+                            </LinearLayout>
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="0.5dp"
+                                android:layout_marginStart="40dp"
+                                android:background="?attr/couiDivider" />
+
+                            <LinearLayout
+                                android:id="@+id/rowDsee"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_coui_item_ripple"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="4dp"
+                                android:paddingTop="10dp"
+                                android:paddingEnd="4dp"
+                                android:paddingBottom="4dp">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_marginEnd="14dp"
+                                    android:src="@drawable/ic_row_dsee"
+                                    android:tag="accent_icon" />
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="10dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:text="@string/pref_dsee_title"
+                                        android:textColor="?attr/couiTextPrimary"
+                                        android:textSize="15sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="@string/pref_dsee_summary"
+                                        android:textColor="?attr/couiTextSecondary"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+
+                                <Switch
+                                    android:id="@+id/swDsee"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@null"
+                                    android:clickable="false"
+                                    android:focusable="false"
+                                    android:showText="false"
+                                    android:splitTrack="false"
+                                    android:switchMinWidth="44dp"
+                                    android:thumb="@drawable/coui_switch_thumb"
+                                    android:track="@drawable/coui_switch_track" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Section: Control Preferences & Handover -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_control_prefs"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowCycleMode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_anc"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_cycle_mode_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_cycle_mode_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvCycleModeVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="9dp"
+                                android:paddingTop="3dp"
+                                android:paddingEnd="9dp"
+                                android:paddingBottom="3dp"
+                                android:singleLine="true"
+                                android:tag="accent_chip"
+                                android:text="@string/cycle_mode_3way"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="11sp" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowHandover"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_handover"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_handover_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_handover_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swHandover"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Section: Official Sony Artwork & Model -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_artwork"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowSyncCatalog"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_cloud"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_sync_catalog_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:id="@+id/tvCatalogStatus"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_sync_catalog_sub_empty"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowPickCustomArtwork"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_palette"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_custom_artwork_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:id="@+id/tvCustomArtworkStatus"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_custom_artwork_sub_none"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowClearCustomArtwork"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_reset"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_clear_artwork_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_clear_artwork_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowModelOverride"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_headphones"
+                                android:tag="accent_icon" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_model_override_title"
+                                android:textColor="?attr/couiTextPrimary"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvModelOverrideVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:text="@string/model_override_auto"
+                                android:textColor="?attr/couiTextSecondary"
+                                android:textSize="13sp" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnApplyDefaults"
+                        android:layout_width="match_parent"
+                        android:layout_height="46dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_coui_btn_secondary"
+                        android:fontFamily="sans-serif-medium"
+                        android:stateListAnimator="@null"
+                        android:text="@string/btn_apply_defaults"
+                        android:textAllCaps="false"
+                        android:textColor="?attr/couiTextPrimary"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- ==================== TAB 1: COLOROS INTEGRATION ==================== -->
+            <ScrollView
+                android:id="@+id/pageIntegration"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:overScrollMode="always"
+                android:scrollbars="none"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="116dp">
+
+                    <!-- Section: ColorOS Bluetooth Bridge -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_bt_bridge"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowBridgeEnabled"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_battery"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_bridge_enabled_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_bridge_v2_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swBridgeEnabled"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowVendorBypass"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_bluetooth"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_vendor_bypass_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_vendor_bypass_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swVendorBypass"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowSuppressNativePairing"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_bluetooth"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_suppress_pairing_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_suppress_pairing_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swSuppressNativePairing"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Section: Settings, Device Space & Popup -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_settings_ui"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowMyDevicesPanel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_popup"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_mydevices_panel_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_mydevices_v2_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swMyDevicesPanel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowNativeArtwork"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_headphones"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_native_artwork_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_native_artwork_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swNativeArtwork"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowMelodyChannel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_tune"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_melody_channel_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_melody_channel_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swMelodyChannel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowOpenCasePopup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_popup"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_open_popup_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_open_popup_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swOpenCasePopup"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+
+                        <View
+                            android:id="@+id/divOpenPopupMode"
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowOpenPopupMode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_popup"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_open_popup_mode_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_open_popup_mode_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvOpenPopupModeVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="9dp"
+                                android:paddingTop="3dp"
+                                android:paddingEnd="9dp"
+                                android:paddingBottom="3dp"
+                                android:singleLine="true"
+                                android:tag="accent_chip"
+                                android:text="@string/popup_mode_pairing_only"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="11sp" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowFluidCloudCapsule"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_capsule"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_fluid_capsule_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_fluid_capsule_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swFluidCloudCapsule"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Section: Control Center & Live Alert -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_systemui_notif"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowQsTile"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_bluetooth"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_qs_tile_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_qs_tile_v2_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swQsTile"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Section: Built-in Restart Scope (Root) -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_restart_scope"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowRootStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="13dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="13dp">
+
+                            <ImageView
+                                android:id="@+id/ivRootIcon"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_status_warn" />
+
+                            <TextView
+                                android:id="@+id/tvRootStatus"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/root_status_checking"
+                                android:textColor="?attr/couiTextSecondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowRestartCore"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_restart"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_restart_core_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_restart_core_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowRestartCustom"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_tune"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_restart_custom_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_restart_custom_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowClearArtworkCache"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_reset"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_clear_md_cache_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_clear_md_cache_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowPreviewOpenPopup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_popup"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_preview_open_popup_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_preview_open_popup_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Action Buttons Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnResetIntegration"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_coui_btn_secondary"
+                            android:fontFamily="sans-serif-medium"
+                            android:stateListAnimator="@null"
+                            android:text="@string/btn_reset_page"
+                            android:textAllCaps="false"
+                            android:textColor="?attr/couiTextPrimary"
+                            android:textSize="15sp" />
+
+                        <Button
+                            android:id="@+id/btnOpenNativePanelTab2"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1.2"
+                            android:background="@drawable/bg_coui_btn_primary"
+                            android:fontFamily="sans-serif-medium"
+                            android:stateListAnimator="@null"
+                            android:tag="accent_btn"
+                            android:text="@string/btn_open_native_panel"
+                            android:textAllCaps="false"
+                            android:textColor="?attr/couiOnAccent"
+                            android:textSize="15sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- ==================== TAB 2: ABOUT ==================== -->
+            <ScrollView
+                android:id="@+id/pageAbout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:overScrollMode="always"
+                android:scrollbars="none"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="116dp">
+
+                    <!-- Hero Card -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:paddingStart="20dp"
+                        android:paddingTop="24dp"
+                        android:paddingEnd="20dp"
+                        android:paddingBottom="22dp">
+
+                        <ImageView
+                            android:layout_width="68dp"
+                            android:layout_height="68dp"
+                            android:src="@mipmap/ic_launcher_round" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/app_name"
+                            android:textColor="?attr/couiTextPrimary"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingEnd="10dp"
+                                android:paddingBottom="4dp"
+                                android:tag="accent_chip"
+                                android:text="@string/chip_version"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingEnd="10dp"
+                                android:paddingBottom="4dp"
+                                android:tag="accent_chip"
+                                android:text="@string/chip_coloros"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingEnd="10dp"
+                                android:paddingBottom="4dp"
+                                android:tag="accent_chip"
+                                android:text="@string/chip_lsposed"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center"
+                            android:lineSpacingExtra="3dp"
+                            android:text="@string/about_hero_desc"
+                            android:textColor="?attr/couiTextSecondary"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_coui_free_notice"
+                            android:fontFamily="sans-serif-medium"
+                            android:paddingStart="14dp"
+                            android:paddingTop="6dp"
+                            android:paddingEnd="14dp"
+                            android:paddingBottom="6dp"
+                            android:text="@string/about_free_notice"
+                            android:textColor="@color/coui_status_ok_fg"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- Environment Info -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_environment"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingStart="18dp"
+                            android:paddingTop="13dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="13dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_sys_ver_title"
+                                android:textColor="?attr/couiTextPrimary"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvSysVersion"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textColor="?attr/couiTextSecondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="18dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingStart="18dp"
+                            android:paddingTop="13dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="13dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_device_title"
+                                android:textColor="?attr/couiTextPrimary"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvDeviceModel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textColor="?attr/couiTextSecondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="18dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingStart="18dp"
+                            android:paddingTop="13dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="13dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_env_channel_title"
+                                android:textColor="?attr/couiTextPrimary"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvAboutChannel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textColor="?attr/couiTextSecondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="18dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingStart="18dp"
+                            android:paddingTop="13dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="13dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_scope_title"
+                                android:textColor="?attr/couiTextPrimary"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/about_scope_value"
+                                android:textColor="?attr/couiTextSecondary"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Appearance Section -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_appearance"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowAboutLanguage"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_language"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_language_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_language_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvAboutLanguageVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="9dp"
+                                android:paddingTop="3dp"
+                                android:paddingEnd="9dp"
+                                android:paddingBottom="3dp"
+                                android:singleLine="true"
+                                android:tag="accent_chip"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="12sp" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowAboutDarkMode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_dark_mode"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_dark_mode_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_dark_mode_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvAboutDarkModeVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="9dp"
+                                android:paddingTop="3dp"
+                                android:paddingEnd="9dp"
+                                android:paddingBottom="3dp"
+                                android:singleLine="true"
+                                android:tag="accent_chip"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="12sp" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowAboutMonet"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_palette"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_monet_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_monet_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swAboutMonet"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Debug & Diagnostics -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_debug"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowAboutChangelog"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_nav_about"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_changelog_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_changelog_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="9dp"
+                                android:paddingTop="3dp"
+                                android:paddingEnd="9dp"
+                                android:paddingBottom="3dp"
+                                android:singleLine="true"
+                                android:tag="accent_chip"
+                                android:text="@string/chip_version"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="12sp" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowAboutCheckUpdate"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_update"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_check_update_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_check_update_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvAboutUpdateChip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="9dp"
+                                android:paddingTop="3dp"
+                                android:paddingEnd="9dp"
+                                android:paddingBottom="3dp"
+                                android:singleLine="true"
+                                android:tag="accent_chip"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="12sp"
+                                android:visibility="gone" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowAboutDebugMode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_logs"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_debug_mode_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_debug_mode_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swAboutDebugMode"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowAboutViewLogs"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_logs"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_view_logs_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_view_logs_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowAboutResetAll"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_reset" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_reset_all_title"
+                                    android:textColor="@color/coui_status_warn_fg"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_reset_all_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Open Source Credits -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:layout_marginBottom="8dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="@string/section_credits"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_coui_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowAboutAuthor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_author"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_author_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_author_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowCreditSonyPods"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_author"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/credit_sonypods_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/credit_sonypods_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowCreditHuaweiPods"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_author"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/credit_huaweipods_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/credit_huaweipods_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_chevron" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- ColorOS 17 Floating Pill Bottom Navigation Bar -->
+    <View
+        android:id="@+id/vBottomNavShadow"
+        android:layout_width="match_parent"
+        android:layout_height="112dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_coui_nav_bottom_shadow"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no" />
+
+    <FrameLayout
+        android:id="@+id/layoutBottomNavContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingBottom="18dp">
+
+        <FrameLayout
+            android:id="@+id/layoutBottomNav"
+            android:layout_width="296dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/bg_coui_floating_nav"
+            android:clickable="true"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:elevation="20dp"
+            android:focusable="true"
+            android:outlineAmbientShadowColor="@color/coui_nav_shadow_ambient"
+            android:outlineSpotShadowColor="@color/coui_nav_shadow_spot"
+            android:padding="5dp">
+
+            <View
+                android:id="@+id/vNavSlidingPill"
+                android:layout_width="95dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="top|start"
+                android:background="@drawable/bg_coui_nav_pill" />
+
+            <LinearLayout
+                android:id="@+id/layoutNavItems"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Tab 0: Headset -->
+                <LinearLayout
+                    android:id="@+id/navHeadset"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:clickable="false"
+                    android:clipChildren="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/ivNavHeadset"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_nav_headset" />
+
+                    <TextView
+                        android:id="@+id/tvNavHeadset"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:singleLine="true"
+                        android:text="@string/nav_headset"
+                        android:textColor="?attr/couiAccent"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <!-- Tab 1: ColorOS Integration -->
+                <LinearLayout
+                    android:id="@+id/navIntegration"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:clickable="false"
+                    android:clipChildren="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/ivNavIntegration"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_nav_integration" />
+
+                    <TextView
+                        android:id="@+id/tvNavIntegration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:singleLine="true"
+                        android:text="@string/nav_integration"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <!-- Tab 2: About -->
+                <LinearLayout
+                    android:id="@+id/navAbout"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:clickable="false"
+                    android:clipChildren="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/ivNavAbout"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_nav_about" />
+
+                    <TextView
+                        android:id="@+id/tvNavAbout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:singleLine="true"
+                        android:text="@string/nav_about"
+                        android:textColor="?attr/couiTextSecondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+    </FrameLayout>
+</FrameLayout>

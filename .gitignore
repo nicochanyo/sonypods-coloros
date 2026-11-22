@@ -1,0 +1,18 @@
+# Signing keys (NEVER commit)
+release.jks
+keystore.properties
+*.jks
+*.keystore
+
+# Build & signing artifacts
+build/
+out/
+compile-stubs/
+tools/
+
+# IDE & OS metadata
+.idea/
+.gradle/
+*.iml
+.DS_Store
+Thumbs.db

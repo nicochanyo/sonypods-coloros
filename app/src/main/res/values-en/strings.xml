@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SonyPods ColorOS</string>
+    <string name="xposed_description">Native ColorOS integration for Sony headphone battery, ANC, popups, and volume-slider controls</string>
+
+    <!-- Bottom Navigation & Header -->
+    <string name="nav_headset">Headset</string>
+    <string name="nav_integration">Integration</string>
+    <string name="nav_about">About</string>
+
+    <string name="page_title_headset">SonyPods ColorOS</string>
+    <string name="page_subtitle_headset">Battery and extra features</string>
+    <string name="page_headset_sub_v2">Battery, ambient tuning, and artwork</string>
+    <string name="page_title_integration">Integration</string>
+    <string name="page_subtitle_integration">System channels, popups, and scope</string>
+    <string name="page_title_about">About</string>
+    <string name="page_subtitle_about">Version, appearance, and diagnostics</string>
+
+    <!-- Top Status Card -->
+    <string name="status_title_active">Module Active</string>
+    <string name="status_title_inactive">Module Inactive</string>
+    <string name="status_sub_active">v1.0.0 · API 102</string>
+    <string name="status_sub_inactive">Enable module in LSPosed and restart Bluetooth</string>
+    <string name="badge_api_102">API 102</string>
+
+    <string name="chip_version">v1.0.0</string>
+    <string name="chip_coloros">ColorOS 16/17</string>
+    <string name="chip_lsposed">API 102</string>
+
+    <!-- Tab 0: Live Headset Control -->
+    <string name="section_live_headset">Connected Device</string>
+    <string name="headset_disconnected_title">No Sony Headset Connected</string>
+    <string name="headset_disconnected_sub">Connect a supported Sony headset to view status</string>
+    <string name="badge_proto_none">Offline</string>
+
+    <string name="battery_left">Left</string>
+    <string name="battery_right">Right</string>
+    <string name="battery_case">Case</string>
+    <string name="battery_unknown">--%</string>
+    <string name="battery_charging_fmt" formatted="false">%d%% ⚡</string>
+    <string name="battery_normal_fmt" formatted="false">%d%%</string>
+    <string name="badge_color_fmt">Color 0x%1$02X</string>
+    <string name="readout_anc_format">Mode: %1$s</string>
+
+    <string name="mode_anc">ANC</string>
+    <string name="mode_ambient">Ambient</string>
+    <string name="mode_off">Off</string>
+
+    <string name="sub_ambient_fine">Ambient Sound</string>
+    <string name="pref_asm_level_title">Ambient Level</string>
+    <string name="pref_asm_level_hint">Range 1 to 20; higher lets in more sound</string>
+    <string name="pref_voice_focus_title">Voice Focus</string>
+    <string name="pref_voice_focus_summary">Emphasize voices over background noise</string>
+
+    <string name="section_extra_params">Extra Features</string>
+    <string name="pref_speak_to_chat_title">Speak-to-Chat</string>
+    <string name="pref_speak_to_chat_summary">Pause playback and switch to ambient while talking</string>
+    <string name="pref_dsee_title">DSEE Upscaling</string>
+    <string name="pref_dsee_summary">Restore high-frequency detail in compressed audio</string>
+
+    <string name="section_control_prefs">Switching &amp; Handover</string>
+    <string name="pref_cycle_mode_title">Cycle Order</string>
+    <string name="pref_cycle_mode_summary">Modes included when cycling from shortcuts</string>
+    <string name="cycle_mode_3way">ANC ⇄ Ambient ⇄ Off</string>
+    <string name="cycle_mode_2way">ANC ⇄ Ambient</string>
+    <string name="dialog_cycle_mode_title">Cycle Order</string>
+
+    <string name="pref_handover_title">Yield to Sound Connect</string>
+    <string name="pref_handover_summary">Pause module control while Sony\'s app is in foreground</string>
+
+    <string name="btn_apply_defaults">Apply Ambient Defaults</string>
+    <string name="btn_refresh_state">Refresh</string>
+    <string name="btn_open_native_panel">Open Headset Card</string>
+
+    <!-- Tab 0: Artwork -->
+    <string name="section_artwork">Device Artwork</string>
+    <string name="pref_sync_catalog_title">Update Sony Artwork Catalog</string>
+    <string name="pref_sync_catalog_sub_empty">Not synced yet; using built-in vector icon</string>
+    <string name="pref_sync_catalog_sub_count">%1$d official models cached</string>
+    <string name="pref_custom_artwork_title">Custom PNG Artwork</string>
+    <string name="pref_custom_artwork_sub_none">Default (official model image)</string>
+    <string name="pref_custom_artwork_sub_set">Custom PNG applied</string>
+    <string name="pref_clear_artwork_title">Restore Default Artwork</string>
+    <string name="pref_clear_artwork_summary">Clear custom image and match headset model</string>
+    <string name="pref_model_override_title">Override Model Name</string>
+    <string name="model_override_auto">Auto</string>
+    <string name="dialog_model_override_title">Override Model Name</string>
+    <string name="dialog_model_override_hint">Leave blank for auto-detection (e.g. WF-1000XM4)</string>
+
+    <!-- Tab 1: ColorOS System Integration -->
+    <string name="section_bt_bridge">Bluetooth Integration</string>
+    <string name="pref_bridge_enabled_title">System State Sync</string>
+    <string name="pref_bridge_v2_summary">Sync battery levels, wear state, and ANC with ColorOS</string>
+    <string name="pref_vendor_bypass_title">Unlock Headset Profile</string>
+    <string name="pref_vendor_bypass_summary">Bypass vendor whitelist so Bluetooth settings recognizes Sony models</string>
+    <string name="pref_suppress_pairing_title">Suppress Native Pairing Popups</string>
+    <string name="pref_suppress_pairing_summary">Hide Android Fast Pair and default quick-connect prompts</string>
+
+    <string name="section_settings_ui">Panels &amp; Popups</string>
+    <string name="pref_mydevices_panel_title">System Headset Panel</string>
+    <string name="pref_mydevices_v2_summary">Enable ColorOS detail panel and Device Space integration</string>
+    <string name="pref_native_artwork_title">Sony Device Artwork</string>
+    <string name="pref_native_artwork_summary">Show Sony artwork across popups, cards, capsule, and media switcher</string>
+    <string name="pref_melody_channel_title">OPPO Melody Channel</string>
+    <string name="pref_melody_channel_summary">Feed volume-slider ANC controls and media icons via OPPO Melody</string>
+    <string name="pref_open_popup_title">Open-Case Popup</string>
+    <string name="pref_open_popup_summary">Show ColorOS native card popup for pairing or status</string>
+    <string name="pref_open_popup_mode_title">Popup Trigger Mode</string>
+    <string name="pref_open_popup_mode_summary">Choose pairing-only or also show battery on connect</string>
+    <string name="dialog_open_popup_mode_title">Popup Trigger Mode</string>
+    <string name="popup_mode_pairing_only">Pairing Only</string>
+    <string name="popup_mode_pairing_and_connect">Pairing &amp; Battery</string>
+    <string name="popup_mode_pairing_only_desc">Pairing mode only (Default)</string>
+    <string name="popup_mode_pairing_and_connect_desc">Pairing mode + battery on connect</string>
+    <string name="pref_fluid_capsule_title">Fluid Cloud Capsule</string>
+    <string name="pref_fluid_capsule_summary">Show live battery and connection status in Fluid Cloud</string>
+
+    <string name="section_systemui_notif">Control Center</string>
+    <string name="pref_qs_tile_title">Bluetooth Tile Readout</string>
+    <string name="pref_qs_tile_v2_summary">Show battery percentages and ANC mode under the Bluetooth tile</string>
+
+    <string name="section_restart_scope">Scope &amp; Actions</string>
+    <string name="root_status_checking">Checking root access…</string>
+    <string name="root_status_ready">Root ready for direct scope restart</string>
+    <string name="root_status_unavailable">Root unavailable (grant access in your root manager)</string>
+    <string name="pref_restart_core_title">Restart Core Scopes</string>
+    <string name="pref_restart_core_summary">Restart Bluetooth, MyDevices, WirelessSettings, Melody, and Accessory</string>
+    <string name="pref_restart_custom_title">Restart Specific Apps…</string>
+    <string name="pref_restart_custom_summary">Choose individual scope packages to restart</string>
+    <string name="pref_clear_md_cache_title">Clear Artwork Cache &amp; Restart</string>
+    <string name="pref_clear_md_cache_summary">Force MyDevices to reload updated headset artwork</string>
+    <string name="pref_preview_open_popup_title">Preview Open-Case Popup</string>
+    <string name="pref_preview_open_popup_summary">Show the native open-case card right now</string>
+    <string name="btn_reset_page">Reset Defaults</string>
+
+    <string name="dialog_restart_custom_title">Select Scopes to Restart</string>
+    <string name="dialog_restart_confirm_sysui">Restarting SystemUI reloads the home screen and lock screen briefly. Continue?</string>
+    <string name="btn_restart_selected">Restart</string>
+
+    <string name="scope_pkg_bluetooth">Bluetooth (com.android.bluetooth)</string>
+    <string name="scope_pkg_mydevices">MyDevices (com.heytap.mydevices)</string>
+    <string name="scope_pkg_wireless">WirelessSettings (com.oplus.wirelesssettings)</string>
+    <string name="scope_pkg_melody">OPPO Melody (com.oplus.melody)</string>
+    <string name="scope_pkg_accessory">Accessory (com.heytap.accessory)</string>
+    <string name="scope_pkg_settings">Settings (com.android.settings)</string>
+    <string name="scope_pkg_systemui">SystemUI (com.android.systemui · reloads screen)</string>
+    <string name="scope_pkg_soundconnect">Sony Sound Connect (com.sony.songpal.mdr)</string>
+
+    <!-- Tab 2: About & Environment -->
+    <string name="about_hero_desc">Brings native ColorOS battery, ANC, volume-slider controls, Fluid Cloud, and popup integration to Sony headsets.</string>
+    <string name="about_free_notice">Open Source · LibXposed API 102</string>
+
+    <string name="section_environment">Environment</string>
+    <string name="about_sys_ver_title">System Version</string>
+    <string name="about_device_title">Device Model</string>
+    <string name="about_env_channel_title">Config Sync</string>
+    <string name="channel_xsp">LSPosed RemotePreferences</string>
+    <string name="channel_private_warn">Local only (module inactive)</string>
+    <string name="about_scope_title">Recommended Scope</string>
+    <string name="about_scope_value">com.android.bluetooth, com.heytap.mydevices, com.oplus.wirelesssettings, com.oplus.melody, com.android.settings, com.android.systemui, com.heytap.accessory, com.sony.songpal.mdr</string>
+
+    <string name="section_appearance">Appearance</string>
+    <string name="about_language_title">Language</string>
+    <string name="about_language_summary">Follows system language by default</string>
+    <string name="dialog_language_title">Language</string>
+    <string name="lang_system">Follow System</string>
+    <string name="lang_system_fmt">Follow System (%1$s)</string>
+    <string name="lang_zh_tw">繁體中文</string>
+    <string name="lang_zh_cn">简体中文</string>
+    <string name="lang_en">English</string>
+
+    <string name="about_dark_mode_title">Dark Mode</string>
+    <string name="about_dark_mode_summary">Follow system, light, or dark theme</string>
+    <string name="dialog_dark_mode_title">Dark Mode</string>
+    <string name="dark_mode_system">Follow System</string>
+    <string name="dark_mode_light">Light</string>
+    <string name="dark_mode_dark">Dark</string>
+
+    <string name="about_monet_title">Dynamic Color</string>
+    <string name="about_monet_summary">Tint accents using system wallpaper colors</string>
+
+    <string name="section_debug">Diagnostics</string>
+    <string name="about_changelog_title">Changelog</string>
+    <string name="about_changelog_summary">View version history</string>
+    <string name="about_check_update_title">Check for Updates</string>
+    <string name="about_check_update_summary">Check for new releases from LSPosed Repository</string>
+    <string name="chip_update_checking">Checking…</string>
+    <string name="chip_update_latest">Up to date</string>
+    <string name="chip_update_available_fmt">New %1$s</string>
+    <string name="toast_update_checking">Checking LSPosed Repository for updates…</string>
+    <string name="toast_update_failed">Unable to reach LSPosed Repository, please try again later</string>
+    <string name="dialog_update_available_title_fmt">Update Available (%1$s)</string>
+    <string name="dialog_update_latest_title">Up to Date</string>
+    <string name="dialog_update_latest_msg_fmt">Installed version (%1$s) matches the latest release (%2$s) on LSPosed Repository.</string>
+    <string name="dialog_update_ver_compare_fmt">Installed %1$s → Latest %2$s</string>
+    <string name="btn_update_download">Download Update APK</string>
+    <string name="btn_update_open_repo">Open LSPosed Repo Page</string>
+    <string name="dialog_changelog_title">Changelog</string>
+    <string name="changelog_v100_title">v1.0.0</string>
+    <string name="changelog_v100_body" formatted="false">• Integrated Sony headphones with ColorOS 16/17 native AirPods pipeline, Device Space, and Fluid Cloud capsules\n• Real-time dual-earbud &amp; case battery via Sony Tandem V1/V2 with asynchronous dual-ear sync &amp; live Fluid Cloud updates\n• Native Quick Settings, volume slider, and detail card controls for ANC / Ambient / Off, Ambient Level (1–20), Voice Focus, Speak-to-Chat, DSEE, and LDAC/AAC codec switching\n• Fast BLE pairing-mode popup detection, native pairing dialog suppression, and automatic Sound Connect handover\n• Bundled Sony official transparent artwork catalog and in-app update checker sourcing from LSPosed Repository</string>
+    <string name="about_debug_mode_title">Verbose Debug Logs</string>
+    <string name="about_debug_mode_summary">Log detailed packet and hook traces</string>
+    <string name="about_view_logs_title">State Snapshot</string>
+    <string name="about_view_logs_summary">Inspect live headset state and config values</string>
+    <string name="about_reset_all_title">Reset All Settings</string>
+    <string name="about_reset_all_summary">Restore all preferences to factory defaults</string>
+
+    <string name="section_credits">Credits</string>
+    <string name="about_author_title">Author: o永夜o (@nicochanyo)</string>
+    <string name="about_author_summary">Author &amp; ColorOS integration · CoolApk profile</string>
+    <string name="credit_sonypods_title">Mercury000 / SonyPods</string>
+    <string name="credit_sonypods_summary">Sony headset protocol reference</string>
+    <string name="credit_huaweipods_title">ByteJuno / HuaweiPods-ColorOS</string>
+    <string name="credit_huaweipods_summary">ColorOS native headset hook reference</string>
+
+    <!-- Dialogs & Toasts -->
+    <string name="dialog_logs_title">State Snapshot</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="dialog_reset_all_title">Reset all settings?</string>
+    <string name="dialog_reset_all_msg">This restores all integration toggles and preferences to default.</string>
+    <string name="btn_confirm_reset">Reset</string>
+
+    <string name="toast_reset_done">Defaults restored</string>
+    <string name="toast_command_sent">Applied</string>
+    <string name="toast_open_link_failed">Unable to open link</string>
+    <string name="toast_restarting_scopes">Restarting scopes…</string>
+    <string name="toast_restart_done">Scopes restarted</string>
+    <string name="toast_restart_failed">Restart failed: %1$s</string>
+    <string name="toast_syncing_catalog">Updating Sony artwork catalog…</string>
+    <string name="toast_sync_ok">Updated %1$d headset artworks</string>
+    <string name="toast_sync_failed">Update failed: %1$s</string>
+    <string name="toast_custom_art_saved">Custom artwork saved (clear cache &amp; restart to refresh)</string>
+    <string name="toast_custom_art_failed">Unable to read selected image</string>
+    <string name="toast_custom_art_cleared">Restored default artwork</string>
+    <string name="toast_native_panel_failed">Could not open card; check connection and scope</string>
+    <string name="toast_preview_popup_failed">Could not launch popup preview</string>
+</resources>

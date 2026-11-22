@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="couiBg" format="color|reference" />
+    <attr name="couiCard" format="color|reference" />
+    <attr name="couiSubcard" format="color|reference" />
+    <attr name="couiNavBg" format="color|reference" />
+    <attr name="couiNavBorder" format="color|reference" />
+    <attr name="couiNavPill" format="color|reference" />
+    <attr name="couiBadgeBg" format="color|reference" />
+    <attr name="couiBadgeFg" format="color|reference" />
+    <attr name="couiTextPrimary" format="color|reference" />
+    <attr name="couiTextSecondary" format="color|reference" />
+    <attr name="couiTextTertiary" format="color|reference" />
+    <attr name="couiAccent" format="color|reference" />
+    <attr name="couiOnAccent" format="color|reference" />
+    <attr name="couiAccentTonal" format="color|reference" />
+    <attr name="couiBtnSecondaryBg" format="color|reference" />
+    <attr name="couiDivider" format="color|reference" />
+    <attr name="couiRipple" format="color|reference" />
+    <attr name="couiSwitchOff" format="color|reference" />
+    <attr name="couiSeekbarTrack" format="color|reference" />
+    <attr name="couiThumbStroke" format="color|reference" />
+</resources>
