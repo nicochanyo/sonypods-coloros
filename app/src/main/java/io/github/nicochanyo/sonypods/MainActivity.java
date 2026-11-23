@@ -80,6 +80,7 @@ import io.github.libxposed.service.XposedProvider;
  */
 public class MainActivity extends Activity {
     private static final String STATE_TAB = "active_tab";
+    private static final String KEY_LAST_SHOWN_CHANGELOG_VER = "last_shown_changelog_ver";
     private static final String URL_SONYPODS = "https://github.com/Mercury000/SonyPods";
     private static final String URL_HUAWEIPODS = "https://github.com/ByteJuno/HuaweiPods-ColorOS";
     private static final String COOLAPK_DEEP_PREFIX = "coolmarket://u/";
@@ -259,7 +260,8 @@ public class MainActivity extends Activity {
         hadLocalKeys = opened.hadLocalKeys;
         data = ConfigStore.loadFromPrefs(prefs);
 
-        if (sPendingTabAfterRecreate >= TAB_HEADSET && sPendingTabAfterRecreate <= TAB_ABOUT) {
+        final boolean isRecreate = sPendingTabAfterRecreate >= TAB_HEADSET && sPendingTabAfterRecreate <= TAB_ABOUT;
+        if (isRecreate) {
             activeTab = sPendingTabAfterRecreate;
             sPendingTabAfterRecreate = -1;
         } else if (savedInstanceState != null) {
@@ -285,6 +287,20 @@ public class MainActivity extends Activity {
             syncRemoteAsync();
         });
         syncRemoteAsync();
+
+        if (!isRecreate && savedInstanceState == null) {
+            SharedPreferences localSp = getSharedPreferences(ConfigStore.PREFS_NAME, Context.MODE_PRIVATE);
+            int curVer = getInstalledVersionCode();
+            int lastShown = localSp.getInt(KEY_LAST_SHOWN_CHANGELOG_VER, 0);
+            if (lastShown < curVer) {
+                localSp.edit().putInt(KEY_LAST_SHOWN_CHANGELOG_VER, curVer).apply();
+                getWindow().getDecorView().post(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        showChangelogDialog();
+                    }
+                });
+            }
+        }
     }
 
     @Override
@@ -2044,10 +2060,12 @@ public class MainActivity extends Activity {
         sheet.card.addView(scroll, scrollLp);
 
         int[] verTitles = new int[]{
+                R.string.changelog_v102_title,
                 R.string.changelog_v101_title,
                 R.string.changelog_v100_title
         };
         int[] verBodies = new int[]{
+                R.string.changelog_v102_body,
                 R.string.changelog_v101_body,
                 R.string.changelog_v100_body
         };
@@ -2108,7 +2126,7 @@ public class MainActivity extends Activity {
             //noinspection deprecation
             return pi.versionCode;
         } catch (Throwable ignored) {
-            return 1001;
+            return 1002;
         }
     }
 
@@ -2120,12 +2138,12 @@ public class MainActivity extends Activity {
             }
         } catch (Throwable ignored) {
         }
-        return "1.0.1";
+        return "1.0.2";
     }
 
     private static String formatVerLabel(String ver) {
         if (ver == null || ver.trim().isEmpty()) {
-            return "v1.0.1";
+            return "v1.0.2";
         }
         String t = ver.trim();
         if (t.startsWith("v") || t.startsWith("V")) {

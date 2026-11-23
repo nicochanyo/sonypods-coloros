@@ -21,10 +21,15 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.json.JSONObject;
+
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -249,6 +254,41 @@ public final class ColorOsMyDevicesHook {
         if (convCls == null) {
             return;
         }
+        Constructor<?> resolvedCtor = null;
+        Object resolvedSingleType = null;
+        Object resolvedLeftType = null;
+        Object resolvedRightType = null;
+        Class<?> batteryInfoCls = XposedCompat.findClassIfExists(
+                "com.oplus.mydevices.domain.entities.device.BatteryInfo", cl);
+        Class<?> batteryTypeCls = XposedCompat.findClassIfExists(
+                "com.oplus.mydevices.domain.entities.device.BatteryType", cl);
+        if (batteryInfoCls != null && batteryTypeCls != null && batteryTypeCls.isEnum()) {
+            try {
+                resolvedCtor = batteryInfoCls.getDeclaredConstructor(batteryTypeCls, int.class, boolean.class);
+                resolvedCtor.setAccessible(true);
+                Object[] enumConstants = batteryTypeCls.getEnumConstants();
+                if (enumConstants != null) {
+                    for (Object c : enumConstants) {
+                        if (!(c instanceof Enum<?>)) continue;
+                        String name = ((Enum<?>) c).name();
+                        if ("SINGLE".equals(name)) {
+                            resolvedSingleType = c;
+                        } else if ("LEFT".equals(name)) {
+                            resolvedLeftType = c;
+                        } else if ("RIGHT".equals(name)) {
+                            resolvedRightType = c;
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                XposedCompat.debug("Resolve BatteryInfo/BatteryType failed: " + t.getMessage());
+            }
+        }
+        final Constructor<?> batteryInfoCtor = resolvedCtor;
+        final Object singleTypeEnum = resolvedSingleType;
+        final Object leftTypeEnum = resolvedLeftType;
+        final Object rightTypeEnum = resolvedRightType;
+
         XposedCompat.hookAllMethods(convCls, "p", new XposedCompat.XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(XposedCompat.MethodHookParam param) {
@@ -264,6 +304,229 @@ public final class ColorOsMyDevicesHook {
             @Override
             protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
                 TLS_SONY.remove();
+            }
+        });
+
+        XposedCompat.hookAllMethods(convCls, "n", new XposedCompat.XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(XposedCompat.MethodHookParam param) {
+                if (TLS_SONY.get() != null || !isPanelEnabled()
+                        || param.args == null || param.args.length < 3
+                        || !(param.args[2] instanceof String)) {
+                    return;
+                }
+                String addr = (String) param.args[2];
+                if (isSonyMac(sAppContext, addr)) {
+                    TLS_SONY.set(buildSonyCtx(sAppContext, null, addr, null));
+                    param.setObjectExtra("tls_n_owned", Boolean.TRUE);
+                }
+            }
+
+            @Override
+            protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
+                if (Boolean.TRUE.equals(param.getObjectExtra("tls_n_owned"))) {
+                    TLS_SONY.remove();
+                }
+            }
+        });
+
+        if (batteryInfoCtor != null && singleTypeEnum != null && leftTypeEnum != null && rightTypeEnum != null) {
+            XposedCompat.hookAllMethods(convCls, "f", new XposedCompat.XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(XposedCompat.MethodHookParam param) {
+                    SonyCtx sc = TLS_SONY.get();
+                    if (sc == null || !isPanelEnabled()) {
+                        return;
+                    }
+                    int secType = (param.args != null && param.args.length >= 1 && param.args[0] instanceof Integer)
+                            ? (Integer) param.args[0] : 2001;
+                    int[] bat = (param.args != null && param.args.length >= 2 && param.args[1] instanceof int[])
+                            ? (int[]) param.args[1] : null;
+                    bat = resolveSonyBatteryArray(bat, sc);
+                    if (bat == null || bat.length < 3) {
+                        return;
+                    }
+                    try {
+                        if (secType == 2000 || SonyDeviceDetector.isOverEarModel(sc.model)) {
+                            int[] minPair = computeMinEarbudBattery(bat);
+                            if (minPair == null) {
+                                param.setResult(Collections.emptyList());
+                            } else {
+                                Object singleInfo = batteryInfoCtor.newInstance(
+                                        singleTypeEnum, minPair[0], minPair[1] != 0);
+                                param.setResult(Collections.singletonList(singleInfo));
+                                XposedCompat.log("a.f -> SINGLE battery=" + minPair[0] + "% for " + sc.model);
+                            }
+                            return;
+                        }
+                        List<Object> twsList = new ArrayList<>(2);
+                        boolean hasL = bat.length >= 4 && bat[0] > 0 && bat[0] <= 100 && bat[3] != 4;
+                        boolean hasR = bat.length >= 5 && bat[1] > 0 && bat[1] <= 100 && bat[4] != 4;
+                        if (hasL) {
+                            twsList.add(batteryInfoCtor.newInstance(leftTypeEnum, bat[0], bat[3] == 1));
+                        }
+                        if (hasR) {
+                            twsList.add(batteryInfoCtor.newInstance(rightTypeEnum, bat[1], bat[4] == 1));
+                        }
+                        if (!twsList.isEmpty()) {
+                            param.setResult(twsList);
+                            XposedCompat.log("a.f -> TWS battery L=" + (hasL ? bat[0] : -1)
+                                    + " R=" + (hasR ? bat[1] : -1) + " (BOX stripped) for " + sc.model);
+                        }
+                    } catch (Throwable t) {
+                        XposedCompat.debug("a.f hook failed: " + t.getMessage());
+                    }
+                }
+            });
+
+            XposedCompat.XC_MethodHook scanPolicyLambdaHook = new XposedCompat.XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(XposedCompat.MethodHookParam param) {
+                    if (TLS_SONY.get() != null || !isPanelEnabled() || param.thisObject == null) {
+                        return;
+                    }
+                    SonyCtx resolved = resolveSonyCtxFromLambda(param.thisObject);
+                    if (resolved != null) {
+                        TLS_SONY.set(resolved);
+                        param.setObjectExtra("tls_scan_owned", Boolean.TRUE);
+                    }
+                }
+
+                @Override
+                protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
+                    if (Boolean.TRUE.equals(param.getObjectExtra("tls_scan_owned"))) {
+                        TLS_SONY.remove();
+                    }
+                }
+            };
+            String[] scanLambdaNames = {
+                    "com.heytap.mydevices.plugin.airpods.core.AirpodsScanPolicy$onBatteryLevelChanged$1",
+                    "com.heytap.mydevices.plugin.airpods.core.AirpodsScanPolicy$onNoiseModeChanged$1"
+            };
+            for (String clsName : scanLambdaNames) {
+                Class<?> lambdaCls = XposedCompat.findClassIfExists(clsName, cl);
+                if (lambdaCls != null) {
+                    XposedCompat.hookAllMethods(lambdaCls, "invoke", scanPolicyLambdaHook);
+                }
+            }
+
+            Class<?> deviceInfoCls = XposedCompat.findClassIfExists(
+                    "com.oplus.mydevices.domain.entities.device.DeviceInfo", cl);
+            if (deviceInfoCls != null) {
+                XposedCompat.hookAllMethods(deviceInfoCls, "setBatteryList", new XposedCompat.XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(XposedCompat.MethodHookParam param) {
+                        if (!isPanelEnabled() || param.thisObject == null
+                                || param.args == null || param.args.length < 1
+                                || !(param.args[0] instanceof List)) {
+                            return;
+                        }
+                        String mac = resolveDeviceInfoMac(param.thisObject);
+                        if (!isSonyMac(sAppContext, mac)) {
+                            return;
+                        }
+                        List<?> raw = (List<?>) param.args[0];
+                        List<?> stripped = stripBoxFromBatteryInfoList(raw);
+                        if (stripped != null) {
+                            param.args[0] = stripped;
+                            XposedCompat.log("DeviceInfo.setBatteryList -> kept L/R, stripped BOX for " + mac);
+                        }
+                    }
+                });
+            }
+
+            // Home screen widget circular progress ring (aa.Zg.e) only looks for SINGLE/BOX
+            Class<?> widgetHelperCls = XposedCompat.findClassIfExists("aa.Zg", cl);
+            if (widgetHelperCls != null) {
+                XposedCompat.hookAllMethods(widgetHelperCls, "e", new XposedCompat.XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
+                        if (!isPanelEnabled() || param.args == null || param.args.length < 3) {
+                            return;
+                        }
+                        Object coder = param.args[0];
+                        if (coder == null || !(param.args[1] instanceof String) || param.args[2] == null) {
+                            return;
+                        }
+                        String viewId = (String) param.args[1];
+                        Object device = param.args[2];
+                        String mac = resolveDeviceInfoMac(device);
+                        if (!isSonyMac(sAppContext, mac) || !isDeviceConnected(device)) {
+                            return;
+                        }
+                        try {
+                            Method getBatList = findMethod(device.getClass(), "getBatteryList");
+                            Object listObj = getBatList != null ? getBatList.invoke(device) : null;
+                            if (!(listObj instanceof List)) {
+                                return;
+                            }
+                            int[] minPair = computeMinFromBatteryInfoListIfDualWithoutSingleOrBox((List<?>) listObj);
+                            if (minPair == null) {
+                                return;
+                            }
+                            JSONObject json = new JSONObject();
+                            json.put("value", minPair[0]);
+                            json.put("charge", minPair[1] != 0);
+                            json.put("hasBattery", true);
+                            Method setCustom = findMethod(coder.getClass(), "setCustomData",
+                                    String.class, String.class, Object.class);
+                            if (setCustom != null) {
+                                setCustom.invoke(coder, viewId, "batteryProgress", json);
+                                XposedCompat.debug("Zg.e -> batteryProgress=" + minPair[0] + "% for " + mac);
+                            }
+                        } catch (Throwable t) {
+                            XposedCompat.debug("Zg.e hook failed: " + t.getMessage());
+                        }
+                    }
+                });
+            }
+        }
+
+        // a.a(List, int[]) maps idx 0/3 -> 1281 (L), 1/4 -> 1282 (R), 2/5 -> 1280 (Main/Box)
+        XposedCompat.hookAllMethods(convCls, "a", new XposedCompat.XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(XposedCompat.MethodHookParam param) {
+                SonyCtx sc = TLS_SONY.get();
+                if (sc == null || !isPanelEnabled() || param.args == null || param.args.length < 2) {
+                    return;
+                }
+                int[] bat = (param.args[1] instanceof int[]) ? (int[]) param.args[1] : null;
+                bat = resolveSonyBatteryArray(bat, sc);
+                if (bat == null || bat.length < 6) {
+                    return;
+                }
+                if (SonyDeviceDetector.isOverEarModel(sc.model)) {
+                    int[] minPair = computeMinEarbudBattery(bat);
+                    param.args[1] = (minPair != null)
+                            ? new int[]{ -1, -1, minPair[0], 4, 4, (minPair[1] != 0) ? 1 : 2 }
+                            : new int[]{ -1, -1, -1, 4, 4, 4 };
+                    return;
+                }
+                boolean hasL = bat[0] > 0 && bat[0] <= 100 && bat[3] != 4;
+                boolean hasR = bat[1] > 0 && bat[1] <= 100 && bat[4] != 4;
+                if (hasL || hasR) {
+                    param.args[1] = new int[]{
+                            bat[0], bat[1], -1,
+                            bat[3], bat[4], 4
+                    };
+                }
+            }
+        });
+
+        // a.b(List, int[]) maps idx 0/3 -> 1280 (Main) for single-battery / over-ear form factor
+        XposedCompat.hookAllMethods(convCls, "b", new XposedCompat.XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(XposedCompat.MethodHookParam param) {
+                SonyCtx sc = TLS_SONY.get();
+                if (sc == null || !isPanelEnabled() || param.args == null || param.args.length < 2) {
+                    return;
+                }
+                int[] bat = (param.args[1] instanceof int[]) ? (int[]) param.args[1] : null;
+                bat = resolveSonyBatteryArray(bat, sc);
+                int[] minPair = computeMinEarbudBattery(bat);
+                param.args[1] = (minPair != null)
+                        ? new int[]{ minPair[0], -1, -1, (minPair[1] != 0) ? 1 : 2, 4, 4 }
+                        : new int[]{ -1, -1, -1, 4, 4, 4 };
             }
         });
     }
@@ -1408,6 +1671,211 @@ public final class ColorOsMyDevicesHook {
 
     private static boolean isValidBatteryArray(int[] bat) {
         return bat != null && bat.length >= 6 && (bat[0] > 0 || bat[1] > 0 || bat[2] > 0);
+    }
+
+    private static int[] resolveSonyBatteryArray(int[] bat, SonyCtx sc) {
+        if (bat != null && isValidBatteryArray(bat)) {
+            return bat;
+        }
+        if (sAppContext != null) {
+            ConfigStore.HeadsetState st = ConfigStore.readGlobalState(sAppContext);
+            if (st.connected && (sc == null || sc.mac.isEmpty() || sc.mac.equalsIgnoreCase(st.mac))) {
+                String model = (sc != null && !sc.model.isEmpty()) ? sc.model : st.effectiveModelName();
+                return buildBatteryArrayFromState(st, model);
+            }
+        }
+        return bat;
+    }
+
+    /**
+     * Returns {@code { minVal, minCharging ? 1 : 0 }} from the lowest active earbud
+     * (L / R), falling back to case battery only when neither earbud has a valid reading.
+     */
+    private static int[] computeMinEarbudBattery(int[] bat) {
+        if (bat == null || bat.length < 3) {
+            return null;
+        }
+        int l = (bat[0] > 0 && bat[0] <= 100 && (bat.length <= 3 || bat[3] != 4)) ? bat[0] : -1;
+        int r = (bat[1] > 0 && bat[1] <= 100 && (bat.length <= 4 || bat[4] != 4)) ? bat[1] : -1;
+        boolean lChg = bat.length > 3 && bat[3] == 1;
+        boolean rChg = bat.length > 4 && bat[4] == 1;
+        int minVal = -1;
+        boolean minChg = false;
+        if (l > 0 && r > 0) {
+            if (l < r) {
+                minVal = l;
+                minChg = lChg;
+            } else if (r < l) {
+                minVal = r;
+                minChg = rChg;
+            } else {
+                minVal = l;
+                minChg = lChg || rChg;
+            }
+        } else if (l > 0) {
+            minVal = l;
+            minChg = lChg;
+        } else if (r > 0) {
+            minVal = r;
+            minChg = rChg;
+        } else if (bat[2] > 0 && bat[2] <= 100 && (bat.length <= 5 || bat[5] != 4)) {
+            minVal = bat[2];
+            minChg = bat.length > 5 && bat[5] == 1;
+        }
+        if (minVal <= 0) {
+            return null;
+        }
+        return new int[]{ minVal, minChg ? 1 : 0 };
+    }
+
+    private static SonyCtx resolveSonyCtxFromLambda(Object lambdaObj) {
+        if (lambdaObj == null) {
+            return null;
+        }
+        BluetoothDevice foundDev = null;
+        String foundMac = "";
+        try {
+            for (Field f : lambdaObj.getClass().getDeclaredFields()) {
+                f.setAccessible(true);
+                Object val = f.get(lambdaObj);
+                if (val instanceof BluetoothDevice && foundDev == null) {
+                    foundDev = (BluetoothDevice) val;
+                } else if (val instanceof String) {
+                    String s = ((String) val).trim();
+                    if (BluetoothAdapter.checkBluetoothAddress(s)) {
+                        foundMac = s;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        if (foundDev != null && isSonyDeviceOrState(sAppContext, foundDev)) {
+            String mac = !foundMac.isEmpty() ? foundMac : safeAddress(foundDev);
+            return buildSonyCtx(sAppContext, foundDev, mac, null);
+        }
+        if (!foundMac.isEmpty() && isSonyMac(sAppContext, foundMac)) {
+            return buildSonyCtx(sAppContext, null, foundMac, null);
+        }
+        return null;
+    }
+
+    private static String resolveDeviceInfoMac(Object deviceInfo) {
+        if (deviceInfo == null) {
+            return "";
+        }
+        String[] getters = { "getMacAddress", "getMac" };
+        for (String name : getters) {
+            try {
+                Method m = findMethod(deviceInfo.getClass(), name);
+                Object v = m != null ? m.invoke(deviceInfo) : null;
+                if (v instanceof String) {
+                    String s = ((String) v).trim();
+                    if (!s.isEmpty() && !"null".equalsIgnoreCase(s)) {
+                        return s;
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return "";
+    }
+
+    private static List<?> stripBoxFromBatteryInfoList(List<?> raw) {
+        if (raw == null || raw.isEmpty()) {
+            return null;
+        }
+        List<Object> filtered = new ArrayList<>(raw.size());
+        boolean hasEarbud = false;
+        boolean hasBox = false;
+        for (Object item : raw) {
+            if (item == null) continue;
+            try {
+                Method getType = findMethod(item.getClass(), "getBatteryType");
+                Method getVal = findMethod(item.getClass(), "getValue");
+                Object typeObj = getType != null ? getType.invoke(item) : null;
+                Object valObj = getVal != null ? getVal.invoke(item) : null;
+                String typeName = (typeObj instanceof Enum<?>) ? ((Enum<?>) typeObj).name() : "";
+                int val = (valObj instanceof Integer) ? (Integer) valObj : -1;
+                if ("BOX".equals(typeName)) {
+                    hasBox = true;
+                    continue;
+                }
+                if (("LEFT".equals(typeName) || "RIGHT".equals(typeName)) && val > 0 && val <= 100) {
+                    hasEarbud = true;
+                }
+                filtered.add(item);
+            } catch (Throwable ignored) {
+                filtered.add(item);
+            }
+        }
+        return (hasEarbud && hasBox && !filtered.isEmpty()) ? filtered : null;
+    }
+
+    private static boolean isDeviceConnected(Object device) {
+        if (device == null) {
+            return false;
+        }
+        try {
+            Method m = findMethod(device.getClass(), "isConnected");
+            Object v = m != null ? m.invoke(device) : null;
+            if (v instanceof Boolean) {
+                return (Boolean) v;
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            Method m = findMethod(device.getClass(), "getDeviceConnectState");
+            Object v = m != null ? m.invoke(device) : null;
+            if (v instanceof Enum<?>) {
+                return "CONNECTED".equals(((Enum<?>) v).name());
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
+    private static int[] computeMinFromBatteryInfoListIfDualWithoutSingleOrBox(List<?> raw) {
+        if (raw == null || raw.isEmpty()) {
+            return null;
+        }
+        int left = -1, right = -1;
+        boolean lChg = false, rChg = false;
+        for (Object item : raw) {
+            if (item == null) continue;
+            try {
+                Method getType = findMethod(item.getClass(), "getBatteryType");
+                Method getVal = findMethod(item.getClass(), "getValue");
+                Method getChg = findMethod(item.getClass(), "getCharge");
+                Object typeObj = getType != null ? getType.invoke(item) : null;
+                Object valObj = getVal != null ? getVal.invoke(item) : null;
+                Object chgObj = getChg != null ? getChg.invoke(item) : null;
+                if (!(typeObj instanceof Enum<?>) || !(valObj instanceof Integer)) {
+                    continue;
+                }
+                String typeName = ((Enum<?>) typeObj).name();
+                int val = (Integer) valObj;
+                boolean chg = Boolean.TRUE.equals(chgObj);
+                if ("SINGLE".equals(typeName) || "BOX".equals(typeName)) {
+                    return null;
+                }
+                if ("LEFT".equals(typeName) && val > 0 && val <= 100) {
+                    left = val;
+                    lChg = chg;
+                } else if ("RIGHT".equals(typeName) && val > 0 && val <= 100) {
+                    right = val;
+                    rChg = chg;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        if (left > 0 && right > 0) {
+            if (left < right) return new int[]{ left, lChg ? 1 : 0 };
+            if (right < left) return new int[]{ right, rChg ? 1 : 0 };
+            return new int[]{ left, (lChg || rChg) ? 1 : 0 };
+        }
+        if (left > 0) return new int[]{ left, lChg ? 1 : 0 };
+        if (right > 0) return new int[]{ right, rChg ? 1 : 0 };
+        return null;
     }
 
     private static void maybeRefreshCapsuleWhenSecondEarJoins(Context ctx) {

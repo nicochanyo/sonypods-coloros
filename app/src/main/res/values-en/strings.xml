@@ -19,11 +19,11 @@
     <!-- Top Status Card -->
     <string name="status_title_active">Module Active</string>
     <string name="status_title_inactive">Module Inactive</string>
-    <string name="status_sub_active">v1.0.1 · API 102</string>
+    <string name="status_sub_active">v1.0.2 · API 102</string>
     <string name="status_sub_inactive">Enable module in LSPosed and restart Bluetooth</string>
     <string name="badge_api_102">API 102</string>
 
-    <string name="chip_version">v1.0.1</string>
+    <string name="chip_version">v1.0.2</string>
     <string name="chip_coloros">ColorOS 16/17</string>
     <string name="chip_lsposed">API 102</string>
 
@@ -207,6 +207,8 @@
     <string name="btn_update_download">Download Update APK</string>
     <string name="btn_update_open_repo">Open Repo</string>
     <string name="dialog_changelog_title">Changelog</string>
+    <string name="changelog_v102_title">v1.0.2</string>
+    <string name="changelog_v102_body" formatted="false">• Fixed Control Center &amp; widget battery/icon readout: shows lowest earbud battery while keeping L/R indicators instead of the charging case\n• Improved Control Center expanded sheet top blur to blend with the live dynamic backdrop\n• Added automatic changelog popup on first launch after updating</string>
     <string name="changelog_v101_title">v1.0.1</string>
     <string name="changelog_v101_body" formatted="false">• Comprehensive Sony Sound Connect Feature Adaptation: integrated four full-featured control pages — Sound &amp; Noise Control, Touch &amp; Smart Controls, Connection &amp; Multipoint, and Auto Power Off\n• Added 6-band custom Equalizer (400Hz–16kHz + Clear Bass) synchronized with Sony presets, real-time drag tuning, and one-tap reset\n• Added Left/Right Touch Sensor assignment, Speak-to-Chat sensitivity &amp; auto-close timeout, Wear Detection, Auto Power Off conditions, Voice Guidance, and Multipoint paired-device switching\n• Added Speak-to-Chat quick toggle tile to the ColorOS volume slider detail panel and fixed Control Center headset card offline/online icon inversion\n• Complete ColorOS 17 UI &amp; Interaction Overhaul: seamless Level-2/3 slide navigation in Bluetooth Details &amp; Control Center sheets with progressive top Gaussian blur headers, native transition curves, and anti-mistouch gesture handling\n• Added collapsing large header in main app, ColorOS 17 damped spring overscroll bounce across all lists &amp; bottom sheets, and floating COUI sheets &amp; anchored popup menus\n• Hardened Sony Tandem RFCOMM reliability (thread-safe write lock &amp; dynamic GS slot resolution) and fixed remote changelog formatting</string>
     <string name="changelog_v100_title">v1.0.0</string>

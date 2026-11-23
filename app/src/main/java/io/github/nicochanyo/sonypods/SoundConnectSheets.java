@@ -8,10 +8,14 @@ import android.content.ContextWrapper;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -1072,20 +1076,25 @@ public final class SoundConnectSheets {
 
         scrollView.addView(body, new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        FrameLayout contentContainer = new FrameLayout(uiCtx);
+        final TopGradientBlurView topBlur = new TopGradientBlurView(uiCtx);
+        topBlur.setClickable(false);
+        topBlur.setFocusable(false);
+        topBlur.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        topBlur.setStatusBarTopPx(statusInset);
+        if (embedded) {
+            topBlur.setDynamicBackdrop(true);
+        } else {
+            topBlur.setSurfaceColor(resolveFullScreenPageBg(uiCtx, pal));
+        }
+
+        FrameLayout contentContainer = embedded
+                ? new TopFadeContentLayout(uiCtx, topBlur)
+                : new FrameLayout(uiCtx);
         contentContainer.addView(scrollView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         root.addView(contentContainer, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        TopGradientBlurView topBlur = new TopGradientBlurView(uiCtx);
-        topBlur.setClickable(false);
-        topBlur.setFocusable(false);
-        topBlur.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        topBlur.setStatusBarTopPx(statusInset);
-        topBlur.setSurfaceColor(embedded
-                ? (pal.dark ? 0xFF1C1C1E : 0xFFEFEFEF)
-                : resolveFullScreenPageBg(uiCtx, pal));
         root.addView(topBlur, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, headerHeightPx + blurExtraPx, Gravity.TOP));
 
@@ -2466,6 +2475,45 @@ public final class SoundConnectSheets {
             }
         }
         return out;
+    }
+
+    private static final class TopFadeContentLayout extends FrameLayout {
+        private final TopGradientBlurView topBlur;
+        private final Paint maskPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private int lastBlurH = -1;
+
+        TopFadeContentLayout(Context context, TopGradientBlurView topBlur) {
+            super(context);
+            this.topBlur = topBlur;
+            maskPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+        }
+
+        @Override
+        protected void dispatchDraw(Canvas canvas) {
+            int blurH = topBlur != null ? topBlur.getHeight() : 0;
+            if (topBlur == null || topBlur.isCapturingTarget() || blurH <= 0) {
+                super.dispatchDraw(canvas);
+                return;
+            }
+            int w = getWidth();
+            int h = getHeight();
+            if (w <= 0 || h <= 0) {
+                super.dispatchDraw(canvas);
+                return;
+            }
+            if (blurH != lastBlurH) {
+                lastBlurH = blurH;
+                maskPaint.setShader(new LinearGradient(
+                        0f, 0f, 0f, blurH,
+                        new int[]{ 0x00FFFFFF, 0x00FFFFFF, 0x58FFFFFF, 0xB8FFFFFF, 0xFFFFFFFF },
+                        new float[]{ 0f, 0.58f, 0.74f, 0.88f, 1f },
+                        Shader.TileMode.CLAMP));
+            }
+            int layer = canvas.saveLayer(0f, 0f, w, h, null);
+            super.dispatchDraw(canvas);
+            canvas.drawRect(0f, 0f, w, blurH, maskPaint);
+            canvas.restoreToCount(layer);
+        }
     }
 
     public static String loc(Context ctx, String tw, String cn, String en) {

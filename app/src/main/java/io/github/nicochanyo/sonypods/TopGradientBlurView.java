@@ -34,6 +34,7 @@ public class TopGradientBlurView extends View {
     private int statusBarTopPx;
     private int bgColor;
     private boolean translucentBackdrop = false;
+    private boolean dynamicBackdrop = false;
 
     // Cached geometry/theme signature for RenderEffects and Shaders
     private int lastW = -1;
@@ -41,6 +42,7 @@ public class TopGradientBlurView extends View {
     private int lastStatusTop = -1;
     private int lastBgColor;
     private boolean lastTranslucent = false;
+    private boolean lastDynamicBackdrop = false;
 
     // API 31+ GPU RenderNodes
     private RenderNode sourceNode;
@@ -114,6 +116,18 @@ public class TopGradientBlurView extends View {
         }
     }
 
+    public void setDynamicBackdrop(boolean dynamic) {
+        if (this.dynamicBackdrop != dynamic) {
+            this.dynamicBackdrop = dynamic;
+            lastW = -1;
+            invalidate();
+        }
+    }
+
+    public boolean isCapturingTarget() {
+        return isCapturing;
+    }
+
     public void notifyTargetInvalidated() {
         if (!isCapturing) {
             invalidate();
@@ -152,7 +166,8 @@ public class TopGradientBlurView extends View {
 
     private void ensureShadersAndEffects(int w, int h) {
         if (w == lastW && h == lastH && statusBarTopPx == lastStatusTop
-                && bgColor == lastBgColor && translucentBackdrop == lastTranslucent) {
+                && bgColor == lastBgColor && translucentBackdrop == lastTranslucent
+                && dynamicBackdrop == lastDynamicBackdrop) {
             return;
         }
         lastW = w;
@@ -160,79 +175,113 @@ public class TopGradientBlurView extends View {
         lastStatusTop = statusBarTopPx;
         lastBgColor = bgColor;
         lastTranslucent = translucentBackdrop;
+        lastDynamicBackdrop = dynamicBackdrop;
 
         float d = getResources().getDisplayMetrics().density;
         boolean compactEmbedded = (statusBarTopPx <= 0);
         float topAnchor = Math.min(h * 0.68f, statusBarTopPx + 34f * d);
         float fh = h;
 
-        float[] scrimStops = compactEmbedded
-                ? new float[] { 0f, 0.48f, 0.64f, 0.78f, 0.90f, 1f }
-                : new float[] {
-                        0f,
-                        clampPos(statusBarTopPx / fh),
-                        clampPos(topAnchor / fh),
-                        clampPos((topAnchor + 20f * d) / fh),
-                        clampPos((topAnchor + 38f * d) / fh),
-                        1f
-                };
-        int rgb = bgColor & 0x00FFFFFF;
-        int[] scrimColors;
-        if (compactEmbedded) {
-            scrimColors = translucentBackdrop
-                    ? new int[] {
-                            (0xCC << 24) | rgb,
-                            (0xB8 << 24) | rgb,
-                            (0x80 << 24) | rgb,
-                            (0x40 << 24) | rgb,
-                            (0x12 << 24) | rgb,
-                            rgb
-                    }
-                    : new int[] {
-                            (0xFF << 24) | rgb,
-                            (0xF7 << 24) | rgb,
-                            (0xCC << 24) | rgb,
-                            (0x7A << 24) | rgb,
-                            (0x24 << 24) | rgb,
-                            rgb
-                    };
+        if (dynamicBackdrop) {
+            scrimPaint.setShader(null);
+            scrimPaint.setColor(Color.TRANSPARENT);
         } else {
-            scrimColors = translucentBackdrop
-                    ? new int[] {
-                            (0x72 << 24) | rgb,
-                            (0x56 << 24) | rgb,
-                            (0x30 << 24) | rgb,
-                            (0x16 << 24) | rgb,
-                            (0x06 << 24) | rgb,
-                            rgb
-                    }
-                    : new int[] {
-                            (0x9E << 24) | rgb,
-                            (0x82 << 24) | rgb,
-                            (0x52 << 24) | rgb,
-                            (0x2B << 24) | rgb,
-                            (0x0C << 24) | rgb,
-                            rgb
+            float[] scrimStops = compactEmbedded
+                    ? new float[] { 0f, 0.48f, 0.64f, 0.78f, 0.90f, 1f }
+                    : new float[] {
+                            0f,
+                            clampPos(statusBarTopPx / fh),
+                            clampPos(topAnchor / fh),
+                            clampPos((topAnchor + 20f * d) / fh),
+                            clampPos((topAnchor + 38f * d) / fh),
+                            1f
                     };
+            int rgb = bgColor & 0x00FFFFFF;
+            int[] scrimColors;
+            if (compactEmbedded) {
+                scrimColors = translucentBackdrop
+                        ? new int[] {
+                                (0xCC << 24) | rgb,
+                                (0xB8 << 24) | rgb,
+                                (0x80 << 24) | rgb,
+                                (0x40 << 24) | rgb,
+                                (0x12 << 24) | rgb,
+                                rgb
+                        }
+                        : new int[] {
+                                (0xFF << 24) | rgb,
+                                (0xF7 << 24) | rgb,
+                                (0xCC << 24) | rgb,
+                                (0x7A << 24) | rgb,
+                                (0x24 << 24) | rgb,
+                                rgb
+                        };
+            } else {
+                scrimColors = translucentBackdrop
+                        ? new int[] {
+                                (0x72 << 24) | rgb,
+                                (0x56 << 24) | rgb,
+                                (0x30 << 24) | rgb,
+                                (0x16 << 24) | rgb,
+                                (0x06 << 24) | rgb,
+                                rgb
+                        }
+                        : new int[] {
+                                (0x9E << 24) | rgb,
+                                (0x82 << 24) | rgb,
+                                (0x52 << 24) | rgb,
+                                (0x2B << 24) | rgb,
+                                (0x0C << 24) | rgb,
+                                rgb
+                        };
+            }
+            scrimPaint.setColor(Color.BLACK);
+            scrimPaint.setShader(new LinearGradient(0f, 0f, 0f, fh, scrimColors, scrimStops, Shader.TileMode.CLAMP));
         }
-        scrimPaint.setShader(new LinearGradient(0f, 0f, 0f, fh, scrimColors, scrimStops, Shader.TileMode.CLAMP));
 
         if (Build.VERSION.SDK_INT >= 31) {
             float rSoft = Math.max(1f, SOFT_BLUR_DP * d);
             float rStrong = Math.max(1f, STRONG_BLUR_DP * d);
 
-            // Keep soft blur 100% opaque across the upper transition so sharp edges never ghost beneath strongBlur
-            float[] softStops = compactEmbedded
-                    ? new float[] { 0f, 0.72f, 0.88f, 1f }
-                    : new float[] {
-                            0f,
-                            clampPos((topAnchor + 26f * d) / fh),
-                            clampPos((topAnchor + 40f * d) / fh),
-                            1f
-                    };
-            int[] softMaskColors = new int[] {
-                    0xFFFFFFFF, 0xFFFFFFFF, 0x5CFFFFFF, 0x00FFFFFF
-            };
+            float[] softStops;
+            int[] softMaskColors;
+            float[] strongStops;
+            int[] strongMaskColors;
+            if (dynamicBackdrop) {
+                softStops = new float[] { 0f, 0.46f, 0.64f, 0.82f, 0.94f, 1f };
+                softMaskColors = new int[] {
+                        0x00FFFFFF, 0x00FFFFFF, 0x78FFFFFF, 0xFFFFFFFF, 0x70FFFFFF, 0x00FFFFFF
+                };
+                strongStops = new float[] { 0f, 0.36f, 0.54f, 0.72f, 0.88f, 1f };
+                strongMaskColors = new int[] {
+                        0x00FFFFFF, 0x00FFFFFF, 0xA8FFFFFF, 0xFFFFFFFF, 0x40FFFFFF, 0x00FFFFFF
+                };
+            } else {
+                // Keep soft blur 100% opaque across the upper transition so sharp edges never ghost beneath strongBlur
+                softStops = compactEmbedded
+                        ? new float[] { 0f, 0.72f, 0.88f, 1f }
+                        : new float[] {
+                                0f,
+                                clampPos((topAnchor + 26f * d) / fh),
+                                clampPos((topAnchor + 40f * d) / fh),
+                                1f
+                        };
+                softMaskColors = new int[] {
+                        0xFFFFFFFF, 0xFFFFFFFF, 0x5CFFFFFF, 0x00FFFFFF
+                };
+                strongStops = compactEmbedded
+                        ? new float[] { 0f, 0.56f, 0.74f, 0.90f, 1f }
+                        : new float[] {
+                                0f,
+                                clampPos((topAnchor + 4f * d) / fh),
+                                clampPos((topAnchor + 20f * d) / fh),
+                                clampPos((topAnchor + 36f * d) / fh),
+                                1f
+                        };
+                strongMaskColors = new int[] {
+                        0xFFFFFFFF, 0xFFFFFFFF, 0x78FFFFFF, 0x00FFFFFF, 0x00FFFFFF
+                };
+            }
             LinearGradient softGrad = new LinearGradient(
                     0f, 0f, 0f, fh, softMaskColors, softStops, Shader.TileMode.CLAMP);
             softMaskedEffect = RenderEffect.createBlendModeEffect(
@@ -240,18 +289,6 @@ public class TopGradientBlurView extends View {
                     RenderEffect.createShaderEffect(softGrad),
                     BlendMode.DST_IN);
 
-            float[] strongStops = compactEmbedded
-                    ? new float[] { 0f, 0.56f, 0.74f, 0.90f, 1f }
-                    : new float[] {
-                            0f,
-                            clampPos((topAnchor + 4f * d) / fh),
-                            clampPos((topAnchor + 20f * d) / fh),
-                            clampPos((topAnchor + 36f * d) / fh),
-                            1f
-                    };
-            int[] strongMaskColors = new int[] {
-                    0xFFFFFFFF, 0xFFFFFFFF, 0x78FFFFFF, 0x00FFFFFF, 0x00FFFFFF
-            };
             LinearGradient strongGrad = new LinearGradient(
                     0f, 0f, 0f, fh, strongMaskColors, strongStops, Shader.TileMode.CLAMP);
             strongMaskedEffect = RenderEffect.createBlendModeEffect(
@@ -266,10 +303,14 @@ public class TopGradientBlurView extends View {
                 strongBlurNode.setRenderEffect(strongMaskedEffect);
             }
         } else {
-            float[] fbStops = compactEmbedded
-                    ? new float[] { 0f, 0.56f, 0.84f, 1f }
-                    : new float[] { 0f, clampPos(topAnchor / fh), clampPos((topAnchor + 28f * d) / fh), 1f };
-            int[] fbColors = new int[] { 0xFFFFFFFF, 0xE6FFFFFF, 0x55FFFFFF, 0x00FFFFFF };
+            float[] fbStops = dynamicBackdrop
+                    ? new float[] { 0f, 0.38f, 0.68f, 0.88f, 1f }
+                    : (compactEmbedded
+                            ? new float[] { 0f, 0.56f, 0.84f, 1f }
+                            : new float[] { 0f, clampPos(topAnchor / fh), clampPos((topAnchor + 28f * d) / fh), 1f });
+            int[] fbColors = dynamicBackdrop
+                    ? new int[] { 0x00FFFFFF, 0x00FFFFFF, 0xD8FFFFFF, 0x60FFFFFF, 0x00FFFFFF }
+                    : new int[] { 0xFFFFFFFF, 0xE6FFFFFF, 0x55FFFFFF, 0x00FFFFFF };
             fallbackMaskPaint.setShader(new LinearGradient(0f, 0f, 0f, fh, fbColors, fbStops, Shader.TileMode.CLAMP));
         }
     }
@@ -292,10 +333,11 @@ public class TopGradientBlurView extends View {
         sourceNode.setPosition(0, 0, w, captureH);
         sourceNode.setClipToBounds(true);
 
+        boolean clearTransparent = dynamicBackdrop || translucentBackdrop;
         isCapturing = true;
         try {
             RecordingCanvas srcRc = sourceNode.beginRecording(w, captureH);
-            if (translucentBackdrop) {
+            if (clearTransparent) {
                 srcRc.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
             } else {
                 srcRc.drawColor(bgColor);
@@ -309,7 +351,9 @@ public class TopGradientBlurView extends View {
             sourceNode.endRecording();
         } catch (Throwable ignored) {
             isCapturing = false;
-            canvas.drawRect(0f, 0f, w, h, scrimPaint);
+            if (!dynamicBackdrop) {
+                canvas.drawRect(0f, 0f, w, h, scrimPaint);
+            }
             return;
         } finally {
             isCapturing = false;
@@ -331,7 +375,9 @@ public class TopGradientBlurView extends View {
         canvas.clipRect(0, 0, w, h);
         canvas.drawRenderNode(softBlurNode);
         canvas.drawRenderNode(strongBlurNode);
-        canvas.drawRect(0f, 0f, w, h, scrimPaint);
+        if (!dynamicBackdrop) {
+            canvas.drawRect(0f, 0f, w, h, scrimPaint);
+        }
         canvas.restoreToCount(sc);
     }
 
@@ -346,11 +392,12 @@ public class TopGradientBlurView extends View {
             fallbackCaptureCanvas = new Canvas(fallbackCaptureBmp);
         }
 
+        boolean clearTransparent = dynamicBackdrop || translucentBackdrop;
         isCapturing = true;
         try {
             fallbackCaptureCanvas.save();
             fallbackCaptureCanvas.scale(1f / FALLBACK_DOWNSAMPLE, 1f / FALLBACK_DOWNSAMPLE);
-            if (translucentBackdrop) {
+            if (clearTransparent) {
                 fallbackCaptureCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
             } else {
                 fallbackCaptureCanvas.drawColor(bgColor);
@@ -365,7 +412,9 @@ public class TopGradientBlurView extends View {
             boxBlurInPlace(fallbackCaptureBmp, 4);
         } catch (Throwable ignored) {
             isCapturing = false;
-            canvas.drawRect(0f, 0f, w, h, scrimPaint);
+            if (!dynamicBackdrop) {
+                canvas.drawRect(0f, 0f, w, h, scrimPaint);
+            }
             return;
         } finally {
             isCapturing = false;
@@ -378,7 +427,9 @@ public class TopGradientBlurView extends View {
         canvas.restore();
         canvas.drawRect(0f, 0f, w, h, fallbackMaskPaint);
         canvas.restoreToCount(layer);
-        canvas.drawRect(0f, 0f, w, h, scrimPaint);
+        if (!dynamicBackdrop) {
+            canvas.drawRect(0f, 0f, w, h, scrimPaint);
+        }
     }
 
     private static void boxBlurInPlace(Bitmap bmp, int radius) {

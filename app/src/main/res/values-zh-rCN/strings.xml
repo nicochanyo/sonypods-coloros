@@ -19,11 +19,11 @@
     <!-- Top Status Card -->
     <string name="status_title_active">模块已启用</string>
     <string name="status_title_inactive">模块未启用</string>
-    <string name="status_sub_active">v1.0.1 · API 102</string>
+    <string name="status_sub_active">v1.0.2 · API 102</string>
     <string name="status_sub_inactive">请在 LSPosed 勾选作用域并重启蓝牙</string>
     <string name="badge_api_102">API 102</string>
 
-    <string name="chip_version">v1.0.1</string>
+    <string name="chip_version">v1.0.2</string>
     <string name="chip_coloros">ColorOS 16/17</string>
     <string name="chip_lsposed">API 102</string>
 
@@ -207,6 +207,8 @@
     <string name="btn_update_download">下载更新 APK</string>
     <string name="btn_update_open_repo">打开仓库页面</string>
     <string name="dialog_changelog_title">更新日志</string>
+    <string name="changelog_v102_title">v1.0.2</string>
+    <string name="changelog_v102_body" formatted="false">• 修复控制中心卡片与小组件电量及图标：改按耳机最低电量显示并保留左右耳电量，不再误显示充电盒\n• 优化控制中心展开面板二、三级标题渐层模糊，跟随系统动态底色显示\n• 新增更新后首次打开自动弹出更新日志</string>
     <string name="changelog_v101_title">v1.0.1</string>
     <string name="changelog_v101_body" formatted="false">• 深度适配 Sony Sound Connect 核心功能：完整整合「声音与降噪」、「触控与智能交互」、「连接与多设备」、「自动关机」四大高级控制分页\n• 新增 6 频段自定义均衡器（400Hz ~ 16kHz + Clear Bass 低音增强）与官方预设曲线联动，支持实时拖拽调音与一键还原预设\n• 新增左／右耳触控传感器功能自定义、智能免摘（Speak-to-Chat 灵敏度与自动恢复时间）、佩戴检测、自动关机条件、语音提示与多点连接（已配对设备实时切换连接／断开）\n• 新增音量控制展开面板「对话感知（智能免摘）」快捷开关按钮，并修复控制中心耳机卡片离线／连接状态图标反色问题\n• 全面重构 ColorOS 17 原生级 UI 与交互体验：系统详情页与控制中心展开面板无缝进入二／三级滑动页面，配备顶部渐层高斯模糊标题栏、原生级页面切换动画与防误触手势判定\n• 新增 App 主页滑动收起大标题、全界面列表与底部弹窗上下越界弹性阻尼回弹效果，以及 ColorOS 17 悬浮底部卡片与锚点弹出菜单\n• 强化 Sony Tandem RFCOMM 通信稳定性（新增线程安全写入锁与动态 GS 参数槽位解析）并修复远端更新日志排版解析问题</string>
     <string name="changelog_v100_title">v1.0.0</string>
