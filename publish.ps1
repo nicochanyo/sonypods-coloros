@@ -197,7 +197,61 @@ if (-not $SkipSourcePush) {
     }
 }
 
-# 6. Helper to create/update a GitHub Release and upload APK asset via REST API
+# 6. Helper to sync metadata files (README.md, SUMMARY, SCOPE, SOURCE_URL) to LSPosed Repository via GitHub Contents API
+function Sync-GitHubFile {
+    param(
+        [string]$RepoSlug,
+        [string]$RemotePath,
+        [string]$ContentText,
+        [string]$CommitMessage,
+        [string]$Token
+    )
+
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $headers = @{
+        'Authorization'        = "Bearer $Token"
+        'Accept'               = 'application/vnd.github+json'
+        'User-Agent'           = 'sonypods-coloros-publisher'
+        'X-GitHub-Api-Version' = '2022-11-28'
+    }
+
+    $existingSha = $null
+    $existingContentB64 = $null
+    $apiUri = "https://api.github.com/repos/$RepoSlug/contents/$RemotePath"
+    try {
+        $existing = Invoke-RestMethod -Uri $apiUri -Headers $headers -Method Get -ErrorAction Stop
+        $existingSha = $existing.sha
+        if ($existing.content) {
+            $existingContentB64 = ($existing.content -replace '\s+', '')
+        }
+    } catch {
+        $existingSha = $null
+    }
+
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    $contentBytes = $utf8NoBom.GetBytes($ContentText)
+    $newContentB64 = [Convert]::ToBase64String($contentBytes)
+
+    if ($existingSha -and $existingContentB64 -eq $newContentB64) {
+        Write-Ok "$RepoSlug/$RemotePath 已是最新，無需更新"
+        return
+    }
+
+    $bodyObj = @{
+        message = $CommitMessage
+        content = $newContentB64
+    }
+    if ($existingSha) {
+        $bodyObj['sha'] = $existingSha
+    }
+
+    $bodyJson = $bodyObj | ConvertTo-Json -Depth 5
+    $bodyBytes = $utf8NoBom.GetBytes($bodyJson)
+    Invoke-RestMethod -Uri $apiUri -Headers $headers -Method Put -Body $bodyBytes -ContentType 'application/json; charset=utf-8' | Out-Null
+    Write-Ok "已同步 $RepoSlug/$RemotePath"
+}
+
+# 7. Helper to create/update a GitHub Release and upload APK asset via REST API
 function Publish-GitHubRelease {
     param(
         [string]$RepoSlug,
@@ -265,8 +319,27 @@ if (-not $ghToken) {
     Write-Warn "無法從 Git Credential Manager 讀取 GitHub Token，將開啟瀏覽器協助手動上傳 APK。"
 }
 
-# 7. Publish Release + APK to LSPosed Repository (Xposed-Modules-Repo/io.github.nicochanyo.sonypods)
+# 8. Sync metadata files (README.md, SUMMARY, SCOPE, SOURCE_URL) & Publish Release + APK to LSPosed Repository
 if (-not $SkipLspRelease) {
+    if ($ghToken) {
+        Write-Step "同步模組資訊檔 (README.md / SUMMARY / SCOPE / SOURCE_URL) 至 LSPosed 倉庫 ($lspRepo)"
+        try {
+            $readmeText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Raw -Encoding UTF8
+            $summaryText = "為 ColorOS 16/17 整合 Sony 耳機原生雙耳與充電盒電量、流體雲狀態膠囊、開蓋配對彈窗、音量條降噪切換與耳機詳情頁進階控制。"
+            $scopeListPath = Join-Path $PSScriptRoot 'app\src\main\resources\META-INF\xposed\scope.list'
+            $scopeItems = @(Get-Content -LiteralPath $scopeListPath -Encoding UTF8 | ForEach-Object { $_.Trim() } | Where-Object { $_.Length -gt 0 })
+            $scopeJson = ($scopeItems | ConvertTo-Json)
+            $sourceUrlText = "https://github.com/$srcRepo`n"
+
+            Sync-GitHubFile -RepoSlug $lspRepo -RemotePath 'README.md'  -ContentText $readmeText    -CommitMessage "Update README.md for v$versionName"  -Token $ghToken
+            Sync-GitHubFile -RepoSlug $lspRepo -RemotePath 'SUMMARY'    -ContentText $summaryText   -CommitMessage "Update SUMMARY for v$versionName"    -Token $ghToken
+            Sync-GitHubFile -RepoSlug $lspRepo -RemotePath 'SCOPE'      -ContentText $scopeJson     -CommitMessage "Update SCOPE for v$versionName"      -Token $ghToken
+            Sync-GitHubFile -RepoSlug $lspRepo -RemotePath 'SOURCE_URL' -ContentText $sourceUrlText -CommitMessage "Update SOURCE_URL for v$versionName" -Token $ghToken
+        } catch {
+            Write-Warn "同步 LSPosed 倉庫資訊檔失敗 (將於發布後可手動補齊): $($_.Exception.Message)"
+        }
+    }
+
     Write-Step "發布 APK 至 LSPosed 模組倉庫 ($lspRepo)"
     $lspSuccess = $false
     if ($ghToken) {

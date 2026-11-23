@@ -103,23 +103,150 @@ public final class SonyTandemProtocol {
             V1_INQ_ASM
     };
 
+    // System Ext Param (Speak-to-Chat Detail: 0xFA..0xFD)
+    public static final int CMD_SYSTEM_GET_EXT_PARAM = 0xFA;
+    public static final int CMD_SYSTEM_RET_EXT_PARAM = 0xFB;
+    public static final int CMD_SYSTEM_SET_EXT_PARAM = 0xFC;
+    public static final int CMD_SYSTEM_NTFY_EXT_PARAM = 0xFD;
+
+    // System InquiredTypes (0xF6..0xF9)
+    public static final int SYS_INQ_PLAYBACK_CONTROL_BY_WEARING = 0x01;
+    public static final int SYS_INQ_SMART_TALKING_V1 = 0x02;
+    public static final int SYS_INQ_ASSIGNABLE_SETTINGS = 0x03;
+    public static final int SYS_INQ_WEARING_STATUS_DETECTOR = 0x06;
+    public static final int SYS_INQ_SMART_TALKING_V2 = 0x0C;
+    public static final int SYS_INQ_ASSIGNABLE_SETTINGS_LIMITED = 0x0E;
+
+    // Power Param (Auto Power Off: 0x26..0x29)
+    public static final int CMD_POWER_GET_PARAM = 0x26;
+    public static final int CMD_POWER_RET_PARAM = 0x27;
+    public static final int CMD_POWER_SET_PARAM = 0x28;
+    public static final int CMD_POWER_NTFY_PARAM = 0x29;
+    public static final int POWER_INQ_AUTO_POWER_OFF = 0x04;
+    public static final int POWER_INQ_AUTO_POWER_OFF_WEARING = 0x05;
+
+    // Audio InquiredTypes (0xE6..0xE9)
+    public static final int AUDIO_INQ_CONNECTION_MODE = 0x00;
+    public static final int AUDIO_INQ_UPSCALING = 0x01;
+    public static final int AUDIO_INQ_CONNECTION_MODE_LDAC = 0x02;
+    public static final int AUDIO_INQ_UPSCALING_WITH_REASON = 0x0B;
+
+    // Touch Sensor Presets
+    public static final int TOUCH_PRESET_AMBIENT = 0x00;
+    public static final int TOUCH_PRESET_VOLUME = 0x10;
+    public static final int TOUCH_PRESET_PLAYBACK = 0x20;
+    public static final int TOUCH_PRESET_VOICE = 0x30;
+    public static final int TOUCH_PRESET_QUICK_ACCESS = 0x36;
+    public static final int TOUCH_PRESET_NONE = 0xFF;
+
+    // Table 2 Peripheral (Multipoint / Paired Devices: 0x32..0x39 on DATA_TYPE_DATA_MDR_NO2)
+    public static final int CMD_T2_PERI_GET_STATUS = 0x32;
+    public static final int CMD_T2_PERI_RET_STATUS = 0x33;
+    public static final int CMD_T2_PERI_SET_STATUS = 0x34;
+    public static final int CMD_T2_PERI_NTFY_STATUS = 0x35;
+    public static final int CMD_T2_PERI_GET_PARAM = 0x36;
+    public static final int CMD_T2_PERI_RET_PARAM = 0x37;
+    public static final int CMD_T2_PERI_SET_PARAM = 0x38;
+    public static final int CMD_T2_PERI_NTFY_PARAM = 0x39;
+    public static final int CMD_T2_PERI_SET_EXTENDED_PARAM = 0x3C;
+    public static final int CMD_T2_PERI_NTFY_EXTENDED_PARAM = 0x3D;
+    public static final int PERI_INQ_CLASSIC_BT = 0x00;
+    public static final int PERI_INQ_WITH_COD = 0x02;
+    public static final int PERI_ACTION_DISCONNECT = 0x00;
+    public static final int PERI_ACTION_CONNECT = 0x01;
+    public static final int PERI_ACTION_UNPAIR = 0x02;
+
     // Audio / DSEE Upscaling (0xE6..0xE9)
     public static final int CMD_AUDIO_GET_PARAM = 0xE6;
     public static final int CMD_AUDIO_RET_PARAM = 0xE7;
     public static final int CMD_AUDIO_SET_PARAM = 0xE8;
     public static final int CMD_AUDIO_NTFY_PARAM = 0xE9;
-    public static final int AUDIO_INQ_UPSCALING = 0x01;
-    public static final int AUDIO_INQ_UPSCALING_WITH_REASON = 0x0B;
 
-    // System / Speak-to-Chat (0xF6..0xF9; inverted value: 0x00=ON, 0x01=OFF)
+    // System Capability & System Param (0xF0..0xF9; inverted value: 0x00=ON, 0x01=OFF)
+    public static final int CMD_SYSTEM_GET_CAPABILITY = 0xF0;
+    public static final int CMD_SYSTEM_RET_CAPABILITY = 0xF1;
     public static final int CMD_SYSTEM_GET_PARAM = 0xF6;
     public static final int CMD_SYSTEM_RET_PARAM = 0xF7;
     public static final int CMD_SYSTEM_SET_PARAM = 0xF8;
     public static final int CMD_SYSTEM_NTFY_PARAM = 0xF9;
-    public static final int SYS_INQ_SMART_TALKING_V1 = 0x02;
-    public static final int SYS_INQ_SMART_TALKING_V2 = 0x0C;
+
+    // Alert (0x94..0x99: required for auto-confirming Multipoint / LDAC mode-switch prompts)
+    public static final int CMD_ALERT_SET_STATUS = 0x94;
+    public static final int CMD_ALERT_SET_PARAM = 0x98;
+    public static final int CMD_ALERT_NTFY_PARAM = 0x99;
+    public static final int ALERT_INQ_FIXED_MESSAGE = 0x00;
+    public static final int ALERT_INQ_APP_BECOMES_FOREGROUND = 0x02;
+
+    // General Setting (GS 0xD0..0xD9: slot 0xD1 = MULTIPOINT_SETTING on WF-1000XM4/XM5/WH-1000XM5)
+    public static final int CMD_GS_GET_CAPABILITY = 0xD0;
+    public static final int CMD_GS_RET_CAPABILITY = 0xD1;
+    public static final int CMD_GS_GET_PARAM = 0xD6;
+    public static final int CMD_GS_RET_PARAM = 0xD7;
+    public static final int CMD_GS_SET_PARAM = 0xD8;
+    public static final int CMD_GS_NTFY_PARAM = 0xD9;
+    public static final int GS_INQ_MULTIPOINT = 0xD1;
+    public static final int[] GS_SLOTS = new int[] { 0xD1, 0xD2, 0xD3, 0xD4 };
+
+    private static volatile boolean sGsMultipointActive;
+    private static volatile boolean sGsWearPauseActive;
+    private static volatile int sGsMultipointSlot;
+    private static volatile int sGsWearPauseSlot;
 
     private SonyTandemProtocol() {
+    }
+
+    public static void resetSessionCaches() {
+        sGsMultipointActive = false;
+        sGsWearPauseActive = false;
+        sGsMultipointSlot = 0;
+        sGsWearPauseSlot = 0;
+    }
+
+    public static int getGsMultipointSlot() {
+        return sGsMultipointSlot != 0 ? sGsMultipointSlot : GS_INQ_MULTIPOINT;
+    }
+
+    public static int getGsWearPauseSlot() {
+        return sGsWearPauseSlot;
+    }
+
+    public static byte[] buildSetAlertStatus(int inquiredType, boolean enable) {
+        return new byte[] {
+                (byte) CMD_ALERT_SET_STATUS,
+                (byte) inquiredType,
+                (byte) (enable ? 0x00 : 0x01)
+        };
+    }
+
+    public static byte[] buildReplyAlert(int inquiredType, int messageType, boolean positive) {
+        return new byte[] {
+                (byte) CMD_ALERT_SET_PARAM,
+                (byte) inquiredType,
+                (byte) messageType,
+                (byte) (positive ? 0x01 : 0x00)
+        };
+    }
+
+    public static byte[] buildGetGsCapability(int gsInquiredType) {
+        return new byte[] { (byte) CMD_GS_GET_CAPABILITY, (byte) gsInquiredType, 0x01 };
+    }
+
+    public static byte[] buildGetGsParam(int gsInquiredType) {
+        return new byte[] { (byte) CMD_GS_GET_PARAM, (byte) gsInquiredType };
+    }
+
+    public static byte[] buildSetGsBooleanParam(int gsInquiredType, boolean enabled) {
+        // GS_SET_PARAM (0xD8): [0xD8, slot(0xD1), 0x00(BOOLEAN_TYPE), 0x00=ON / 0x01=OFF]
+        return new byte[] {
+                (byte) CMD_GS_SET_PARAM,
+                (byte) gsInquiredType,
+                0x00,
+                (byte) (enabled ? 0x00 : 0x01)
+        };
+    }
+
+    public static byte[] buildGetSystemCapability(int inquiredType) {
+        return new byte[] { (byte) CMD_SYSTEM_GET_CAPABILITY, (byte) inquiredType };
     }
 
     public static byte[] buildGetProtocolInfo() {
@@ -153,6 +280,127 @@ public final class SonyTandemProtocol {
 
     public static byte[] buildGetEqEbbParam(int inquiredType) {
         return new byte[] { CMD_EQEBB_GET_PARAM, (byte) inquiredType };
+    }
+
+    public static byte[] buildGetSystemExtParam(int inquiredType) {
+        return new byte[] { (byte) CMD_SYSTEM_GET_EXT_PARAM, (byte) inquiredType };
+    }
+
+    public static byte[] buildGetPowerParam(int inquiredType) {
+        return new byte[] { (byte) CMD_POWER_GET_PARAM, (byte) inquiredType };
+    }
+
+    public static byte[] buildT2GetPeripheralStatus(int inquiredType) {
+        return new byte[] { (byte) CMD_T2_PERI_GET_STATUS, (byte) inquiredType };
+    }
+
+    public static byte[] buildT2GetPeripheralParam(int inquiredType) {
+        return new byte[] { (byte) CMD_T2_PERI_GET_PARAM, (byte) inquiredType };
+    }
+
+    public static byte[] buildSetEqPreset(int inquiredType, int presetId, int[] bands) {
+        int inq = (inquiredType >= 0) ? inquiredType : 0x00;
+        boolean sendBands = bands != null && bands.length > 0
+                && (presetId == 0xA0 || presetId == 0xA1 || presetId == 0xA2);
+        if (!sendBands) {
+            return new byte[] { (byte) CMD_EQEBB_SET_PARAM, (byte) inq, (byte) presetId, 0x00 };
+        }
+        int cnt = Math.min(8, bands.length);
+        byte[] pkt = new byte[4 + cnt];
+        pkt[0] = (byte) CMD_EQEBB_SET_PARAM;
+        pkt[1] = (byte) inq;
+        pkt[2] = (byte) presetId;
+        pkt[3] = (byte) cnt;
+        if (cnt == 6 && bands.length >= 6) {
+            // Wire order for 6-band PRESET_EQ: [0]=Clear Bass (UI bands[5]), [1..5]=400Hz..16kHz (UI bands[0..4])
+            pkt[4] = (byte) (ConfigStore.HeadsetState.clampEqBand(bands[5]) + 10);
+            for (int i = 0; i < 5; i++) {
+                pkt[5 + i] = (byte) (ConfigStore.HeadsetState.clampEqBand(bands[i]) + 10);
+            }
+        } else {
+            for (int i = 0; i < cnt; i++) {
+                pkt[4 + i] = (byte) (ConfigStore.HeadsetState.clampEqBand(bands[i]) + 10);
+            }
+        }
+        return pkt;
+    }
+
+    public static byte[] buildSetSpeakToChatDetail(int inquiredType, int sensitivity, int modeOutTime) {
+        int sens = Math.max(0, Math.min(2, sensitivity));
+        int out = Math.max(0, Math.min(3, modeOutTime));
+        if (inquiredType == SYS_INQ_SMART_TALKING_V2) {
+            return new byte[] {
+                    (byte) CMD_SYSTEM_SET_EXT_PARAM, (byte) SYS_INQ_SMART_TALKING_V2,
+                    (byte) sens, (byte) out
+            };
+        }
+        return new byte[] {
+                (byte) CMD_SYSTEM_SET_EXT_PARAM, (byte) SYS_INQ_SMART_TALKING_V1,
+                (byte) sens, 0x01, (byte) out
+        };
+    }
+
+    public static byte[] buildSetWearDetect(boolean enabled) {
+        if (sGsWearPauseSlot != 0) {
+            return buildSetGsBooleanParam(sGsWearPauseSlot, enabled);
+        }
+        return new byte[] {
+                (byte) CMD_SYSTEM_SET_PARAM, (byte) SYS_INQ_PLAYBACK_CONTROL_BY_WEARING,
+                (byte) (enabled ? 0x00 : 0x01)
+        };
+    }
+
+    public static byte[] buildSetConnectionMode(int inquiredType, int priorMode) {
+        int inq = (inquiredType == AUDIO_INQ_CONNECTION_MODE_LDAC)
+                ? AUDIO_INQ_CONNECTION_MODE_LDAC
+                : AUDIO_INQ_CONNECTION_MODE;
+        int mode = Math.max(0, Math.min(2, priorMode));
+        return new byte[] { (byte) CMD_AUDIO_SET_PARAM, (byte) inq, (byte) mode };
+    }
+
+    public static byte[] buildSetAutoPowerOff(int inquiredType, int element) {
+        int inq = (inquiredType == POWER_INQ_AUTO_POWER_OFF)
+                ? POWER_INQ_AUTO_POWER_OFF
+                : POWER_INQ_AUTO_POWER_OFF_WEARING;
+        int selectElem = (element == 0x11)
+                ? (inq == POWER_INQ_AUTO_POWER_OFF_WEARING ? 0x10 : 0x00)
+                : element;
+        return new byte[] { (byte) CMD_POWER_SET_PARAM, (byte) inq, (byte) element, (byte) selectElem };
+    }
+
+    public static byte[] buildT2SetMultipoint(int inquiredType, boolean enabled) {
+        int inq = (inquiredType == PERI_INQ_WITH_COD) ? PERI_INQ_WITH_COD : PERI_INQ_CLASSIC_BT;
+        // [2]=PeripheralBluetoothMode.NORMAL_MODE (0x00), [3]=EnableDisable (0x00=ENABLE, 0x01=DISABLE)
+        return new byte[] {
+                (byte) CMD_T2_PERI_SET_STATUS, (byte) inq, 0x00, (byte) (enabled ? 0x00 : 0x01)
+        };
+    }
+
+    public static byte[] buildT2PeripheralAction(int inquiredType, int actionType, String mac) {
+        if (mac == null) return null;
+        String cleanMac = mac.trim().toUpperCase(Locale.US);
+        byte[] macBytes = cleanMac.getBytes(StandardCharsets.US_ASCII);
+        if (macBytes.length != 17) return null;
+        int inq = (inquiredType == PERI_INQ_WITH_COD) ? PERI_INQ_WITH_COD : PERI_INQ_CLASSIC_BT;
+        byte[] pkt = new byte[3 + macBytes.length];
+        pkt[0] = (byte) CMD_T2_PERI_SET_EXTENDED_PARAM;
+        pkt[1] = (byte) inq;
+        pkt[2] = (byte) actionType;
+        System.arraycopy(macBytes, 0, pkt, 3, macBytes.length);
+        return pkt;
+    }
+
+    public static byte[] buildSetTouchSensor(int inquiredType, int leftPreset, int rightPreset) {
+        int inq = (inquiredType == SYS_INQ_ASSIGNABLE_SETTINGS_LIMITED)
+                ? SYS_INQ_ASSIGNABLE_SETTINGS_LIMITED
+                : SYS_INQ_ASSIGNABLE_SETTINGS;
+        return new byte[] {
+                (byte) CMD_SYSTEM_SET_PARAM,
+                (byte) inq,
+                0x02,
+                (byte) (leftPreset & 0xFF),
+                (byte) (rightPreset & 0xFF)
+        };
     }
 
     public static byte[] buildSetNcAsm(
@@ -332,15 +580,100 @@ public final class SonyTandemProtocol {
             case CMD_SYSTEM_RET_PARAM:
             case CMD_SYSTEM_NTFY_PARAM:
                 return parseSystemParam(payload, state);
+            case CMD_SYSTEM_RET_EXT_PARAM:
+            case CMD_SYSTEM_NTFY_EXT_PARAM:
+                return parseSystemExtParam(payload, state);
             case CMD_AUDIO_RET_PARAM:
             case CMD_AUDIO_NTFY_PARAM:
                 return parseAudioParam(payload, state);
             case CMD_EQEBB_RET_PARAM:
             case CMD_EQEBB_NTFY_PARAM:
                 return parseEqEbb(payload, state);
+            case CMD_POWER_RET_PARAM:
+            case CMD_POWER_NTFY_PARAM:
+                return parsePowerParam(payload, state);
+            case CMD_GS_RET_CAPABILITY:
+                return parseGsCapability(payload, state);
+            case CMD_GS_RET_PARAM:
+            case CMD_GS_NTFY_PARAM:
+                return parseGsParam(payload, state);
             default:
                 return false;
         }
+    }
+
+    /** Decodes Table 2 (DATA_MDR_NO2 = 0x0E) peripheral / multipoint responses. */
+    public static boolean parseTable2Payload(byte[] payload, ConfigStore.HeadsetState state) {
+        if (payload == null || payload.length < 3 || state == null) {
+            return false;
+        }
+        int cmd = payload[0] & 0xFF;
+        int inq = payload[1] & 0xFF;
+        if ((cmd == CMD_T2_PERI_RET_STATUS || cmd == CMD_T2_PERI_NTFY_STATUS)
+                && (inq == PERI_INQ_CLASSIC_BT || inq == PERI_INQ_WITH_COD)
+                && payload.length >= 4) {
+            // [cmd, inq, PeripheralBluetoothMode, EnableDisable(0x00=ENABLE, 0x01=DISABLE)]
+            // On WF-1000XM4, byte[3] is peripheral list unlock status; GS 0xD1 owns multipointEnabled once active.
+            boolean enabled = (payload[3] & 0xFF) == 0x00;
+            boolean changed = !state.supportsMultipoint
+                    || state.multipointInquiredType != inq
+                    || (!sGsMultipointActive && state.multipointEnabled != enabled);
+            state.supportsMultipoint = true;
+            state.multipointInquiredType = inq;
+            if (!sGsMultipointActive) {
+                state.multipointEnabled = enabled;
+            }
+            if (changed) {
+                state.lastEvent = String.format(Locale.US, "multipoint(0x%02X)=%s", inq, state.multipointEnabled);
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        if ((cmd == CMD_T2_PERI_RET_PARAM || cmd == CMD_T2_PERI_NTFY_PARAM)
+                && (inq == PERI_INQ_CLASSIC_BT || inq == PERI_INQ_WITH_COD)) {
+            int count = payload[2] & 0xFF;
+            int idx = 3;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < count; i++) {
+                if (idx + 19 > payload.length) break;
+                String devMac = new String(payload, idx, 17, StandardCharsets.US_ASCII).trim().toUpperCase(Locale.US);
+                int connStatus = payload[idx + 17] & 0xFF;
+                int nameLenIdx = (inq == PERI_INQ_WITH_COD) ? (idx + 21) : (idx + 18);
+                int nameStartIdx = (inq == PERI_INQ_WITH_COD) ? (idx + 22) : (idx + 19);
+                if (nameLenIdx >= payload.length) break;
+                int nameLen = payload[nameLenIdx] & 0xFF;
+                if (nameStartIdx + nameLen > payload.length) break;
+                String devName = new String(payload, nameStartIdx, nameLen, StandardCharsets.UTF_8)
+                        .replace('~', ' ').replace(';', ' ').replace('|', ' ').trim();
+                idx = nameStartIdx + nameLen;
+                if (sb.length() > 0) sb.append(';');
+                sb.append(devMac).append('~').append(devName).append('~').append(connStatus != 0 ? '1' : '0');
+            }
+            String listStr = sb.toString();
+            boolean changed = !state.supportsMultipoint
+                    || state.multipointInquiredType != inq
+                    || !listStr.equals(state.multipointDevices);
+            state.supportsMultipoint = true;
+            state.multipointInquiredType = inq;
+            state.multipointDevices = listStr;
+            if (changed) {
+                state.lastEvent = "multiDevs=" + count;
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        if (cmd == CMD_T2_PERI_NTFY_EXTENDED_PARAM && payload.length >= 4) {
+            int action = payload[2] & 0xFF;
+            int result = payload[3] & 0xFF;
+            String targetMac = (payload.length >= 21)
+                    ? new String(payload, 4, 17, StandardCharsets.US_ASCII).trim().toUpperCase(Locale.US)
+                    : "";
+            XposedCompat.log(String.format(Locale.US,
+                    "T2 peri ext result: inq=0x%02X action=0x%02X result=0x%02X mac=%s",
+                    inq, action, result, targetMac));
+            return false;
+        }
+        return false;
     }
 
     private static boolean parseProtocolInfo(byte[] payload, ConfigStore.HeadsetState state) {
@@ -646,15 +979,112 @@ public final class SonyTandemProtocol {
     private static boolean parseSystemParam(byte[] payload, ConfigStore.HeadsetState state) {
         int inq = payload[1] & 0xFF;
         if ((inq == SYS_INQ_SMART_TALKING_V1 || inq == SYS_INQ_SMART_TALKING_V2) && payload.length >= 3) {
+            if (state.supportsSpeakToChat
+                    && state.speakToChatInquiredType == SYS_INQ_SMART_TALKING_V2
+                    && inq == SYS_INQ_SMART_TALKING_V1) {
+                return false;
+            }
+            int raw = payload[2] & 0xFF;
+            if (raw > 0x01) {
+                return false;
+            }
             boolean newlyBound = !state.supportsSpeakToChat || state.speakToChatInquiredType != inq;
             state.speakToChatInquiredType = inq;
             state.supportsSpeakToChat = true;
             // Inverted Sony wire convention: 0x00=ON, 0x01=OFF
-            boolean enabled = (payload[2] & 0xFF) == 0x00;
+            boolean enabled = raw == 0x00;
             boolean changed = newlyBound || enabled != state.speakToChat;
             state.speakToChat = enabled;
             state.lastEvent = String.format(Locale.US, "speak(0x%02X)=%s", inq, enabled);
             if (changed) {
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        if ((inq == SYS_INQ_ASSIGNABLE_SETTINGS || inq == SYS_INQ_ASSIGNABLE_SETTINGS_LIMITED)
+                && payload.length >= 4) {
+            if (state.supportsTouchSensor
+                    && state.touchInquiredType == SYS_INQ_ASSIGNABLE_SETTINGS
+                    && inq == SYS_INQ_ASSIGNABLE_SETTINGS_LIMITED) {
+                return false;
+            }
+            int count = payload[2] & 0xFF;
+            if (count < 1 || payload.length != 3 + count) {
+                return false;
+            }
+            int leftP = payload[3] & 0xFF;
+            int rightP = (count >= 2) ? (payload[4] & 0xFF) : state.touchRightPreset;
+            if (leftP == 0xFE || rightP == 0xFE) {
+                return false;
+            }
+            boolean changed = !state.supportsTouchSensor
+                    || state.touchInquiredType != inq
+                    || leftP != state.touchLeftPreset
+                    || rightP != state.touchRightPreset;
+            state.supportsTouchSensor = true;
+            state.touchInquiredType = inq;
+            state.touchLeftPreset = leftP;
+            state.touchRightPreset = rightP;
+            if (changed) {
+                state.lastEvent = String.format(Locale.US, "touch=0x%02X/0x%02X", leftP, rightP);
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        if (inq == SYS_INQ_PLAYBACK_CONTROL_BY_WEARING && payload.length == 3 && !sGsWearPauseActive) {
+            int raw = payload[2] & 0xFF;
+            if (raw > 0x01) {
+                return false;
+            }
+            boolean enabled = raw == 0x00;
+            boolean changed = !state.supportsWearDetect || enabled != state.wearAutoPause;
+            state.supportsWearDetect = true;
+            state.wearAutoPause = enabled;
+            if (changed) {
+                state.lastEvent = "wearDetect=" + enabled;
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        return false;
+    }
+
+    private static boolean parseSystemExtParam(byte[] payload, ConfigStore.HeadsetState state) {
+        int inq = payload[1] & 0xFF;
+        if (inq == SYS_INQ_SMART_TALKING_V2 && payload.length >= 4) {
+            int sens = payload[2] & 0xFF;
+            int out = payload[3] & 0xFF;
+            if (sens > 2 || out > 3) {
+                return false;
+            }
+            boolean changed = sens != state.speakSensitivity || out != state.speakTimeout;
+            state.speakToChatInquiredType = inq;
+            state.supportsSpeakToChat = true;
+            state.speakSensitivity = sens;
+            state.speakTimeout = out;
+            if (changed) {
+                state.lastEvent = "speakExt=" + sens + "/" + out;
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        if (inq == SYS_INQ_SMART_TALKING_V1 && payload.length >= 5) {
+            if (state.supportsSpeakToChat
+                    && state.speakToChatInquiredType == SYS_INQ_SMART_TALKING_V2) {
+                return false;
+            }
+            int sens = payload[2] & 0xFF;
+            int out = payload[4] & 0xFF;
+            if (sens > 2 || out > 3) {
+                return false;
+            }
+            boolean changed = sens != state.speakSensitivity || out != state.speakTimeout;
+            state.speakToChatInquiredType = inq;
+            state.supportsSpeakToChat = true;
+            state.speakSensitivity = sens;
+            state.speakTimeout = out;
+            if (changed) {
+                state.lastEvent = "speakExt1=" + sens + "/" + out;
                 state.updatedAtMs = System.currentTimeMillis();
             }
             return changed;
@@ -665,13 +1095,139 @@ public final class SonyTandemProtocol {
     private static boolean parseAudioParam(byte[] payload, ConfigStore.HeadsetState state) {
         int inq = payload[1] & 0xFF;
         if ((inq == AUDIO_INQ_UPSCALING || inq == AUDIO_INQ_UPSCALING_WITH_REASON) && payload.length >= 3) {
+            int raw = payload[2] & 0xFF;
+            if (raw > 0x01) {
+                return false;
+            }
             boolean newlyBound = !state.supportsDsee;
             state.supportsDsee = true;
-            boolean enabled = (payload[2] & 0xFF) != 0;
+            boolean enabled = raw != 0;
             boolean changed = newlyBound || enabled != state.dsee;
             state.dsee = enabled;
             state.lastEvent = String.format(Locale.US, "dsee(0x%02X)=%s", inq, enabled);
             if (changed) {
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        if ((inq == AUDIO_INQ_CONNECTION_MODE || inq == AUDIO_INQ_CONNECTION_MODE_LDAC) && payload.length >= 3) {
+            if (state.supportsConnectionMode
+                    && state.connectionModeInquiredType == AUDIO_INQ_CONNECTION_MODE_LDAC
+                    && inq == AUDIO_INQ_CONNECTION_MODE) {
+                return false;
+            }
+            int prior = payload[2] & 0xFF;
+            if (prior > 2) {
+                return false;
+            }
+            boolean changed = !state.supportsConnectionMode
+                    || state.connectionModeInquiredType != inq
+                    || prior != state.connectionPriorMode;
+            state.supportsConnectionMode = true;
+            state.connectionModeInquiredType = inq;
+            state.connectionPriorMode = prior;
+            if (changed) {
+                state.lastEvent = "priorMode=" + prior;
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        return false;
+    }
+
+    private static boolean parseGsCapability(byte[] payload, ConfigStore.HeadsetState state) {
+        if (payload.length < 5) {
+            return false;
+        }
+        int slot = payload[1] & 0xFF;
+        int settingType = payload[2] & 0xFF;
+        int stringFormat = payload[3] & 0xFF;
+        int titleLen = payload[4] & 0xFF;
+        if (payload.length < 5 + titleLen) {
+            return false;
+        }
+        String title = new String(payload, 5, titleLen, StandardCharsets.UTF_8).trim();
+        XposedCompat.log(String.format(Locale.US, "GS cap slot=0x%02X type=%d fmt=%d title=%s",
+                slot, settingType, stringFormat, title));
+        if (settingType == 0x00) {
+            String upper = title.toUpperCase(Locale.US);
+            if (upper.contains("MULTIPOINT") || upper.contains("2 DEVICES")) {
+                sGsMultipointSlot = slot;
+                boolean changed = !state.supportsMultipoint;
+                state.supportsMultipoint = true;
+                if (changed) {
+                    state.updatedAtMs = System.currentTimeMillis();
+                }
+                return changed;
+            }
+            if (upper.contains("WEARING") || upper.contains("TAKEN_OFF")
+                    || upper.contains("TAKEN OFF") || upper.contains("PAUSE")) {
+                sGsWearPauseSlot = slot;
+                boolean changed = !state.supportsWearDetect;
+                state.supportsWearDetect = true;
+                if (changed) {
+                    state.updatedAtMs = System.currentTimeMillis();
+                }
+                return changed;
+            }
+        }
+        return false;
+    }
+
+    private static boolean parseGsParam(byte[] payload, ConfigStore.HeadsetState state) {
+        if (payload.length < 4 || (payload[2] & 0xFF) != 0x00) {
+            return false;
+        }
+        int raw = payload[3] & 0xFF;
+        if (raw > 0x01) {
+            return false;
+        }
+        int slot = payload[1] & 0xFF;
+        boolean enabled = (raw == 0x00);
+        if ((sGsMultipointSlot != 0 && slot == sGsMultipointSlot)
+                || (sGsMultipointSlot == 0 && slot == GS_INQ_MULTIPOINT)) {
+            sGsMultipointActive = true;
+            boolean changed = !state.supportsMultipoint || state.multipointEnabled != enabled;
+            state.supportsMultipoint = true;
+            state.multipointEnabled = enabled;
+            if (changed) {
+                state.lastEvent = "multipointGs=" + enabled;
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        if (sGsWearPauseSlot != 0 && slot == sGsWearPauseSlot) {
+            sGsWearPauseActive = true;
+            boolean changed = !state.supportsWearDetect || state.wearAutoPause != enabled;
+            state.supportsWearDetect = true;
+            state.wearAutoPause = enabled;
+            if (changed) {
+                state.lastEvent = "wearPauseGs=" + enabled;
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
+        }
+        return false;
+    }
+
+    private static boolean parsePowerParam(byte[] payload, ConfigStore.HeadsetState state) {
+        int inq = payload[1] & 0xFF;
+        if ((inq == POWER_INQ_AUTO_POWER_OFF || inq == POWER_INQ_AUTO_POWER_OFF_WEARING)
+                && payload.length >= 3) {
+            if (state.supportsAutoPowerOff
+                    && state.autoPowerOffInquiredType == POWER_INQ_AUTO_POWER_OFF_WEARING
+                    && inq == POWER_INQ_AUTO_POWER_OFF) {
+                return false;
+            }
+            int elem = payload[2] & 0xFF;
+            boolean changed = !state.supportsAutoPowerOff
+                    || state.autoPowerOffInquiredType != inq
+                    || elem != state.autoPowerOffElement;
+            state.supportsAutoPowerOff = true;
+            state.autoPowerOffInquiredType = inq;
+            state.autoPowerOffElement = elem;
+            if (changed) {
+                state.lastEvent = String.format(Locale.US, "autoOff(0x%02X)=0x%02X", inq, elem);
                 state.updatedAtMs = System.currentTimeMillis();
             }
             return changed;
@@ -681,15 +1237,52 @@ public final class SonyTandemProtocol {
 
     private static boolean parseEqEbb(byte[] payload, ConfigStore.HeadsetState state) {
         int inq = payload[1] & 0xFF;
-        if ((inq == 0x00 || inq == 0x02) && payload.length >= 3) {
-            state.eqInquiredType = inq;
+        if ((inq == 0x00 || inq == 0x02 || inq == 0x04) && payload.length >= 3) {
             int presetId = payload[2] & 0xFF;
             String name = mapEqPresetName(presetId);
-            if (!name.equals(state.eqPresetName)) {
-                state.eqPresetName = name;
-                state.updatedAtMs = System.currentTimeMillis();
-                return true;
+            boolean changed = !state.supportsEq
+                    || state.eqInquiredType != inq
+                    || state.eqPresetId != presetId
+                    || !name.equals(state.eqPresetName);
+            state.supportsEq = true;
+            state.eqInquiredType = inq;
+            state.eqPresetId = presetId;
+            state.eqPresetName = name;
+            if (payload.length >= 4) {
+                int cnt = payload[3] & 0xFF;
+                if (cnt > 0 && payload.length >= 4 + cnt) {
+                    int n = Math.min(state.eqBands.length, cnt);
+                    state.eqBandCount = n;
+                    if (cnt == 6 && state.eqBands.length >= 6) {
+                        // Wire order for 6-band PRESET_EQ: [0]=Clear Bass (UI index 5), [1..5]=400Hz..16kHz (UI indices 0..4)
+                        int clearBass = ConfigStore.HeadsetState.clampEqBand((payload[4] & 0xFF) - 10);
+                        for (int i = 0; i < 5; i++) {
+                            int val = ConfigStore.HeadsetState.clampEqBand((payload[5 + i] & 0xFF) - 10);
+                            if (state.eqBands[i] != val) {
+                                state.eqBands[i] = val;
+                                changed = true;
+                            }
+                        }
+                        if (state.eqBands[5] != clearBass) {
+                            state.eqBands[5] = clearBass;
+                            changed = true;
+                        }
+                    } else {
+                        for (int i = 0; i < n; i++) {
+                            int val = ConfigStore.HeadsetState.clampEqBand((payload[4 + i] & 0xFF) - 10);
+                            if (state.eqBands[i] != val) {
+                                state.eqBands[i] = val;
+                                changed = true;
+                            }
+                        }
+                    }
+                }
             }
+            if (changed) {
+                state.lastEvent = "eq=" + name;
+                state.updatedAtMs = System.currentTimeMillis();
+            }
+            return changed;
         }
         return false;
     }
@@ -710,6 +1303,10 @@ public final class SonyTandemProtocol {
             case 0x15: return "Treble Boost";
             case 0x16: return "Bass Boost";
             case 0x17: return "Speech";
+            case 0x30: return "Heavy";
+            case 0x31: return "Clear";
+            case 0x32: return "Hard";
+            case 0x33: return "Soft";
             case 0xA0: return "Custom";
             case 0xA1: return "User 1";
             case 0xA2: return "User 2";

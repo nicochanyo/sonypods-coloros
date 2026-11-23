@@ -567,12 +567,21 @@ public final class BluetoothHook {
             if (dev != null) {
                 applyA2dpCodecPreference(dev, codecType);
             }
+            if (s != null && s.getStateSnapshot().supportsConnectionMode) {
+                s.setConnectionMode(codecType == ConfigStore.CODEC_AAC ? 1 : 0);
+            }
             return;
         }
 
         SonyTandemSession target = findTargetSession(targetMac);
         if (target == null) {
+            if (!ConfigStore.CMD_REFRESH.equals(cmd)) {
+                XposedCompat.log("CMD " + cmd + " ignored: no active session (mac=" + targetMac + ")");
+            }
             return;
+        }
+        if (!ConfigStore.CMD_REFRESH.equals(cmd)) {
+            XposedCompat.log("CMD " + cmd + " mac=" + targetMac);
         }
 
         if (ConfigStore.CMD_SET_ANC.equals(cmd)) {
@@ -592,6 +601,39 @@ public final class BluetoothHook {
             target.setSpeakToChat(intent.getBooleanExtra(ConfigStore.EXTRA_BOOL_VAL, false));
         } else if (ConfigStore.CMD_SET_DSEE.equals(cmd)) {
             target.setDsee(intent.getBooleanExtra(ConfigStore.EXTRA_BOOL_VAL, false));
+        } else if (ConfigStore.CMD_SET_EQ.equals(cmd)) {
+            ConfigStore.HeadsetState snap = target.getStateSnapshot();
+            int presetId = intent.getIntExtra(ConfigStore.EXTRA_EQ_PRESET, snap.eqPresetId);
+            int[] bands = intent.getIntArrayExtra(ConfigStore.EXTRA_EQ_BANDS);
+            target.setEq(presetId, bands);
+        } else if (ConfigStore.CMD_SET_SPEAK_DETAIL.equals(cmd)) {
+            ConfigStore.HeadsetState snap = target.getStateSnapshot();
+            int sens = intent.getIntExtra(ConfigStore.EXTRA_SPEAK_SENSITIVITY, snap.speakSensitivity);
+            int out = intent.getIntExtra(ConfigStore.EXTRA_SPEAK_TIMEOUT, snap.speakTimeout);
+            target.setSpeakToChatDetail(sens, out);
+        } else if (ConfigStore.CMD_SET_TOUCH_SENSOR.equals(cmd)) {
+            ConfigStore.HeadsetState snap = target.getStateSnapshot();
+            int leftP = intent.getIntExtra(ConfigStore.EXTRA_TOUCH_LEFT, snap.touchLeftPreset);
+            int rightP = intent.getIntExtra(ConfigStore.EXTRA_TOUCH_RIGHT, snap.touchRightPreset);
+            target.setTouchSensor(leftP, rightP);
+        } else if (ConfigStore.CMD_SET_MULTIPOINT.equals(cmd)) {
+            target.setMultipoint(intent.getBooleanExtra(ConfigStore.EXTRA_BOOL_VAL, false));
+        } else if (ConfigStore.CMD_MULTIPOINT_ACTION.equals(cmd)) {
+            String dstMac = intent.getStringExtra(ConfigStore.EXTRA_TARGET_MAC);
+            int actionType = intent.getIntExtra(ConfigStore.EXTRA_MULTIPOINT_ACTION,
+                    SonyTandemProtocol.PERI_ACTION_CONNECT);
+            target.sendMultipointAction(dstMac, actionType);
+        } else if (ConfigStore.CMD_SET_CONNECTION_MODE.equals(cmd)) {
+            int prior = intent.getIntExtra(ConfigStore.EXTRA_INT_VAL, 0);
+            target.setConnectionMode(prior);
+            if (target.getDevice() != null) {
+                applyA2dpCodecPreference(target.getDevice(),
+                        prior == 1 ? ConfigStore.CODEC_AAC : ConfigStore.CODEC_LDAC);
+            }
+        } else if (ConfigStore.CMD_SET_WEAR_DETECT.equals(cmd)) {
+            target.setWearDetect(intent.getBooleanExtra(ConfigStore.EXTRA_BOOL_VAL, true));
+        } else if (ConfigStore.CMD_SET_AUTO_POWER_OFF.equals(cmd)) {
+            target.setAutoPowerOff(intent.getIntExtra(ConfigStore.EXTRA_INT_VAL, 0x10));
         } else if (ConfigStore.CMD_SET_AMBIENT_PARAMS.equals(cmd)) {
             ConfigStore.HeadsetState snap = target.getStateSnapshot();
             int level = intent.getIntExtra(ConfigStore.EXTRA_ASM_LEVEL, snap.asmLevel);

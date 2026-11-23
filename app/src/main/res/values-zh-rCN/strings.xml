@@ -19,11 +19,11 @@
     <!-- Top Status Card -->
     <string name="status_title_active">模块已启用</string>
     <string name="status_title_inactive">模块未启用</string>
-    <string name="status_sub_active">v1.0.0 · API 102</string>
+    <string name="status_sub_active">v1.0.1 · API 102</string>
     <string name="status_sub_inactive">请在 LSPosed 勾选作用域并重启蓝牙</string>
     <string name="badge_api_102">API 102</string>
 
-    <string name="chip_version">v1.0.0</string>
+    <string name="chip_version">v1.0.1</string>
     <string name="chip_coloros">ColorOS 16/17</string>
     <string name="chip_lsposed">API 102</string>
 
@@ -52,11 +52,21 @@
     <string name="pref_voice_focus_title">专注语音</string>
     <string name="pref_voice_focus_summary">开启环境音时强化人声并降低背景噪音</string>
 
-    <string name="section_extra_params">附加功能</string>
+    <string name="section_extra_params">附加功能（二级分类）</string>
     <string name="pref_speak_to_chat_title">说话时自动暂停</string>
     <string name="pref_speak_to_chat_summary">开口说话时自动切为环境音并暂停播放</string>
     <string name="pref_dsee_title">DSEE 音质还原</string>
     <string name="pref_dsee_summary">实时补偿压缩音源的高频细节</string>
+    <string name="sc_cat_sound_title">声音与降噪</string>
+    <string name="sc_cat_sound_summary">环境音、均衡器与音质增强</string>
+    <string name="sc_cat_interaction_title">触控与智能交互</string>
+    <string name="sc_cat_interaction_summary">触控操作、智能免摘与佩戴</string>
+    <string name="sc_cat_connection_title">连接与多设备</string>
+    <string name="sc_cat_connection_summary">双设备连接与音频编码质量</string>
+    <string name="sc_cat_power_title">自动关机</string>
+    <string name="sc_cat_power_summary">闲置或摘下后自动关闭电源</string>
+    <string name="sc_status_offline">未连接</string>
+    <string name="toast_headset_not_connected">请先连接 Sony 耳机</string>
 
     <string name="section_control_prefs">切换与接管</string>
     <string name="pref_cycle_mode_title">模式循环顺序</string>
@@ -85,7 +95,7 @@
     <string name="pref_model_override_title">手动指定型号</string>
     <string name="model_override_auto">自动识别</string>
     <string name="dialog_model_override_title">指定耳机型号</string>
-    <string name="dialog_model_override_hint">留空则自动识别（如 WF-1000XM4、WH-1000XM5）</string>
+    <string name="dialog_model_override_hint">留空自动识别（如 WF-1000XM4）</string>
 
     <!-- Tab 1: ColorOS System Integration -->
     <string name="section_bt_bridge">蓝牙整合</string>
@@ -125,7 +135,7 @@
     <string name="root_status_unavailable">未获取 Root 权限（请在管理器授权）</string>
     <string name="pref_restart_core_title">重启核心作用域</string>
     <string name="pref_restart_core_summary">重新加载蓝牙、设备空间、无线设置、欢律与配件服务</string>
-    <string name="pref_restart_custom_title">选择重启项目…</string>
+    <string name="pref_restart_custom_title">选择重启项目</string>
     <string name="pref_restart_custom_summary">手动勾选需要重新启动的系统组件</string>
     <string name="pref_clear_md_cache_title">清除图标缓存并重启</string>
     <string name="pref_clear_md_cache_summary">更新或替换图片后强制重新加载图标</string>
@@ -192,10 +202,13 @@
     <string name="dialog_update_available_title_fmt">发现新版本 %1$s</string>
     <string name="dialog_update_latest_title">已是最新版本</string>
     <string name="dialog_update_latest_msg_fmt">当前已安装版本（%1$s）与 LSPosed 模块仓库最新版本（%2$s）一致。</string>
+    <string name="dialog_update_ahead_msg_fmt">当前已安装较新版本（%1$s），LSPosed 模块仓库当前最新版本为 %2$s。</string>
     <string name="dialog_update_ver_compare_fmt">当前版本 %1$s → 最新版本 %2$s</string>
     <string name="btn_update_download">下载更新 APK</string>
-    <string name="btn_update_open_repo">打开 LSPosed 仓库页</string>
+    <string name="btn_update_open_repo">打开仓库页面</string>
     <string name="dialog_changelog_title">更新日志</string>
+    <string name="changelog_v101_title">v1.0.1</string>
+    <string name="changelog_v101_body" formatted="false">• 深度适配 Sony Sound Connect 核心功能：完整整合「声音与降噪」、「触控与智能交互」、「连接与多设备」、「自动关机」四大高级控制分页\n• 新增 6 频段自定义均衡器（400Hz ~ 16kHz + Clear Bass 低音增强）与官方预设曲线联动，支持实时拖拽调音与一键还原预设\n• 新增左／右耳触控传感器功能自定义、智能免摘（Speak-to-Chat 灵敏度与自动恢复时间）、佩戴检测、自动关机条件、语音提示与多点连接（已配对设备实时切换连接／断开）\n• 新增音量控制展开面板「对话感知（智能免摘）」快捷开关按钮，并修复控制中心耳机卡片离线／连接状态图标反色问题\n• 全面重构 ColorOS 17 原生级 UI 与交互体验：系统详情页与控制中心展开面板无缝进入二／三级滑动页面，配备顶部渐层高斯模糊标题栏、原生级页面切换动画与防误触手势判定\n• 新增 App 主页滑动收起大标题、全界面列表与底部弹窗上下越界弹性阻尼回弹效果，以及 ColorOS 17 悬浮底部卡片与锚点弹出菜单\n• 强化 Sony Tandem RFCOMM 通信稳定性（新增线程安全写入锁与动态 GS 参数槽位解析）并修复远端更新日志排版解析问题</string>
     <string name="changelog_v100_title">v1.0.0</string>
     <string name="changelog_v100_body" formatted="false">• 完整整合 ColorOS 16/17 原生耳机管线、设备空间与流体云状态胶囊\n• 支持 Sony Tandem V1/V2 双耳与充电盒实时电量、双耳异步出盒同步与热更新\n• 支持原生控制中心、音量条与详情页切换降噪／环境音／关闭、通透强度（1~20）、关注语音、智能免摘、DSEE 与 LDAC/AAC 编码切换\n• 支持 BLE 高速配对模式检测弹窗、屏蔽原生配对框及 Sound Connect 自动让位\n• 内置 Sony 官方透明图标库与从 LSPosed 模块仓库检查更新功能</string>
     <string name="about_debug_mode_title">详细调试日志</string>
@@ -217,6 +230,11 @@
     <string name="dialog_logs_title">状态与诊断</string>
     <string name="btn_close">关闭</string>
     <string name="btn_cancel">取消</string>
+    <string name="btn_apply">应用</string>
+    <string name="btn_copy_logs">复制诊断信息</string>
+    <string name="toast_copied">已复制到剪贴板</string>
+    <string name="dialog_model_override_sub">输入型号名称或点击常用机型，留空则自动识别</string>
+    <string name="dialog_restart_custom_sub">勾选要通过 Root 重载的系统组件</string>
     <string name="dialog_reset_all_title">重置全部设置？</string>
     <string name="dialog_reset_all_msg">所有整合开关与耳机偏好将恢复默认值。</string>
     <string name="btn_confirm_reset">确认重置</string>

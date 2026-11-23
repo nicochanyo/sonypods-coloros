@@ -205,6 +205,8 @@ public final class ColorOsMelodyHook {
                             st.voiceFocus,
                             sw);
                     param.setResult(new Bundle());
+                } else if ("melody_method_control_wear".equals(callArgs.method)) {
+                    param.setResult(new Bundle());
                 }
             }
         });

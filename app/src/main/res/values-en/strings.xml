@@ -19,11 +19,11 @@
     <!-- Top Status Card -->
     <string name="status_title_active">Module Active</string>
     <string name="status_title_inactive">Module Inactive</string>
-    <string name="status_sub_active">v1.0.0 · API 102</string>
+    <string name="status_sub_active">v1.0.1 · API 102</string>
     <string name="status_sub_inactive">Enable module in LSPosed and restart Bluetooth</string>
     <string name="badge_api_102">API 102</string>
 
-    <string name="chip_version">v1.0.0</string>
+    <string name="chip_version">v1.0.1</string>
     <string name="chip_coloros">ColorOS 16/17</string>
     <string name="chip_lsposed">API 102</string>
 
@@ -57,6 +57,16 @@
     <string name="pref_speak_to_chat_summary">Pause playback and switch to ambient while talking</string>
     <string name="pref_dsee_title">DSEE Upscaling</string>
     <string name="pref_dsee_summary">Restore high-frequency detail in compressed audio</string>
+    <string name="sc_cat_sound_title">Sound &amp; Noise Control</string>
+    <string name="sc_cat_sound_summary">Ambient sound, EQ, and DSEE</string>
+    <string name="sc_cat_interaction_title">Touch &amp; Smart Controls</string>
+    <string name="sc_cat_interaction_summary">Touch controls, Speak-to-Chat, wear</string>
+    <string name="sc_cat_connection_title">Connection &amp; Multipoint</string>
+    <string name="sc_cat_connection_summary">Multipoint connection and audio codec</string>
+    <string name="sc_cat_power_title">Auto Power Off</string>
+    <string name="sc_cat_power_summary">Power off timer when idle or removed</string>
+    <string name="sc_status_offline">Offline</string>
+    <string name="toast_headset_not_connected">Connect Sony headphones first</string>
 
     <string name="section_control_prefs">Switching &amp; Handover</string>
     <string name="pref_cycle_mode_title">Cycle Order</string>
@@ -125,7 +135,7 @@
     <string name="root_status_unavailable">Root unavailable (grant access in your root manager)</string>
     <string name="pref_restart_core_title">Restart Core Scopes</string>
     <string name="pref_restart_core_summary">Restart Bluetooth, MyDevices, WirelessSettings, Melody, and Accessory</string>
-    <string name="pref_restart_custom_title">Restart Specific Apps…</string>
+    <string name="pref_restart_custom_title">Restart Specific Apps</string>
     <string name="pref_restart_custom_summary">Choose individual scope packages to restart</string>
     <string name="pref_clear_md_cache_title">Clear Artwork Cache &amp; Restart</string>
     <string name="pref_clear_md_cache_summary">Force MyDevices to reload updated headset artwork</string>
@@ -192,10 +202,13 @@
     <string name="dialog_update_available_title_fmt">Update Available (%1$s)</string>
     <string name="dialog_update_latest_title">Up to Date</string>
     <string name="dialog_update_latest_msg_fmt">Installed version (%1$s) matches the latest release (%2$s) on LSPosed Repository.</string>
+    <string name="dialog_update_ahead_msg_fmt">Installed build (%1$s) is ahead of the latest LSPosed Repository release (%2$s).</string>
     <string name="dialog_update_ver_compare_fmt">Installed %1$s → Latest %2$s</string>
     <string name="btn_update_download">Download Update APK</string>
-    <string name="btn_update_open_repo">Open LSPosed Repo Page</string>
+    <string name="btn_update_open_repo">Open Repo</string>
     <string name="dialog_changelog_title">Changelog</string>
+    <string name="changelog_v101_title">v1.0.1</string>
+    <string name="changelog_v101_body" formatted="false">• Comprehensive Sony Sound Connect Feature Adaptation: integrated four full-featured control pages — Sound &amp; Noise Control, Touch &amp; Smart Controls, Connection &amp; Multipoint, and Auto Power Off\n• Added 6-band custom Equalizer (400Hz–16kHz + Clear Bass) synchronized with Sony presets, real-time drag tuning, and one-tap reset\n• Added Left/Right Touch Sensor assignment, Speak-to-Chat sensitivity &amp; auto-close timeout, Wear Detection, Auto Power Off conditions, Voice Guidance, and Multipoint paired-device switching\n• Added Speak-to-Chat quick toggle tile to the ColorOS volume slider detail panel and fixed Control Center headset card offline/online icon inversion\n• Complete ColorOS 17 UI &amp; Interaction Overhaul: seamless Level-2/3 slide navigation in Bluetooth Details &amp; Control Center sheets with progressive top Gaussian blur headers, native transition curves, and anti-mistouch gesture handling\n• Added collapsing large header in main app, ColorOS 17 damped spring overscroll bounce across all lists &amp; bottom sheets, and floating COUI sheets &amp; anchored popup menus\n• Hardened Sony Tandem RFCOMM reliability (thread-safe write lock &amp; dynamic GS slot resolution) and fixed remote changelog formatting</string>
     <string name="changelog_v100_title">v1.0.0</string>
     <string name="changelog_v100_body" formatted="false">• Integrated Sony headphones with ColorOS 16/17 native AirPods pipeline, Device Space, and Fluid Cloud capsules\n• Real-time dual-earbud &amp; case battery via Sony Tandem V1/V2 with asynchronous dual-ear sync &amp; live Fluid Cloud updates\n• Native Quick Settings, volume slider, and detail card controls for ANC / Ambient / Off, Ambient Level (1–20), Voice Focus, Speak-to-Chat, DSEE, and LDAC/AAC codec switching\n• Fast BLE pairing-mode popup detection, native pairing dialog suppression, and automatic Sound Connect handover\n• Bundled Sony official transparent artwork catalog and in-app update checker sourcing from LSPosed Repository</string>
     <string name="about_debug_mode_title">Verbose Debug Logs</string>
@@ -217,6 +230,11 @@
     <string name="dialog_logs_title">State Snapshot</string>
     <string name="btn_close">Close</string>
     <string name="btn_cancel">Cancel</string>
+    <string name="btn_apply">Apply</string>
+    <string name="btn_copy_logs">Copy Snapshot</string>
+    <string name="toast_copied">Copied to clipboard</string>
+    <string name="dialog_model_override_sub">Enter an official model name or tap a preset; leave empty for auto</string>
+    <string name="dialog_restart_custom_sub">Select system components to restart via root</string>
     <string name="dialog_reset_all_title">Reset all settings?</string>
     <string name="dialog_reset_all_msg">This restores all integration toggles and preferences to default.</string>
     <string name="btn_confirm_reset">Reset</string>

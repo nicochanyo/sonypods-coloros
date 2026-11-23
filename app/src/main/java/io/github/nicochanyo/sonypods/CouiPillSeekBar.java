@@ -15,6 +15,18 @@ import android.widget.SeekBar;
 public class CouiPillSeekBar extends SeekBar {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
+    private boolean hasCustomPalette;
+    private int customTrackColor;
+    private int customAccentColor;
+    private int customDotColor;
+
+    public void setCustomPalette(int trackColor, int accentColor, int dotColor) {
+        this.hasCustomPalette = true;
+        this.customTrackColor = trackColor;
+        this.customAccentColor = accentColor;
+        this.customDotColor = dotColor;
+        invalidate();
+    }
 
     public CouiPillSeekBar(Context context) {
         super(context);
@@ -72,9 +84,11 @@ public class CouiPillSeekBar extends SeekBar {
         float frac = max > 0 ? Math.max(0f, Math.min(1f, getProgress() / (float) max)) : 0f;
 
         Context ctx = getContext();
-        int trackColor = ConfigStore.resolveThemeColor(ctx, R.attr.couiSeekbarTrack, R.color.coui_seekbar_track);
-        int accentColor = DynamicThemeHelper.getAccent(ctx);
-        int dotColor = DynamicThemeHelper.getOnAccent(ctx);
+        int trackColor = hasCustomPalette
+                ? customTrackColor
+                : ConfigStore.resolveThemeColor(ctx, R.attr.couiSeekbarTrack, R.color.coui_seekbar_track);
+        int accentColor = hasCustomPalette ? customAccentColor : DynamicThemeHelper.getAccent(ctx);
+        int dotColor = hasCustomPalette ? customDotColor : DynamicThemeHelper.getOnAccent(ctx);
         if (!isEnabled()) {
             accentColor = (Math.round(Color.alpha(accentColor) * 0.42f) << 24)
                     | (accentColor & 0x00FFFFFF);

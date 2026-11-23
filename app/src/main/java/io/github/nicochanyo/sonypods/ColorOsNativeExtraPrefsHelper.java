@@ -1,15 +1,13 @@
 package io.github.nicochanyo.sonypods;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.ColorStateList;
-import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,10 +17,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.SeekBar;
-import android.widget.TextView;
+import android.widget.FrameLayout;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -42,11 +37,10 @@ import java.util.WeakHashMap;
  */
 public final class ColorOsNativeExtraPrefsHelper {
     private static final String KEY_CAT_EXTRA = "cat_sony_extra";
-    private static final String KEY_ASM_LEVEL = "sony_extra_asm_level";
-    private static final String KEY_VOICE_FOCUS = "sony_extra_voice_focus";
-    private static final String KEY_SPEAK_TO_CHAT = "sony_extra_speak_to_chat";
-    private static final String KEY_DSEE = "sony_extra_dsee";
-    private static final String KEY_AUDIO_CODEC = "sony_extra_audio_codec";
+    private static final String KEY_CAT_SOUND = "sony_cat_sound";
+    private static final String KEY_CAT_INTERACTION = "sony_cat_interaction";
+    private static final String KEY_CAT_CONNECTION = "sony_cat_connection";
+    private static final String KEY_CAT_POWER = "sony_cat_power";
     private static final String KEY_OPEN_MODULE = "sony_extra_open_module";
     private static final String KEY_DISCONNECT_GAP = "sony_extra_disconnect_gap";
 
@@ -58,8 +52,6 @@ public final class ColorOsNativeExtraPrefsHelper {
     private static final List<WeakReference<Object>> ACTIVE_FRAGMENTS = new ArrayList<>();
     private static final WeakHashMap<Object, Long> INITIAL_TOP_LOCK_UNTIL = new WeakHashMap<>();
     private static final WeakHashMap<Object, Boolean> TOUCH_LISTENER_ATTACHED = new WeakHashMap<>();
-
-    private static volatile boolean sUpdatingFromState;
 
     private ColorOsNativeExtraPrefsHelper() {
     }
@@ -89,6 +81,7 @@ public final class ColorOsNativeExtraPrefsHelper {
             XposedCompat.hookAllMethods(detailFragCls, "onViewCreated", new XposedCompat.XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
+                    SoundConnectSheets.resetHostStage(resolveHostStage(param.thisObject, null));
                     injectOrSyncDetailFragment(param.thisObject);
                     armInitialScrollToTopIfSony(param.thisObject);
                 }
@@ -97,10 +90,17 @@ public final class ColorOsNativeExtraPrefsHelper {
             XposedCompat.hookAllMethods(detailFragCls, "onHostPanelShow", new XposedCompat.XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
+                    SoundConnectSheets.resetHostStage(resolveHostStage(param.thisObject, null));
                     injectOrSyncDetailFragment(param.thisObject);
                     if (param.args == null || param.args.length == 0 || !Boolean.FALSE.equals(param.args[0])) {
                         armInitialScrollToTopIfSony(param.thisObject);
                     }
+                }
+            });
+            XposedCompat.hookAllMethods(detailFragCls, "onHostPanelStop", new XposedCompat.XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
+                    SoundConnectSheets.resetHostStage(resolveHostStage(param.thisObject, null));
                 }
             });
             XposedCompat.hookAllMethods(detailFragCls, "applyConnectedUi", detailAsyncHook);
@@ -358,86 +358,61 @@ public final class ColorOsNativeExtraPrefsHelper {
                     || mac.equalsIgnoreCase(st.mac));
 
             ConfigStore.CodecState cs = ConfigStore.readGlobalCodecState(ctx);
-            boolean codecMacMatch = cs.mac.isEmpty()
-                    || (mac != null && !mac.isEmpty() && cs.mac.equalsIgnoreCase(mac))
-                    || (st.mac != null && !st.mac.isEmpty() && cs.mac.equalsIgnoreCase(st.mac));
-            boolean showCodec = matchingConnected && codecMacMatch && cs.supportsLdac && cs.supportsAac;
-
-            boolean showExtraControls = matchingConnected
-                    && (st.supportsNcAsm || st.supportsSpeakToChat || st.supportsDsee || showCodec);
+            boolean showSound = matchingConnected && SoundConnectSheets.hasSoundFeatures(st);
+            boolean showInteraction = matchingConnected && SoundConnectSheets.hasInteractionFeatures(st);
+            boolean showConnection = matchingConnected && SoundConnectSheets.hasConnectionFeatures(st, cs, mac);
+            boolean showPower = matchingConnected && SoundConnectSheets.hasPowerFeatures(st);
+            boolean showExtraControls = showSound || showInteraction || showConnection || showPower;
             setPrefVisible(cat, true);
 
-            Object asmPref = findPref(frag, cat, KEY_ASM_LEVEL);
-            Object vfPref = findPref(frag, cat, KEY_VOICE_FOCUS);
-            Object stcPref = findPref(frag, cat, KEY_SPEAK_TO_CHAT);
-            Object dseePref = findPref(frag, cat, KEY_DSEE);
-            Object codecPref = findPref(frag, cat, KEY_AUDIO_CODEC);
+            Object soundPref = findPref(frag, cat, KEY_CAT_SOUND);
+            Object interPref = findPref(frag, cat, KEY_CAT_INTERACTION);
+            Object connPref = findPref(frag, cat, KEY_CAT_CONNECTION);
+            Object powerPref = findPref(frag, cat, KEY_CAT_POWER);
             Object openModPref = findPref(frag, cat, KEY_OPEN_MODULE);
 
-            sUpdatingFromState = true;
-            try {
-                if (asmPref != null) {
-                    boolean showAsm = matchingConnected && st.supportsNcAsm;
-                    setPrefVisible(asmPref, showAsm);
-                    setPrefEnabled(asmPref, showAsm);
-                    if (showAsm) {
-                        setCouiAssignment(asmPref, st.asmLevel + " / 20");
-                    }
+            if (soundPref != null) {
+                setPrefVisible(soundPref, showSound);
+                setPrefEnabled(soundPref, showSound);
+                setCouiAssignment(soundPref, "");
+            }
+            if (interPref != null) {
+                setPrefVisible(interPref, showInteraction);
+                setPrefEnabled(interPref, showInteraction);
+                setCouiAssignment(interPref, "");
+            }
+            if (connPref != null) {
+                setPrefVisible(connPref, showConnection);
+                setPrefEnabled(connPref, showConnection);
+                setCouiAssignment(connPref, "");
+            }
+            if (powerPref != null) {
+                setPrefVisible(powerPref, showPower);
+                setPrefEnabled(powerPref, showPower);
+                if (showPower) {
+                    setCouiAssignment(powerPref, SoundConnectSheets.formatPowerSummary(ctx, st));
                 }
-                if (vfPref != null) {
-                    boolean showVf = matchingConnected && st.supportsNcAsm;
-                    setPrefVisible(vfPref, showVf);
-                    setPrefEnabled(vfPref, showVf);
-                    setSwitchChecked(vfPref, st.voiceFocus);
+            }
+            if (openModPref != null) {
+                setPrefVisible(openModPref, true);
+                setPrefEnabled(openModPref, true);
+                if (!showExtraControls && !matchingConnected) {
+                    setPrefSummary(openModPref, locText(ctx,
+                            "開啟 SonyPods ColorOS 模組設定",
+                            "打开 SonyPods ColorOS 模块设置",
+                            "Open SonyPods ColorOS settings"));
+                } else {
+                    setPrefSummary(openModPref, locText(ctx,
+                            "圖示、切換順序與系統整合",
+                            "图标、切换顺序与系统整合",
+                            "Artwork, cycle order, and integration"));
                 }
-                if (stcPref != null) {
-                    boolean nativeConvVisible = false;
-                    if (isSettingPage) {
-                        Object nativeConv = findPref(frag, screen, "pref_airpods_conversation_aware");
-                        nativeConvVisible = nativeConv != null && readBooleanField(nativeConv, "z", false);
-                    }
-                    boolean showStc = matchingConnected && st.supportsSpeakToChat && !nativeConvVisible;
-                    setPrefVisible(stcPref, showStc);
-                    setPrefEnabled(stcPref, showStc);
-                    setSwitchChecked(stcPref, st.speakToChat);
-                }
-                if (dseePref != null) {
-                    boolean showDsee = matchingConnected && st.supportsDsee;
-                    setPrefVisible(dseePref, showDsee);
-                    setPrefEnabled(dseePref, showDsee);
-                    setSwitchChecked(dseePref, st.dsee);
-                }
-                if (codecPref != null) {
-                    setPrefVisible(codecPref, showCodec);
-                    setPrefEnabled(codecPref, showCodec);
-                    if (showCodec) {
-                        String codecLabel = ConfigStore.codecDisplayName(cs.activeCodec);
-                        setCouiAssignment(codecPref, codecLabel);
-                    }
-                }
-                if (openModPref != null) {
-                    setPrefVisible(openModPref, true);
-                    setPrefEnabled(openModPref, true);
-                    if (!showExtraControls && !matchingConnected) {
-                        setPrefSummary(openModPref, locText(ctx,
-                                "開啟 SonyPods ColorOS 模組設定",
-                                "打开 SonyPods ColorOS 模块设置",
-                                "Open SonyPods ColorOS settings"));
-                    } else {
-                        setPrefSummary(openModPref, locText(ctx,
-                                "圖資設定、切換模式與系統整合",
-                                "图标设置、切换模式与系统整合",
-                                "Artwork, cycle order, and system integration"));
-                    }
-                }
-                Object gapPref = findPref(frag, screen, KEY_DISCONNECT_GAP);
-                if (gapPref != null) {
-                    Object discCat = findPref(frag, screen, "cat_airpods_disconnect");
-                    boolean showGap = discCat != null && readBooleanField(discCat, "z", false);
-                    setPrefVisible(gapPref, showGap);
-                }
-            } finally {
-                sUpdatingFromState = false;
+            }
+            Object gapPref = findPref(frag, screen, KEY_DISCONNECT_GAP);
+            if (gapPref != null) {
+                Object discCat = findPref(frag, screen, "cat_airpods_disconnect");
+                boolean showGap = discCat != null && readBooleanField(discCat, "z", false);
+                setPrefVisible(gapPref, showGap);
             }
             if (!isSettingPage) {
                 enforceScrollToTopIfArmed(frag);
@@ -469,11 +444,9 @@ public final class ColorOsNativeExtraPrefsHelper {
 
             Class<?> catCls = XposedCompat.findClassIfExists(
                     "com.coui.appcompat.preference.COUIPreferenceCategory", cl);
-            Class<?> swCls = XposedCompat.findClassIfExists(
-                    "com.coui.appcompat.preference.COUISwitchPreference", cl);
             Class<?> jumpCls = XposedCompat.findClassIfExists(
                     "com.coui.appcompat.preference.COUIJumpPreference", cl);
-            if (catCls == null || swCls == null || jumpCls == null) {
+            if (catCls == null || jumpCls == null) {
                 return null;
             }
 
@@ -529,106 +502,85 @@ public final class ColorOsNativeExtraPrefsHelper {
             }
 
             Constructor<?> jumpCtor = jumpCls.getConstructor(Context.class);
-            Constructor<?> swCtor = swCls.getConstructor(Context.class);
 
-            // 1. Ambient Sound Level
-            Object asmPref = jumpCtor.newInstance(prefCtx);
-            setPrefKey(asmPref, KEY_ASM_LEVEL);
-            setPrefTitle(asmPref, locText(prefCtx, "通透強度", "通透强度", "Ambient Level"));
-            setPrefSummary(asmPref, locText(prefCtx, "調整環境音通透等級（1 ~ 20）",
-                    "调整环境音通透等级（1 ~ 20）", "Adjust ambient sound level (1 ~ 20)"));
-            setPrefOrder(asmPref, 10);
-            setPrefPersistent(asmPref, false);
-            setPrefIconSpaceReserved(asmPref, false);
-            setOnClickListener(asmPref, cl, () -> showAsmLevelDialog(frag, prefCtx));
-            addPref(cat, asmPref);
+            // 1. Sound & Noise Control (Ambient level, Voice focus, EQ, DSEE)
+            addCategoryJumpPref(cat, jumpCtor, prefCtx, cl, KEY_CAT_SOUND, 10,
+                    locText(prefCtx, "聲音與降噪", "声音与降噪", "Sound & Noise Control"),
+                    locText(prefCtx, "環境音、等化器與音質增強",
+                            "环境音、均衡器与音质增强",
+                            "Ambient sound, EQ, and DSEE"),
+                    () -> {
+                        Context uiCtx = resolveActivityUiContext(frag, prefCtx);
+                        SoundConnectSheets.showSoundAndEqSheet(
+                                uiCtx, prefCtx, CouiBottomSheet.Palette.fromSystemOverlay(uiCtx),
+                                resolveHostStage(frag, uiCtx), null);
+                    });
 
-            // 2. Voice Focus
-            Object vfPref = swCtor.newInstance(prefCtx);
-            setPrefKey(vfPref, KEY_VOICE_FOCUS);
-            setPrefTitle(vfPref, locText(prefCtx, "專注語音", "专注语音", "Voice Focus"));
-            setPrefSummary(vfPref, locText(prefCtx, "開啟環境音時強化人聲並降低背景噪音",
-                    "开启环境音时强化人声并降低背景噪音", "Emphasize voices over background noise"));
-            setPrefOrder(vfPref, 20);
-            setPrefPersistent(vfPref, false);
-            setPrefIconSpaceReserved(vfPref, false);
-            setOnChangeListener(vfPref, cl, newVal -> {
-                ConfigStore.HeadsetState st = ConfigStore.readGlobalState(prefCtx);
-                if (st.connected) {
-                    ConfigStore.sendCommandBroadcast(
-                            prefCtx, ConfigStore.CMD_SET_AMBIENT_PARAMS, st.mac,
-                            st.ancMode, st.asmLevel, newVal, false);
-                }
-            });
-            addPref(cat, vfPref);
+            // 2. Touch & Smart Controls (Touch sensors, Speak-to-Chat details, Wear detect)
+            addCategoryJumpPref(cat, jumpCtor, prefCtx, cl, KEY_CAT_INTERACTION, 20,
+                    locText(prefCtx, "觸碰與智慧互動", "触控与智能交互", "Touch & Smart Controls"),
+                    locText(prefCtx, "觸控操作、說話至聊天與佩戴",
+                            "触控操作、智能免摘与佩戴",
+                            "Touch controls, Speak-to-Chat, wear"),
+                    () -> {
+                        Context uiCtx = resolveActivityUiContext(frag, prefCtx);
+                        SoundConnectSheets.showTouchAndSmartSheet(
+                                uiCtx, prefCtx, CouiBottomSheet.Palette.fromSystemOverlay(uiCtx),
+                                resolveHostStage(frag, uiCtx), null);
+                    });
 
-            // 3. Speak-to-Chat
-            Object stcPref = swCtor.newInstance(prefCtx);
-            setPrefKey(stcPref, KEY_SPEAK_TO_CHAT);
-            setPrefTitle(stcPref, locText(prefCtx, "說話時自動暫停", "说话时自动暂停", "Speak-to-Chat"));
-            setPrefSummary(stcPref, locText(prefCtx, "開口說話時自動切為環境音並暫停播放",
-                    "开口说话时自动切为环境音并暂停播放", "Pause audio and enable ambient while talking"));
-            setPrefOrder(stcPref, 30);
-            setPrefPersistent(stcPref, false);
-            setPrefIconSpaceReserved(stcPref, false);
-            setOnChangeListener(stcPref, cl, newVal -> {
-                ConfigStore.HeadsetState st = ConfigStore.readGlobalState(prefCtx);
-                if (st.connected) {
-                    ConfigStore.sendCommandBroadcast(
-                            prefCtx, ConfigStore.CMD_SET_SPEAK_TO_CHAT, st.mac,
-                            st.ancMode, st.asmLevel, st.voiceFocus, newVal);
-                }
-            });
-            addPref(cat, stcPref);
+            // 3. Connection & Multipoint (2-device multipoint + unified LDAC / AAC connection quality)
+            addCategoryJumpPref(cat, jumpCtor, prefCtx, cl, KEY_CAT_CONNECTION, 30,
+                    locText(prefCtx, "連線與多設備", "连接与多设备", "Connection & Multipoint"),
+                    locText(prefCtx, "雙裝置連線與音訊編碼品質",
+                            "双设备连接与音频编码质量",
+                            "Multipoint connection and audio codec"),
+                    () -> {
+                        Context uiCtx = resolveActivityUiContext(frag, prefCtx);
+                        SoundConnectSheets.showConnectionAndMultipointSheet(
+                                uiCtx, prefCtx, CouiBottomSheet.Palette.fromSystemOverlay(uiCtx),
+                                resolveHostStage(frag, uiCtx), null);
+                    });
 
-            // 4. DSEE
-            Object dseePref = swCtor.newInstance(prefCtx);
-            setPrefKey(dseePref, KEY_DSEE);
-            setPrefTitle(dseePref, locText(prefCtx, "DSEE 音質還原", "DSEE 音质还原", "DSEE Upscaling"));
-            setPrefSummary(dseePref, locText(prefCtx, "即時補償壓縮音源的高頻細節",
-                    "实时补偿压缩音源的高频细节", "Restore high-frequency detail in compressed audio"));
-            setPrefOrder(dseePref, 40);
-            setPrefPersistent(dseePref, false);
-            setPrefIconSpaceReserved(dseePref, false);
-            setOnChangeListener(dseePref, cl, newVal -> {
-                ConfigStore.HeadsetState st = ConfigStore.readGlobalState(prefCtx);
-                if (st.connected) {
-                    ConfigStore.sendCommandBroadcast(
-                            prefCtx, ConfigStore.CMD_SET_DSEE, st.mac,
-                            st.ancMode, st.asmLevel, st.voiceFocus, newVal);
-                }
-            });
-            addPref(cat, dseePref);
+            // 4. Auto Power Off (Single-line row with value shown on right via couiAssignment)
+            addCategoryJumpPref(cat, jumpCtor, prefCtx, cl, KEY_CAT_POWER, 40,
+                    locText(prefCtx, "自動關機", "自动关机", "Auto Power Off"),
+                    null,
+                    () -> {
+                        Context uiCtx = resolveActivityUiContext(frag, prefCtx);
+                        SoundConnectSheets.showPowerAndSystemSheet(
+                                uiCtx, prefCtx, CouiBottomSheet.Palette.fromSystemOverlay(uiCtx),
+                                resolveHostStage(frag, uiCtx), null);
+                    });
 
-            // 5. Audio Codec (LDAC / AAC)
-            Object codecPref = jumpCtor.newInstance(prefCtx);
-            setPrefKey(codecPref, KEY_AUDIO_CODEC);
-            setPrefTitle(codecPref, locText(prefCtx, "音訊編碼", "音频编码", "Audio Codec"));
-            setPrefSummary(codecPref, locText(prefCtx,
-                    "切換高解析 LDAC 與穩定低功耗 AAC",
-                    "切换高解析 LDAC 与稳定低功耗 AAC",
-                    "Switch between LDAC and AAC"));
-            setPrefOrder(codecPref, 45);
-            setPrefPersistent(codecPref, false);
-            setPrefIconSpaceReserved(codecPref, false);
-            setOnClickListener(codecPref, cl, () -> showCodecDialog(frag, prefCtx));
-            addPref(cat, codecPref);
-
-            // 6. Open Module Settings
-            Object openModPref = jumpCtor.newInstance(prefCtx);
-            setPrefKey(openModPref, KEY_OPEN_MODULE);
-            setPrefTitle(openModPref, locText(prefCtx, "更多設定", "更多设置", "More Settings"));
-            setPrefOrder(openModPref, 50);
-            setPrefPersistent(openModPref, false);
-            setPrefIconSpaceReserved(openModPref, false);
-            setOnClickListener(openModPref, cl, () -> launchModuleApp(prefCtx));
-            addPref(cat, openModPref);
+            // 5. Open Module Settings
+            addCategoryJumpPref(cat, jumpCtor, prefCtx, cl, KEY_OPEN_MODULE, 50,
+                    locText(prefCtx, "更多設定", "更多设置", "More Settings"),
+                    null,
+                    () -> launchModuleApp(prefCtx));
 
             return cat;
         } catch (Throwable t) {
             XposedCompat.debug("buildAndInsertCategory failed (" + isSettingPage + "): " + t.getMessage());
             return null;
         }
+    }
+
+    private static void addCategoryJumpPref(
+            Object cat, Constructor<?> jumpCtor, Context prefCtx, ClassLoader cl,
+            String key, int order, String title, String summary, Runnable onClick
+    ) throws Throwable {
+        Object pref = jumpCtor.newInstance(prefCtx);
+        setPrefKey(pref, key);
+        setPrefTitle(pref, title);
+        if (summary != null) {
+            setPrefSummary(pref, summary);
+        }
+        setPrefOrder(pref, order);
+        setPrefPersistent(pref, false);
+        setPrefIconSpaceReserved(pref, false);
+        setOnClickListener(pref, cl, onClick);
+        addPref(cat, pref);
     }
 
     private static Context resolveActivityUiContext(Object frag, Context fallback) {
@@ -643,126 +595,37 @@ public final class ColorOsNativeExtraPrefsHelper {
         return fallback;
     }
 
-    private static void showAsmLevelDialog(Object frag, Context ctx) {
+    private static SoundConnectSheets.HostStage resolveHostStage(Object frag, Context uiCtx) {
+        if (frag == null) {
+            return SoundConnectSheets.HostStage.fromContext(uiCtx);
+        }
+        Context ctx = uiCtx != null ? uiCtx : resolveActivityUiContext(frag, resolveFragContext(frag));
         try {
-            Context uiCtx = resolveActivityUiContext(frag, ctx);
-
-            ConfigStore.HeadsetState st = ConfigStore.readGlobalState(ctx);
-            int curLevel = ConfigStore.clampAsmLevel(st.asmLevel);
-            float d = uiCtx.getResources().getDisplayMetrics().density;
-            boolean isNight = (uiCtx.getResources().getConfiguration().uiMode
-                    & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-
-            LinearLayout container = new LinearLayout(uiCtx);
-            container.setOrientation(LinearLayout.VERTICAL);
-            int hPad = Math.round(24f * d);
-            int vPad = Math.round(16f * d);
-            container.setPadding(hPad, vPad, hPad, Math.round(8f * d));
-
-            TextView valTv = new TextView(uiCtx);
-            valTv.setTextSize(16f);
-            valTv.setTextColor(isNight ? 0xFFF2F2F2 : 0xFF1A1A1A);
-            valTv.setText(locText(ctx, "通透等級：", "通透等级：", "Level: ") + curLevel + " / 20");
-            valTv.setPadding(0, 0, 0, Math.round(12f * d));
-            container.addView(valTv, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT));
-
-            SeekBar seekBar = new SeekBar(uiCtx);
-            seekBar.setMax(19);
-            seekBar.setProgress(curLevel - 1);
-            seekBar.setProgressTintList(ColorStateList.valueOf(0xFF00BFA5));
-            seekBar.setThumbTintList(ColorStateList.valueOf(0xFF00BFA5));
-            seekBar.setProgressBackgroundTintList(
-                    ColorStateList.valueOf(isNight ? 0x4DFFFFFF : 0x33000000));
-            final int[] chosen = new int[]{curLevel};
-            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override
-                public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
-                    int lvl = progress + 1;
-                    chosen[0] = lvl;
-                    valTv.setText(locText(ctx, "通透等級：", "通透等级：", "Level: ") + lvl + " / 20");
-                }
-
-                @Override
-                public void onStartTrackingTouch(SeekBar bar) {
-                }
-
-                @Override
-                public void onStopTrackingTouch(SeekBar bar) {
-                    ConfigStore.HeadsetState latest = ConfigStore.readGlobalState(ctx);
-                    if (latest.connected) {
-                        ConfigStore.sendCommandBroadcast(
-                                ctx, ConfigStore.CMD_SET_AMBIENT_PARAMS, latest.mac,
-                                latest.ancMode, chosen[0], latest.voiceFocus, false);
-                    }
-                }
-            });
-            LinearLayout.LayoutParams sbLp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-            int sbMarginV = Math.round(8f * d);
-            sbLp.topMargin = sbMarginV;
-            sbLp.bottomMargin = sbMarginV;
-            container.addView(seekBar, sbLp);
-
-            int themeRes = isNight
-                    ? android.R.style.Theme_DeviceDefault_Dialog_Alert
-                    : android.R.style.Theme_DeviceDefault_Light_Dialog_Alert;
-            AlertDialog dlg = new AlertDialog.Builder(uiCtx, themeRes)
-                    .setTitle(locText(ctx, "通透強度", "通透强度", "Ambient Level"))
-                    .setView(container)
-                    .setNegativeButton(locText(ctx, "取消", "取消", "Cancel"), null)
-                    .setPositiveButton(locText(ctx, "確定", "确定", "OK"), (dialog, which) -> {
-                        ConfigStore.HeadsetState latest = ConfigStore.readGlobalState(ctx);
-                        if (latest.connected) {
-                            ConfigStore.sendCommandBroadcast(
-                                    ctx, ConfigStore.CMD_SET_AMBIENT_PARAMS, latest.mac,
-                                    latest.ancMode, chosen[0], latest.voiceFocus, false);
+            Field hbField = findField(frag.getClass(), "mHostBinding");
+            Object hb = hbField != null ? hbField.get(frag) : null;
+            if (hb != null) {
+                Field aField = findField(hb.getClass(), "a");
+                Field fField = findField(hb.getClass(), "f");
+                Object rootObj = aField != null ? aField.get(hb) : null;
+                Object svObj = fField != null ? fField.get(hb) : null;
+                if (rootObj instanceof FrameLayout) {
+                    Dialog hostDialog = null;
+                    try {
+                        Method findDlg = findMethod(frag.getClass(), "findHostBottomSheetDialog");
+                        Object dObj = findDlg != null ? findDlg.invoke(frag) : null;
+                        if (dObj instanceof Dialog) {
+                            hostDialog = (Dialog) dObj;
                         }
-                    })
-                    .show();
-            Button pos = dlg.getButton(AlertDialog.BUTTON_POSITIVE);
-            if (pos != null) pos.setTextColor(0xFF00A896);
-            Button neg = dlg.getButton(AlertDialog.BUTTON_NEGATIVE);
-            if (neg != null) neg.setTextColor(isNight ? 0xFFB8B8B8 : 0xFF666666);
-        } catch (Throwable t) {
-            XposedCompat.debug("showAsmLevelDialog failed: " + t.getMessage());
+                    } catch (Throwable ignored) {
+                    }
+                    View level1 = (svObj instanceof View) ? (View) svObj : null;
+                    return SoundConnectSheets.HostStage.forEmbeddedPanel(
+                            (FrameLayout) rootObj, level1, hostDialog, ctx);
+                }
+            }
+        } catch (Throwable ignored) {
         }
-    }
-
-    private static void showCodecDialog(Object frag, Context ctx) {
-        try {
-            Context uiCtx = resolveActivityUiContext(frag, ctx);
-            boolean isNight = (uiCtx.getResources().getConfiguration().uiMode
-                    & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-            ConfigStore.HeadsetState st = ConfigStore.readGlobalState(ctx);
-            ConfigStore.CodecState cs = ConfigStore.readGlobalCodecState(ctx);
-
-            CharSequence[] items = new CharSequence[]{
-                    locText(ctx, "LDAC（高解析音質）", "LDAC（高解析音质）", "LDAC (High Quality)"),
-                    locText(ctx, "AAC（穩定連線與省電）", "AAC（稳定连接与省电）", "AAC (Stable & Battery)")
-            };
-            int checked = cs.activeCodec == ConfigStore.CODEC_AAC ? 1 : 0;
-            int themeRes = isNight
-                    ? android.R.style.Theme_DeviceDefault_Dialog_Alert
-                    : android.R.style.Theme_DeviceDefault_Light_Dialog_Alert;
-
-            AlertDialog dlg = new AlertDialog.Builder(uiCtx, themeRes)
-                    .setTitle(locText(ctx, "音訊編碼", "音频编码", "Audio Codec"))
-                    .setSingleChoiceItems(items, checked, (dialog, which) -> {
-                        int chosenCodec = which == 1 ? ConfigStore.CODEC_AAC : ConfigStore.CODEC_LDAC;
-                        String targetMac = !cs.mac.isEmpty() ? cs.mac : st.mac;
-                        ConfigStore.sendCodecCommandBroadcast(ctx, targetMac, chosenCodec);
-                        dialog.dismiss();
-                    })
-                    .setNegativeButton(locText(ctx, "取消", "取消", "Cancel"), null)
-                    .show();
-            Button neg = dlg.getButton(AlertDialog.BUTTON_NEGATIVE);
-            if (neg != null) neg.setTextColor(isNight ? 0xFFB8B8B8 : 0xFF666666);
-        } catch (Throwable t) {
-            XposedCompat.debug("showCodecDialog failed: " + t.getMessage());
-        }
+        return SoundConnectSheets.HostStage.fromContext(ctx);
     }
 
     private static void launchModuleApp(Context ctx) {
@@ -773,31 +636,6 @@ public final class ColorOsNativeExtraPrefsHelper {
             ctx.startActivity(intent);
         } catch (Throwable t) {
             XposedCompat.debug("launchModuleApp failed: " + t.getMessage());
-        }
-    }
-
-    private interface BoolCallback {
-        void onChanged(boolean newValue);
-    }
-
-    private static void setOnChangeListener(Object pref, ClassLoader cl, BoolCallback cb) {
-        try {
-            Class<?> listenerCls = XposedCompat.findClassIfExists(
-                    "androidx.preference.Preference$c", cl);
-            if (listenerCls == null) return;
-            Object proxy = Proxy.newProxyInstance(
-                    cl,
-                    new Class<?>[]{listenerCls},
-                    (p, method, args) -> {
-                        if ("a".equals(method.getName()) && !sUpdatingFromState
-                                && args != null && args.length >= 2 && args[1] instanceof Boolean) {
-                            cb.onChanged((Boolean) args[1]);
-                        }
-                        return Boolean.TRUE;
-                    });
-            Method m = findMethod(pref.getClass(), "G0", listenerCls);
-            if (m != null) m.invoke(pref, proxy);
-        } catch (Throwable ignored) {
         }
     }
 
@@ -903,10 +741,6 @@ public final class ColorOsNativeExtraPrefsHelper {
 
     private static void setPrefEnabled(Object pref, boolean enabled) {
         invokeBool(pref, "x0", enabled);
-    }
-
-    private static void setSwitchChecked(Object pref, boolean checked) {
-        invokeBool(pref, "W0", checked);
     }
 
     private static void setCouiAssignment(Object pref, CharSequence value) {

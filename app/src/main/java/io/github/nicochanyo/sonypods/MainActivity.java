@@ -2,11 +2,11 @@ package io.github.nicochanyo.sonypods;
 
 import android.animation.ValueAnimator;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -15,10 +15,9 @@ import android.content.pm.PackageInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -26,18 +25,24 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.text.Html;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.animation.OvershootInterpolator;
 import android.view.animation.PathInterpolator;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -56,6 +61,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -63,6 +69,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.github.libxposed.service.XposedProvider;
 
@@ -93,6 +101,8 @@ public class MainActivity extends Activity {
     private static final PathInterpolator FLUID_EASE = new PathInterpolator(0.22f, 1.0f, 0.36f, 1.0f);
     private static final OvershootInterpolator ICON_SPRING = new OvershootInterpolator(1.25f);
     private static final OvershootInterpolator NAV_SPRING_BACK = new OvershootInterpolator(1.15f);
+    private static final float COLLAPSED_TITLE_SCALE = 0.70f;
+    private static final float SUBTITLE_FADE_END_PROGRESS = 0.48f;
 
     private static int sPendingTabAfterRecreate = -1;
 
@@ -111,10 +121,20 @@ public class MainActivity extends Activity {
     private final AtomicInteger syncGeneration = new AtomicInteger(0);
     private final Runnable debouncedSync = this::syncRemoteAsync;
 
-    // Header
+    // Header & Progressive Blur
+    private ProgressiveBlurFrameLayout layoutRootBlur;
+    private TopGradientBlurView vTopHeaderBlur;
     private View layoutHeader;
     private TextView tvPageTitle;
     private TextView tvPageSubtitle;
+    private ValueAnimator headerCollapseAnimator;
+    private ValueAnimator subtitleTabFadeAnimator;
+    private float headerCollapseProgress;
+    private float subtitleTabAlpha = 1f;
+    private int statusBarTopPx;
+    private int headerTitleShiftPx;
+    private int headerSubtitleShiftPx;
+    private int headerCollapseRangePx;
 
     // Pages & Swipe
     private View layoutPageContainer;
@@ -161,10 +181,14 @@ public class MainActivity extends Activity {
     private TextView tvAsmLevelVal;
     private SeekBar sbAsmLevel;
     private Switch swVoiceFocus;
-    private View rowSpeakToChat;
-    private Switch swSpeakToChat;
-    private View rowDsee;
-    private Switch swDsee;
+    private View rowScSound;
+    private View rowScInteraction;
+    private View rowScConnection;
+    private View rowScPower;
+    private TextView tvScSoundVal;
+    private TextView tvScInteractionVal;
+    private TextView tvScConnectionVal;
+    private TextView tvScPowerVal;
     private TextView tvCycleModeVal;
     private Switch swHandover;
     private TextView tvCatalogStatus;
@@ -313,6 +337,18 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        syncActiveHeaderToScrollNow();
+    }
+
+    @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        syncActiveHeaderToScrollNow();
+    }
+
+    @Override
     protected void onDestroy() {
         XposedProvider.setConnectionListener(null);
         mainHandler.removeCallbacks(debouncedSync);
@@ -320,6 +356,16 @@ public class MainActivity extends Activity {
             navPillMorphAnimator.cancel();
             navPillMorphAnimator = null;
         }
+        if (headerCollapseAnimator != null) {
+            headerCollapseAnimator.cancel();
+            headerCollapseAnimator = null;
+        }
+        if (subtitleTabFadeAnimator != null) {
+            subtitleTabFadeAnimator.cancel();
+            subtitleTabFadeAnimator = null;
+        }
+        if (tvPageTitle != null) tvPageTitle.animate().cancel();
+        if (tvPageSubtitle != null) tvPageSubtitle.animate().cancel();
         if (layoutBottomNav != null) layoutBottomNav.animate().cancel();
         if (vNavSlidingPill != null) vNavSlidingPill.animate().cancel();
         syncExecutor.shutdownNow();
@@ -365,7 +411,12 @@ public class MainActivity extends Activity {
     }
 
     private boolean isSwipeEligibleTouch(float rawX, float rawY) {
-        if (layoutPageContainer == null || !isPointInView(layoutPageContainer, rawX, rawY)) {
+        if (rawY < statusBarTopPx) {
+            return false;
+        }
+        if (layoutPageContainer == null || !layoutPageContainer.isShown()
+                || SoundConnectSheets.hasActiveStage(this)
+                || !isPointInView(layoutPageContainer, rawX, rawY)) {
             return false;
         }
         if (isPointInView(layoutBottomNavContainer, rawX, rawY)) {
@@ -423,15 +474,28 @@ public class MainActivity extends Activity {
 
     private void applyInsetsPadding() {
         final int headerPadH = dp(24);
-        final int headerTopBase = dp(38);
-        final int headerBotBase = dp(22);
+        final int headerTopBase = dp(28);
+        final int headerBotBase = dp(16);
+        headerTitleShiftPx = dp(24);
+        headerSubtitleShiftPx = dp(26);
+        headerCollapseRangePx = dp(64);
 
         layoutHeader.setOnApplyWindowInsetsListener((v, insets) -> {
             int top = Build.VERSION.SDK_INT >= 30
                     ? insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()).top
                     : insets.getSystemWindowInsetTop();
+            statusBarTopPx = top;
             v.setPadding(headerPadH, top + headerTopBase, headerPadH, headerBotBase);
+            if (vTopHeaderBlur != null) {
+                vTopHeaderBlur.setStatusBarTopPx(top);
+            }
+            syncHeaderGeometryAndScrollPadding();
             return insets;
+        });
+        layoutHeader.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            if ((bottom - top) != (oldBottom - oldTop)) {
+                syncHeaderGeometryAndScrollPadding();
+            }
         });
         layoutHeader.requestApplyInsets();
 
@@ -454,7 +518,110 @@ public class MainActivity extends Activity {
         layoutBottomNavContainer.requestApplyInsets();
     }
 
+    private void syncHeaderGeometryAndScrollPadding() {
+        if (layoutHeader == null) return;
+        int headerH = layoutHeader.getHeight();
+        if (headerH > 0) {
+            int contentTopPad = headerH + dp(2);
+            for (View page : pages) {
+                if (page instanceof ViewGroup && ((ViewGroup) page).getChildCount() > 0) {
+                    View inner = ((ViewGroup) page).getChildAt(0);
+                    if (inner.getPaddingTop() != contentTopPad) {
+                        inner.setPaddingRelative(
+                                inner.getPaddingStart(),
+                                contentTopPad,
+                                inner.getPaddingEnd(),
+                                inner.getPaddingBottom());
+                    }
+                }
+            }
+        }
+        if (vTopHeaderBlur != null && tvPageTitle != null && tvPageTitle.getHeight() > 0) {
+            int collapsedTitleH = Math.round(tvPageTitle.getHeight() * COLLAPSED_TITLE_SCALE);
+            int targetBlurH = statusBarTopPx + dp(4) + collapsedTitleH + dp(56);
+            ViewGroup.LayoutParams lp = vTopHeaderBlur.getLayoutParams();
+            if (lp != null && lp.height != targetBlurH) {
+                lp.height = targetBlurH;
+                vTopHeaderBlur.setLayoutParams(lp);
+            }
+        }
+        syncActiveHeaderToScrollNow();
+    }
+
+    private void syncActiveHeaderToScrollNow() {
+        View active = (activeTab >= 0 && activeTab < pages.length) ? pages[activeTab] : null;
+        if (active != null) {
+            active.post(() -> {
+                if (active == pages[activeTab]) {
+                    syncHeaderToScrollY(active.getScrollY(), false);
+                    if (vTopHeaderBlur != null) {
+                        vTopHeaderBlur.notifyTargetInvalidated();
+                    }
+                }
+            });
+            syncHeaderToScrollY(active.getScrollY(), false);
+        }
+        if (vTopHeaderBlur != null) {
+            vTopHeaderBlur.notifyTargetInvalidated();
+        }
+    }
+
+    private static float computeSubtitleAlpha(float collapseProgress) {
+        float t = Math.max(0f, Math.min(1f, collapseProgress / SUBTITLE_FADE_END_PROGRESS));
+        return Math.max(0f, Math.min(1f, 1f - (float) Math.pow(t, 1.35)));
+    }
+
+    private void applyHeaderCollapseProgress(float p) {
+        headerCollapseProgress = Math.max(0f, Math.min(1f, p));
+        if (tvPageTitle != null) {
+            float pivotX = (tvPageTitle.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL)
+                    ? tvPageTitle.getWidth() : 0f;
+            tvPageTitle.setPivotX(pivotX);
+            tvPageTitle.setPivotY(0f);
+            float scale = 1f - (1f - COLLAPSED_TITLE_SCALE) * headerCollapseProgress;
+            tvPageTitle.setScaleX(scale);
+            tvPageTitle.setScaleY(scale);
+            tvPageTitle.setTranslationY(-headerTitleShiftPx * headerCollapseProgress);
+        }
+        if (tvPageSubtitle != null) {
+            float subT = Math.max(0f, Math.min(1f, headerCollapseProgress / SUBTITLE_FADE_END_PROGRESS));
+            float neededTravelPx;
+            if (tvPageTitle != null && tvPageTitle.getHeight() > 0 && tvPageSubtitle.getTop() > tvPageTitle.getTop()) {
+                float scaleAtFade = 1f - (1f - COLLAPSED_TITLE_SCALE) * SUBTITLE_FADE_END_PROGRESS;
+                float titleBottomAtFade = tvPageTitle.getTop()
+                        - headerTitleShiftPx * SUBTITLE_FADE_END_PROGRESS
+                        + tvPageTitle.getHeight() * scaleAtFade;
+                float targetSubTopAtFade = titleBottomAtFade - dp(5);
+                neededTravelPx = Math.max(headerSubtitleShiftPx, tvPageSubtitle.getTop() - targetSubTopAtFade);
+            } else {
+                neededTravelPx = headerSubtitleShiftPx;
+            }
+            tvPageSubtitle.setTranslationY(-neededTravelPx * subT);
+            tvPageSubtitle.setAlpha(computeSubtitleAlpha(headerCollapseProgress) * subtitleTabAlpha);
+        }
+    }
+
+    private void syncHeaderToScrollY(int scrollY, boolean animate) {
+        float range = Math.max(1f, headerCollapseRangePx > 0 ? headerCollapseRangePx : dp(64));
+        float target = Math.max(0f, Math.min(1f, scrollY / range));
+        if (headerCollapseAnimator != null) {
+            headerCollapseAnimator.cancel();
+            headerCollapseAnimator = null;
+        }
+        if (!animate || Math.abs(target - headerCollapseProgress) < 0.005f) {
+            applyHeaderCollapseProgress(target);
+            return;
+        }
+        headerCollapseAnimator = ValueAnimator.ofFloat(headerCollapseProgress, target);
+        headerCollapseAnimator.setDuration(260L);
+        headerCollapseAnimator.setInterpolator(FLUID_EASE);
+        headerCollapseAnimator.addUpdateListener(anim -> applyHeaderCollapseProgress((Float) anim.getAnimatedValue()));
+        headerCollapseAnimator.start();
+    }
+
     private void bindViews() {
+        layoutRootBlur = findViewById(R.id.layoutRootBlur);
+        vTopHeaderBlur = findViewById(R.id.vTopHeaderBlur);
         layoutHeader = findViewById(R.id.layoutHeader);
         tvPageTitle = findViewById(R.id.tvPageTitle);
         tvPageSubtitle = findViewById(R.id.tvPageSubtitle);
@@ -463,6 +630,38 @@ public class MainActivity extends Activity {
         pages[TAB_HEADSET] = findViewById(R.id.pageHeadset);
         pages[TAB_INTEGRATION] = findViewById(R.id.pageIntegration);
         pages[TAB_ABOUT] = findViewById(R.id.pageAbout);
+
+        if (layoutRootBlur != null) {
+            layoutRootBlur.bindProgressiveBlur(R.id.layoutPageContainer, R.id.vTopHeaderBlur);
+        }
+        for (int i = 0; i < pages.length; i++) {
+            final int tabIdx = i;
+            if (pages[i] != null) {
+                pages[i].setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                    if (vTopHeaderBlur != null) {
+                        vTopHeaderBlur.notifyTargetInvalidated();
+                    }
+                    if (tabIdx == activeTab) {
+                        syncHeaderToScrollY(scrollY, false);
+                    }
+                });
+                pages[i].addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    if (tabIdx == activeTab) {
+                        syncHeaderToScrollY(v.getScrollY(), false);
+                        if (vTopHeaderBlur != null) {
+                            vTopHeaderBlur.notifyTargetInvalidated();
+                        }
+                    }
+                });
+                if (pages[i] instanceof CouiBounceScrollView) {
+                    ((CouiBounceScrollView) pages[i]).setOnOverscrollListener(translationY -> {
+                        if (vTopHeaderBlur != null) {
+                            vTopHeaderBlur.notifyTargetInvalidated();
+                        }
+                    });
+                }
+            }
+        }
 
         vBottomNavShadow = findViewById(R.id.vBottomNavShadow);
         layoutBottomNavContainer = findViewById(R.id.layoutBottomNavContainer);
@@ -484,6 +683,22 @@ public class MainActivity extends Activity {
         bindHeadsetViews();
         bindIntegrationViews();
         bindAboutViews();
+        applyCardOutlineClipping(pages[TAB_HEADSET]);
+        applyCardOutlineClipping(pages[TAB_INTEGRATION]);
+        applyCardOutlineClipping(pages[TAB_ABOUT]);
+    }
+
+    private static void applyCardOutlineClipping(View view) {
+        if (view instanceof LinearLayout && view.getBackground() instanceof GradientDrawable) {
+            view.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+            view.setClipToOutline(true);
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) view;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                applyCardOutlineClipping(vg.getChildAt(i));
+            }
+        }
     }
 
     private void bindHeadsetViews() {
@@ -505,10 +720,14 @@ public class MainActivity extends Activity {
         tvAsmLevelVal = findViewById(R.id.tvAsmLevelVal);
         sbAsmLevel = findViewById(R.id.sbAsmLevel);
         swVoiceFocus = findViewById(R.id.swVoiceFocus);
-        rowSpeakToChat = findViewById(R.id.rowSpeakToChat);
-        swSpeakToChat = findViewById(R.id.swSpeakToChat);
-        rowDsee = findViewById(R.id.rowDsee);
-        swDsee = findViewById(R.id.swDsee);
+        rowScSound = findViewById(R.id.rowScSound);
+        rowScInteraction = findViewById(R.id.rowScInteraction);
+        rowScConnection = findViewById(R.id.rowScConnection);
+        rowScPower = findViewById(R.id.rowScPower);
+        tvScSoundVal = findViewById(R.id.tvScSoundVal);
+        tvScInteractionVal = findViewById(R.id.tvScInteractionVal);
+        tvScConnectionVal = findViewById(R.id.tvScConnectionVal);
+        tvScPowerVal = findViewById(R.id.tvScPowerVal);
         tvCycleModeVal = findViewById(R.id.tvCycleModeVal);
         swHandover = findViewById(R.id.swHandover);
 
@@ -557,23 +776,22 @@ public class MainActivity extends Activity {
                     headsetState.mac, headsetState.ancMode, data.defaultAsmLevel, isChecked, false);
         });
 
-        rowSpeakToChat.setOnClickListener(v -> swSpeakToChat.toggle());
-        swSpeakToChat.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (suppressUiCallbacks) return;
-            headsetState.speakToChat = isChecked;
-            ConfigStore.sendCommandBroadcast(this, ConfigStore.CMD_SET_SPEAK_TO_CHAT,
-                    headsetState.mac, headsetState.ancMode, headsetState.asmLevel, headsetState.voiceFocus, isChecked);
-        });
+        bindSoundConnectCategoryRow(rowScSound, () -> SoundConnectSheets.showSoundAndEqSheet(
+                this, this, CouiBottomSheet.Palette.fromModuleTheme(this),
+                () -> mainHandler.postDelayed(this::refreshHeadsetStateUi, 240L)));
+        bindSoundConnectCategoryRow(rowScInteraction, () -> SoundConnectSheets.showTouchAndSmartSheet(
+                this, this, CouiBottomSheet.Palette.fromModuleTheme(this),
+                () -> mainHandler.postDelayed(this::refreshHeadsetStateUi, 240L)));
+        bindSoundConnectCategoryRow(rowScConnection, () -> SoundConnectSheets.showConnectionAndMultipointSheet(
+                this, this, CouiBottomSheet.Palette.fromModuleTheme(this),
+                () -> mainHandler.postDelayed(this::refreshHeadsetStateUi, 240L)));
+        bindSoundConnectCategoryRow(rowScPower, () -> SoundConnectSheets.showPowerAndSystemSheet(
+                this, this, CouiBottomSheet.Palette.fromModuleTheme(this),
+                () -> mainHandler.postDelayed(this::refreshHeadsetStateUi, 240L)));
 
-        rowDsee.setOnClickListener(v -> swDsee.toggle());
-        swDsee.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (suppressUiCallbacks) return;
-            headsetState.dsee = isChecked;
-            ConfigStore.sendCommandBroadcast(this, ConfigStore.CMD_SET_DSEE,
-                    headsetState.mac, headsetState.ancMode, headsetState.asmLevel, headsetState.voiceFocus, isChecked);
-        });
-
-        findViewById(R.id.rowCycleMode).setOnClickListener(v -> showCycleModeDialog());
+        View rowCycleMode = findViewById(R.id.rowCycleMode);
+        CouiBottomSheet.trackTouchPoint(rowCycleMode);
+        rowCycleMode.setOnClickListener(v -> showCycleModeDialog(v));
         findViewById(R.id.rowHandover).setOnClickListener(v -> swHandover.toggle());
         swHandover.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (suppressUiCallbacks) return;
@@ -625,7 +843,8 @@ public class MainActivity extends Activity {
         bindSwitchRow(R.id.rowVendorBypass, swVendorBypass, v -> data.vendorBypass = v);
         bindSwitchRow(R.id.rowMelodyChannel, swMelodyChannel, v -> data.melodyChannel = v);
         bindSwitchRow(R.id.rowOpenCasePopup, swOpenCasePopup, v -> data.openCasePopup = v);
-        rowOpenPopupMode.setOnClickListener(v -> showOpenPopupModeDialog());
+        CouiBottomSheet.trackTouchPoint(rowOpenPopupMode);
+        rowOpenPopupMode.setOnClickListener(v -> showOpenPopupModeDialog(v));
         bindSwitchRow(R.id.rowSuppressNativePairing, swSuppressNativePairing, v -> data.suppressNativePairing = v);
 
         findViewById(R.id.rowRootStatus).setOnClickListener(v -> refreshRootStatusAsync());
@@ -672,8 +891,13 @@ public class MainActivity extends Activity {
         tvSysVersion.setText("Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
         tvDeviceModel.setText(Build.MANUFACTURER + " " + Build.MODEL);
 
-        findViewById(R.id.rowAboutLanguage).setOnClickListener(v -> showLanguageDialog());
-        findViewById(R.id.rowAboutDarkMode).setOnClickListener(v -> showDarkModeDialog());
+        View rowAboutLanguage = findViewById(R.id.rowAboutLanguage);
+        CouiBottomSheet.trackTouchPoint(rowAboutLanguage);
+        rowAboutLanguage.setOnClickListener(v -> showLanguageDialog(v));
+
+        View rowAboutDarkMode = findViewById(R.id.rowAboutDarkMode);
+        CouiBottomSheet.trackTouchPoint(rowAboutDarkMode);
+        rowAboutDarkMode.setOnClickListener(v -> showDarkModeDialog(v));
         findViewById(R.id.rowAboutChangelog).setOnClickListener(v -> showChangelogDialog());
         findViewById(R.id.rowAboutCheckUpdate).setOnClickListener(v -> checkUpdateFromLsposedRepo(true));
 
@@ -752,17 +976,51 @@ public class MainActivity extends Activity {
             tvAsmLevelVal.setText(String.valueOf(asm));
             sbAsmLevel.setProgress(Math.max(0, Math.min(19, asm - 1)));
             swVoiceFocus.setChecked(headsetState.connected ? headsetState.voiceFocus : data.defaultVoiceFocus);
-            swSpeakToChat.setChecked(headsetState.speakToChat);
-            swDsee.setChecked(headsetState.dsee);
 
-            rowSpeakToChat.setAlpha(headsetState.connected ? 1.0f : 0.55f);
-            swSpeakToChat.setEnabled(headsetState.connected);
-            rowDsee.setAlpha(headsetState.connected ? 1.0f : 0.55f);
-            swDsee.setEnabled(headsetState.connected);
+            ConfigStore.CodecState cs = ConfigStore.readGlobalCodecState(this);
+            updateCategoryRowState(rowScSound, tvScSoundVal,
+                    SoundConnectSheets.hasSoundFeatures(headsetState),
+                    SoundConnectSheets.formatSoundSummary(this, headsetState));
+            updateCategoryRowState(rowScInteraction, tvScInteractionVal,
+                    SoundConnectSheets.hasInteractionFeatures(headsetState),
+                    SoundConnectSheets.formatInteractionSummary(this, headsetState));
+            updateCategoryRowState(rowScConnection, tvScConnectionVal,
+                    SoundConnectSheets.hasConnectionFeatures(headsetState, cs, headsetState.mac),
+                    SoundConnectSheets.formatConnectionSummary(this, headsetState, cs));
+            updateCategoryRowState(rowScPower, tvScPowerVal,
+                    SoundConnectSheets.hasPowerFeatures(headsetState),
+                    SoundConnectSheets.formatPowerSummary(this, headsetState));
 
             updateArtworkPreviewAsync(effectiveModel, headsetState.colorCode);
         } finally {
             suppressUiCallbacks = false;
+        }
+    }
+
+    private void bindSoundConnectCategoryRow(View row, Runnable openAction) {
+        if (row == null) return;
+        row.setOnClickListener(v -> {
+            headsetState = ConfigStore.readGlobalState(this);
+            if (!headsetState.connected) {
+                Toast.makeText(this, R.string.toast_headset_not_connected, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            openAction.run();
+        });
+    }
+
+    private void updateCategoryRowState(View row, TextView valTv, boolean available, String summary) {
+        if (row != null) {
+            row.setAlpha(available ? 1.0f : 0.55f);
+        }
+        if (valTv != null) {
+            if (!headsetState.connected) {
+                valTv.setText(R.string.sc_status_offline);
+            } else if (summary != null && !summary.isEmpty()) {
+                valTv.setText(summary);
+            } else {
+                valTv.setText(available ? "—" : getString(R.string.sc_status_offline));
+            }
         }
     }
 
@@ -900,36 +1158,40 @@ public class MainActivity extends Activity {
     }
 
     private void showModelOverrideDialog() {
-        EditText input = new EditText(this);
-        input.setSingleLine(true);
-        input.setHint(R.string.dialog_model_override_hint);
-        if (data.customModelOverride != null) {
-            input.setText(data.customModelOverride);
-            input.setSelection(data.customModelOverride.length());
-        }
-        int pad = dp(20);
-        android.widget.FrameLayout container = new android.widget.FrameLayout(this);
-        container.setPadding(pad, dp(8), pad, 0);
-        container.addView(input);
+        final CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        final CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
+        CouiBottomSheet.addHeader(
+                this, sheet.card, pal,
+                getString(R.string.dialog_model_override_title),
+                getString(R.string.dialog_model_override_sub),
+                null);
 
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_model_override_title)
-                .setView(container)
-                .setPositiveButton(android.R.string.ok, (d, w) -> {
+        final String curModel = data.customModelOverride != null ? data.customModelOverride.trim() : "";
+        final EditText input = CouiBottomSheet.addPillInputBox(this, sheet.card, pal, curModel,
+                getString(R.string.dialog_model_override_hint));
+
+        final String autoLabel = getString(R.string.model_override_auto);
+        final String[] presets = {
+                "", "WF-1000XM4", "WF-1000XM5",
+                "WH-1000XM4", "WH-1000XM5", "LinkBuds S", "ULT WEAR"
+        };
+        final String[] labels = new String[presets.length];
+        for (int i = 0; i < presets.length; i++) {
+            labels[i] = presets[i].isEmpty() ? autoLabel : presets[i];
+        }
+        CouiBottomSheet.addChipFlowGroup(this, sheet.card, pal, labels, presets, input);
+
+        CouiBottomSheet.addButtonRow(
+                this, sheet.card, pal,
+                getString(R.string.btn_cancel), 0, v -> sheet.dialog.dismiss(),
+                getString(R.string.btn_apply), 1, v -> {
                     data.customModelOverride = input.getText().toString().trim();
                     persistImmediate();
                     syncUiState();
                     refreshHeadsetStateUi();
-                })
-                .setNeutralButton(R.string.model_override_auto, (d, w) -> {
-                    data.customModelOverride = "";
-                    persistImmediate();
-                    syncUiState();
-                    refreshHeadsetStateUi();
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-        DynamicThemeHelper.tintAlertDialog(dlg, this);
+                    sheet.dialog.dismiss();
+                });
+        sheet.dialog.show();
     }
 
     private void refreshRootStatusAsync() {
@@ -969,7 +1231,7 @@ public class MainActivity extends Activity {
                 ScopeRestarter.PKG_SYSTEMUI,
                 ScopeRestarter.PKG_SOUND_CONNECT
         };
-        final String[] labels = {
+        final String[] rawLabels = {
                 getString(R.string.scope_pkg_bluetooth),
                 getString(R.string.scope_pkg_mydevices),
                 getString(R.string.scope_pkg_wireless),
@@ -981,10 +1243,55 @@ public class MainActivity extends Activity {
         };
         final boolean[] checked = { true, true, true, true, true, false, false, false };
 
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_restart_custom_title)
-                .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> checked[which] = isChecked)
-                .setPositiveButton(R.string.btn_restart_selected, (dialog, which) -> {
+        final CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        final CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
+        final TextView countBadge = CouiBottomSheet.addHeader(
+                this, sheet.card, pal,
+                getString(R.string.dialog_restart_custom_title),
+                getString(R.string.dialog_restart_custom_sub),
+                "5 / " + pkgs.length);
+
+        ScrollView scroll = CouiBottomSheet.createMaxHeightScrollView(
+                this, Math.round(getResources().getDisplayMetrics().heightPixels * 0.44f));
+        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        scrollLp.topMargin = dp(14);
+        LinearLayout group = CouiBottomSheet.createSubcardGroup(this, pal);
+        scroll.addView(group);
+        sheet.card.addView(scroll, scrollLp);
+
+        final CouiBottomSheet.CheckBadgeView[] badges = new CouiBottomSheet.CheckBadgeView[pkgs.length];
+        for (int i = 0; i < pkgs.length; i++) {
+            final int idx = i;
+            String raw = rawLabels[i];
+            int paren = raw.indexOf(" (");
+            String title = paren > 0 ? raw.substring(0, paren).trim() : raw;
+            String subtitle = pkgs[i];
+            if (ScopeRestarter.PKG_SYSTEMUI.equals(pkgs[i]) && paren > 0) {
+                int dot = raw.indexOf("·", paren);
+                if (dot > 0) {
+                    String note = raw.substring(dot + 1).replace(")", "").trim();
+                    subtitle = pkgs[i] + " · " + note;
+                }
+            }
+            badges[i] = CouiBottomSheet.addCheckRow(
+                    this, group, pal, title, subtitle, checked[i], i < pkgs.length - 1, v -> {
+                        checked[idx] = !checked[idx];
+                        badges[idx].setChecked(checked[idx]);
+                        int selCount = 0;
+                        for (boolean b : checked) {
+                            if (b) selCount++;
+                        }
+                        if (countBadge != null) {
+                            countBadge.setText(selCount + " / " + pkgs.length);
+                        }
+                    });
+        }
+
+        CouiBottomSheet.addButtonRow(
+                this, sheet.card, pal,
+                getString(R.string.btn_cancel), 0, v -> sheet.dialog.dismiss(),
+                getString(R.string.btn_restart_selected), 1, v -> {
                     List<String> selected = new ArrayList<>();
                     boolean hasSysUi = false;
                     for (int i = 0; i < pkgs.length; i++) {
@@ -996,25 +1303,32 @@ public class MainActivity extends Activity {
                         }
                     }
                     if (selected.isEmpty()) return;
+                    sheet.dialog.dismiss();
                     if (hasSysUi) {
                         confirmAndRestartSelected(selected);
                     } else {
                         executeRestartSelected(selected);
                     }
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-        DynamicThemeHelper.tintAlertDialog(dlg, this);
+                });
+        sheet.dialog.show();
     }
 
     private void confirmAndRestartSelected(List<String> selected) {
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_restart_custom_title)
-                .setMessage(R.string.dialog_restart_confirm_sysui)
-                .setPositiveButton(R.string.btn_restart_selected, (d, w) -> executeRestartSelected(selected))
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-        DynamicThemeHelper.tintAlertDialog(dlg, this);
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
+        CouiBottomSheet.addHeader(
+                this, sheet.card, pal,
+                getString(R.string.dialog_restart_custom_title),
+                getString(R.string.dialog_restart_confirm_sysui),
+                null);
+        CouiBottomSheet.addButtonRow(
+                this, sheet.card, pal,
+                getString(R.string.btn_cancel), 0, v -> sheet.dialog.dismiss(),
+                getString(R.string.btn_restart_selected), 2, v -> {
+                    sheet.dialog.dismiss();
+                    executeRestartSelected(selected);
+                });
+        sheet.dialog.show();
     }
 
     private void executeRestartSelected(List<String> selected) {
@@ -1028,41 +1342,32 @@ public class MainActivity extends Activity {
         });
     }
 
-    private void showCycleModeDialog() {
+    private void showCycleModeDialog(View anchor) {
         String[] labels = {getString(R.string.cycle_mode_3way), getString(R.string.cycle_mode_2way)};
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_cycle_mode_title)
-                .setSingleChoiceItems(labels, data.cycleMode == ConfigStore.CYCLE_2WAY ? 1 : 0, (dialog, which) -> {
+        int cur = data.cycleMode == ConfigStore.CYCLE_2WAY ? 1 : 0;
+        CouiBottomSheet.showPopupMenu(this, anchor, CouiBottomSheet.Palette.fromModuleTheme(this),
+                labels, cur, which -> {
                     data.cycleMode = which == 1 ? ConfigStore.CYCLE_2WAY : ConfigStore.CYCLE_3WAY;
                     persistImmediate();
-                    dialog.dismiss();
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-        DynamicThemeHelper.tintAlertDialog(dlg, this);
+                });
     }
 
-    private void showOpenPopupModeDialog() {
+    private void showOpenPopupModeDialog(View anchor) {
         String[] labels = {
                 getString(R.string.popup_mode_pairing_only_desc),
                 getString(R.string.popup_mode_pairing_and_connect_desc)
         };
         int cur = data.openCasePopupMode == ConfigStore.POPUP_MODE_PAIRING_AND_CONNECT ? 1 : 0;
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_open_popup_mode_title)
-                .setSingleChoiceItems(labels, cur, (dialog, which) -> {
+        CouiBottomSheet.showPopupMenu(this, anchor, CouiBottomSheet.Palette.fromModuleTheme(this),
+                labels, cur, which -> {
                     data.openCasePopupMode = which == 1
                             ? ConfigStore.POPUP_MODE_PAIRING_AND_CONNECT
                             : ConfigStore.POPUP_MODE_PAIRING_ONLY;
                     persistImmediate();
-                    dialog.dismiss();
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-        DynamicThemeHelper.tintAlertDialog(dlg, this);
+                });
     }
 
-    private void showLanguageDialog() {
+    private void showLanguageDialog(View anchor) {
         final String[] codes = {
                 ConfigStore.LANG_SYSTEM,
                 ConfigStore.LANG_ZH_TW,
@@ -1081,89 +1386,169 @@ public class MainActivity extends Activity {
         for (int i = 0; i < codes.length; i++) {
             if (codes[i].equals(cur)) idx = i;
         }
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_language_title)
-                .setSingleChoiceItems(names, idx, (dialog, which) -> {
+        CouiBottomSheet.showPopupMenu(this, anchor, CouiBottomSheet.Palette.fromModuleTheme(this),
+                names, idx, which -> {
                     String chosen = codes[which];
-                    dialog.dismiss();
                     if (!chosen.equals(cur)) {
                         ConfigStore.setAppLanguage(this, chosen);
                         sPendingTabAfterRecreate = activeTab;
                         recreate();
                     }
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-        DynamicThemeHelper.tintAlertDialog(dlg, this);
+                });
     }
 
-    private void showDarkModeDialog() {
+    private void showDarkModeDialog(View anchor) {
         String[] names = {
                 getString(R.string.dark_mode_system),
                 getString(R.string.dark_mode_light),
                 getString(R.string.dark_mode_dark)
         };
         int cur = ConfigStore.getAppDarkMode(this);
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_dark_mode_title)
-                .setSingleChoiceItems(names, cur, (dialog, which) -> {
-                    ConfigStore.setAppDarkMode(this, which);
-                    dialog.dismiss();
-                    sPendingTabAfterRecreate = activeTab;
-                    recreate();
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-        DynamicThemeHelper.tintAlertDialog(dlg, this);
+        CouiBottomSheet.showPopupMenu(this, anchor, CouiBottomSheet.Palette.fromModuleTheme(this),
+                names, cur, which -> {
+                    if (which != cur) {
+                        ConfigStore.setAppDarkMode(this, which);
+                        sPendingTabAfterRecreate = activeTab;
+                        recreate();
+                    }
+                });
+    }
+
+    private void addDiagnosticRow(LinearLayout group, CouiBottomSheet.Palette pal,
+                                  String label, String value, boolean addDivider) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(14), dp(11), dp(14), dp(11));
+
+        TextView kTv = new TextView(this);
+        kTv.setText(label);
+        kTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+        kTv.setTextColor(pal.textSecondary);
+        row.addView(kTv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView vTv = new TextView(this);
+        vTv.setText(value);
+        vTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+        vTv.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        vTv.setTextColor(pal.textPrimary);
+        vTv.setGravity(Gravity.END);
+        LinearLayout.LayoutParams vLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        vLp.setMarginStart(dp(12));
+        row.addView(vTv, vLp);
+
+        group.addView(row, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        if (addDivider) {
+            CouiBottomSheet.addDivider(this, group, pal, 14);
+        }
     }
 
     private void showDiagnosticsDialog() {
         ConfigStore.HeadsetState st = ConfigStore.readGlobalState(this);
-        StringBuilder sb = new StringBuilder();
-        sb.append("Xposed Service: ").append(xspActive ? "Connected (API 102)" : "Not Connected").append('\n');
-        sb.append("Headset Connected: ").append(st.connected).append('\n');
-        sb.append("Name / Model / MAC: ").append(st.name).append(" / ").append(st.effectiveModelName())
-                .append(" / ").append(st.mac).append('\n');
-        sb.append("Color Code: ").append(st.colorCode >= 0 ? String.format(Locale.US, "0x%02X", st.colorCode) : "unknown").append('\n');
-        sb.append("Protocol: Tandem V").append(st.protocolVersion)
-                .append(" (NCASM=0x").append(Integer.toHexString(st.ncAsmInquiredType))
-                .append(", S2C=0x").append(Integer.toHexString(Math.max(0, st.speakToChatInquiredType)))
-                .append(")\n");
-        sb.append("Battery: L=").append(st.leftBattery).append("% R=").append(st.rightBattery)
-                .append("% Case=").append(st.caseBattery).append("% Single=").append(st.singleBattery).append("%\n");
-        sb.append("Mode: ").append(st.formatModeLabel(this))
-                .append(" (ASM=").append(st.asmLevel)
-                .append(", VF=").append(st.voiceFocus)
-                .append(", S2C=").append(st.speakToChat)
-                .append(", DSEE=").append(st.dsee).append(")\n");
-        sb.append("Catalog Cached: ").append(SonyModelImageManager.getCatalogCount(this))
-                .append(", Custom PNG: ").append(SonyModelImageManager.hasCustomOverride(this)).append('\n');
+        String protoStr = "Tandem V" + st.protocolVersion
+                + " (0x" + Integer.toHexString(st.ncAsmInquiredType)
+                + ", S2C 0x" + Integer.toHexString(Math.max(0, st.speakToChatInquiredType)) + ")";
+        String devStr = st.connected
+                ? (st.effectiveModelName() + " · " + st.mac
+                        + (st.colorCode >= 0 ? String.format(Locale.US, " · 0x%02X", st.colorCode) : ""))
+                : getString(R.string.headset_disconnected_title);
+        String batStr = "L=" + st.leftBattery + "% R=" + st.rightBattery
+                + "% Case=" + st.caseBattery + "% S=" + st.singleBattery + "%";
+        String modeStr = st.formatModeLabel(this)
+                + " (ASM=" + st.asmLevel + ", VF=" + st.voiceFocus
+                + ", S2C=" + st.speakToChat + ", DSEE=" + st.dsee + ")";
+        String artStr = SonyModelImageManager.getCatalogCount(this)
+                + (SonyModelImageManager.hasCustomOverride(this) ? " · Custom PNG" : "");
+
+        StringBuilder fullDump = new StringBuilder();
+        fullDump.append("Xposed Service: ").append(xspActive ? "Connected (API 102)" : "Not Connected").append('\n');
+        fullDump.append("Device: ").append(devStr).append('\n');
+        fullDump.append("Protocol: ").append(protoStr).append('\n');
+        fullDump.append("Battery: ").append(batStr).append('\n');
+        fullDump.append("Mode: ").append(modeStr).append('\n');
+        fullDump.append("Catalog: ").append(artStr).append('\n');
         String recent = XposedCompat.dumpRecentLogs();
         if (!recent.isEmpty()) {
-            sb.append("\n--- App Process Logs ---\n").append(recent);
+            fullDump.append("\n--- App Process Logs ---\n").append(recent);
+        }
+        final String copyText = fullDump.toString();
+
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
+        CouiBottomSheet.addHeader(
+                this, sheet.card, pal,
+                getString(R.string.dialog_logs_title),
+                null,
+                xspActive ? "API 102" : "Offline");
+
+        ScrollView scroll = CouiBottomSheet.createMaxHeightScrollView(
+                this, Math.round(getResources().getDisplayMetrics().heightPixels * 0.46f));
+        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        scrollLp.topMargin = dp(14);
+        LinearLayout bodyCol = new LinearLayout(this);
+        bodyCol.setOrientation(LinearLayout.VERTICAL);
+        scroll.addView(bodyCol);
+        sheet.card.addView(scroll, scrollLp);
+
+        LinearLayout infoCard = CouiBottomSheet.createSubcardGroup(this, pal);
+        addDiagnosticRow(infoCard, pal, "Device", devStr, true);
+        addDiagnosticRow(infoCard, pal, "Protocol", protoStr, true);
+        addDiagnosticRow(infoCard, pal, "Battery", batStr, true);
+        addDiagnosticRow(infoCard, pal, "Mode", modeStr, true);
+        addDiagnosticRow(infoCard, pal, "Artwork", artStr, false);
+        bodyCol.addView(infoCard, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        if (!recent.isEmpty()) {
+            LinearLayout logCard = CouiBottomSheet.createSubcardGroup(this, pal);
+            logCard.setPadding(dp(12), dp(10), dp(12), dp(10));
+            TextView logTv = new TextView(this);
+            logTv.setText(recent);
+            logTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
+            logTv.setTypeface(Typeface.MONOSPACE);
+            logTv.setTextColor(pal.textSecondary);
+            logTv.setLineSpacing(0f, 1.25f);
+            logCard.addView(logTv);
+            LinearLayout.LayoutParams logLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            logLp.topMargin = dp(10);
+            bodyCol.addView(logCard, logLp);
         }
 
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_logs_title)
-                .setMessage(sb.toString())
-                .setPositiveButton(R.string.btn_close, null)
-                .show();
-        DynamicThemeHelper.tintAlertDialog(dlg, this);
+        CouiBottomSheet.addButtonRow(
+                this, sheet.card, pal,
+                getString(R.string.btn_copy_logs), 0, v -> {
+                    ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(ClipData.newPlainText("SonyPods Diagnostics", copyText));
+                        Toast.makeText(this, R.string.toast_copied, Toast.LENGTH_SHORT).show();
+                    }
+                },
+                getString(R.string.btn_close), 1, v -> sheet.dialog.dismiss());
+        sheet.dialog.show();
     }
 
     private void showResetAllDialog() {
-        AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_reset_all_title)
-                .setMessage(R.string.dialog_reset_all_msg)
-                .setPositiveButton(R.string.btn_confirm_reset, (d, w) -> {
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
+        CouiBottomSheet.addHeader(
+                this, sheet.card, pal,
+                getString(R.string.dialog_reset_all_title),
+                getString(R.string.dialog_reset_all_msg),
+                null);
+        CouiBottomSheet.addButtonRow(
+                this, sheet.card, pal,
+                getString(R.string.btn_cancel), 0, v -> sheet.dialog.dismiss(),
+                getString(R.string.btn_confirm_reset), 2, v -> {
+                    sheet.dialog.dismiss();
                     data = ConfigStore.createDefaults();
                     persistImmediate();
                     refreshHeadsetStateUi();
                     Toast.makeText(this, R.string.toast_reset_done, Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-        DynamicThemeHelper.tintAlertDialog(dlg, this);
+                });
+        sheet.dialog.show();
     }
 
     private void syncUiState() {
@@ -1182,8 +1567,12 @@ public class MainActivity extends Activity {
                 tvAboutChannel.setText(R.string.channel_private_warn);
             }
 
-            tvCycleModeVal.setText(data.cycleMode == ConfigStore.CYCLE_2WAY
+            String cycleLabel = getString(data.cycleMode == ConfigStore.CYCLE_2WAY
                     ? R.string.cycle_mode_2way : R.string.cycle_mode_3way);
+            if (!cycleLabel.startsWith("ANC")) {
+                cycleLabel = cycleLabel.replace(" ⇄ ", "⇄");
+            }
+            tvCycleModeVal.setText(cycleLabel);
             swHandover.setChecked(data.handover);
 
             int catCount = SonyModelImageManager.getCatalogCount(this);
@@ -1296,7 +1685,12 @@ public class MainActivity extends Activity {
                     p.setVisibility(View.VISIBLE);
                     p.setAlpha(0f);
                     p.setTranslationX(dir * dist);
-                    p.animate().translationX(0f).alpha(1f).setDuration(300L).setInterpolator(FLUID_EASE).start();
+                    p.animate().translationX(0f).alpha(1f).setDuration(300L).setInterpolator(FLUID_EASE)
+                            .setUpdateListener(anim -> {
+                                if (vTopHeaderBlur != null) {
+                                    vTopHeaderBlur.notifyTargetInvalidated();
+                                }
+                            }).start();
                 } else if (i == oldTab) {
                     p.setVisibility(View.VISIBLE);
                     p.animate().translationX(-dir * dist).alpha(0f).setDuration(270L).setInterpolator(FLUID_EASE)
@@ -1320,6 +1714,9 @@ public class MainActivity extends Activity {
                 pages[i].setAlpha(1f);
                 pages[i].setVisibility(i == targetTab ? View.VISIBLE : View.GONE);
             }
+            if (vTopHeaderBlur != null) {
+                vTopHeaderBlur.notifyTargetInvalidated();
+            }
         }
 
         if (targetTab == TAB_HEADSET) {
@@ -1333,20 +1730,40 @@ public class MainActivity extends Activity {
             tvPageSubtitle.setText(R.string.page_subtitle_about);
         }
 
-        if (animate && oldTab != targetTab) {
+        int targetScrollY = pages[targetTab] != null ? pages[targetTab].getScrollY() : 0;
+        boolean animHeader = animate && oldTab != targetTab;
+        if (subtitleTabFadeAnimator != null) {
+            subtitleTabFadeAnimator.cancel();
+            subtitleTabFadeAnimator = null;
+        }
+        if (animHeader) {
             tvPageTitle.animate().cancel();
             tvPageTitle.setTranslationX(dir * dp(18));
             tvPageTitle.setAlpha(0.25f);
             tvPageTitle.animate().translationX(0f).alpha(1f).setDuration(260L).setInterpolator(FLUID_EASE).start();
+
             tvPageSubtitle.animate().cancel();
             tvPageSubtitle.setTranslationX(dir * dp(14));
-            tvPageSubtitle.setAlpha(0.25f);
-            tvPageSubtitle.animate().translationX(0f).alpha(1f).setDuration(260L).setInterpolator(FLUID_EASE).start();
+            tvPageSubtitle.animate().translationX(0f).setDuration(260L).setInterpolator(FLUID_EASE).start();
+
+            subtitleTabAlpha = 0.25f;
+            syncHeaderToScrollY(targetScrollY, true);
+            subtitleTabFadeAnimator = ValueAnimator.ofFloat(0.25f, 1f);
+            subtitleTabFadeAnimator.setDuration(260L);
+            subtitleTabFadeAnimator.setInterpolator(FLUID_EASE);
+            subtitleTabFadeAnimator.addUpdateListener(anim -> {
+                subtitleTabAlpha = (Float) anim.getAnimatedValue();
+                if (tvPageSubtitle != null) {
+                    tvPageSubtitle.setAlpha(computeSubtitleAlpha(headerCollapseProgress) * subtitleTabAlpha);
+                }
+            });
+            subtitleTabFadeAnimator.start();
         } else {
             tvPageTitle.setTranslationX(0f);
             tvPageTitle.setAlpha(1f);
             tvPageSubtitle.setTranslationX(0f);
-            tvPageSubtitle.setAlpha(1f);
+            subtitleTabAlpha = 1f;
+            syncHeaderToScrollY(targetScrollY, false);
         }
         updateNavIndicator(oldTab, targetTab, dir, animate, fromNavDrag);
     }
@@ -1608,90 +2025,58 @@ public class MainActivity extends Activity {
     }
 
     private void showChangelogDialog() {
-        final Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.createCenter(this, pal);
+        CouiBottomSheet.addHeader(
+                this, sheet.card, pal,
+                getString(R.string.dialog_changelog_title),
+                null,
+                formatVerLabel(getInstalledVersionName()));
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundResource(R.drawable.bg_coui_card);
-        root.setPadding(dp(20), dp(20), dp(20), dp(18));
-
-        TextView tvTitle = new TextView(this);
-        tvTitle.setText(R.string.dialog_changelog_title);
-        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f);
-        tvTitle.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        tvTitle.setTextColor(ConfigStore.resolveThemeColor(this, R.attr.couiTextPrimary, R.color.coui_text_primary));
-        root.addView(tvTitle);
-
-        ScrollView scroll = new ScrollView(this);
-        scroll.setVerticalScrollBarEnabled(false);
+        ScrollView scroll = CouiBottomSheet.createMaxHeightScrollView(
+                this, Math.round(getResources().getDisplayMetrics().heightPixels * 0.46f));
         LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         scrollLp.topMargin = dp(14);
         LinearLayout list = new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(list);
+        sheet.card.addView(scroll, scrollLp);
 
         int[] verTitles = new int[]{
+                R.string.changelog_v101_title,
                 R.string.changelog_v100_title
         };
         int[] verBodies = new int[]{
+                R.string.changelog_v101_body,
                 R.string.changelog_v100_body
         };
         for (int i = 0; i < verTitles.length; i++) {
-            addChangelogItem(list, verTitles[i], verBodies[i], i < verTitles.length - 1);
+            addChangelogItem(list, pal, getString(verTitles[i]), getString(verBodies[i]), i < verTitles.length - 1);
         }
 
-        root.addView(scroll, scrollLp);
-
-        Button btnClose = new Button(this);
-        btnClose.setText(R.string.btn_close);
-        btnClose.setAllCaps(false);
-        btnClose.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
-        btnClose.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        btnClose.setTextColor(DynamicThemeHelper.getOnAccent(this));
-        btnClose.setBackgroundResource(R.drawable.bg_coui_btn_primary);
-        btnClose.setStateListAnimator(null);
-        btnClose.setTag("accent_btn");
-        btnClose.setOnClickListener(v -> dialog.dismiss());
-        LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
-        btnLp.topMargin = dp(16);
-        root.addView(btnClose, btnLp);
-
-        DynamicThemeHelper.applyAccent(root, this);
-        dialog.setContentView(root);
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            int width = Math.round(getResources().getDisplayMetrics().widthPixels * 0.90f);
-            dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
-        }
-        dialog.show();
+        CouiBottomSheet.addSingleButton(this, sheet.card, pal,
+                getString(R.string.btn_close), 1, 16, v -> sheet.dialog.dismiss());
+        sheet.dialog.show();
     }
 
-    private void addChangelogItem(LinearLayout parent, int verTitleRes, int bodyRes, boolean addBottomMargin) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackgroundResource(R.drawable.bg_coui_subcard);
+    private void addChangelogItem(LinearLayout parent, CouiBottomSheet.Palette pal,
+                                  String verTitle, CharSequence bodyText, boolean addBottomMargin) {
+        LinearLayout card = CouiBottomSheet.createSubcardGroup(this, pal);
         card.setPadding(dp(14), dp(12), dp(14), dp(12));
 
-        TextView badge = new TextView(this);
-        badge.setText(verTitleRes);
+        TextView badge = CouiBottomSheet.createChipBadge(this, pal, verTitle, true, null);
+        badge.setClickable(false);
         badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-        badge.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        badge.setTextColor(DynamicThemeHelper.getAccent(this));
-        badge.setBackgroundResource(R.drawable.bg_coui_chip);
-        badge.setTag("accent_chip");
         badge.setPadding(dp(9), dp(3), dp(9), dp(3));
-        LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        card.addView(badge, badgeLp);
+        card.addView(badge, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView body = new TextView(this);
-        body.setText(bodyRes);
+        body.setText(bodyText);
         body.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-        body.setLineSpacing(0f, 1.32f);
-        body.setTextColor(ConfigStore.resolveThemeColor(this, R.attr.couiTextSecondary, R.color.coui_text_secondary));
+        body.setLineSpacing(0f, 1.35f);
+        body.setTextColor(pal.textSecondary);
         LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         bodyLp.topMargin = dp(8);
@@ -1723,7 +2108,7 @@ public class MainActivity extends Activity {
             //noinspection deprecation
             return pi.versionCode;
         } catch (Throwable ignored) {
-            return 1000;
+            return 1001;
         }
     }
 
@@ -1735,12 +2120,12 @@ public class MainActivity extends Activity {
             }
         } catch (Throwable ignored) {
         }
-        return "1.0.0";
+        return "1.0.1";
     }
 
     private static String formatVerLabel(String ver) {
         if (ver == null || ver.trim().isEmpty()) {
-            return "v1.0.0";
+            return "v1.0.1";
         }
         String t = ver.trim();
         if (t.startsWith("v") || t.startsWith("V")) {
@@ -1982,68 +2367,141 @@ public class MainActivity extends Activity {
         }
     }
 
-    private String formatLocalizedChangelog(RepoReleaseInfo info) {
+    private static String unescapeUnicodeLiterals(String s) {
+        if (s == null || !s.contains("\\u")) {
+            return s;
+        }
+        Matcher m = Pattern.compile("\\\\u([0-9a-fA-F]{4})").matcher(s);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            int cp = Integer.parseInt(m.group(1), 16);
+            m.appendReplacement(sb, Matcher.quoteReplacement(String.valueOf((char) cp)));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    private static String cleanMarkdownInline(String s) {
+        if (s == null) return "";
+        String r = Normalizer.normalize(s, Normalizer.Form.NFC);
+        r = r.replaceAll("\\[([^\\]]+)\\]\\([^)]+\\)", "$1");
+        r = r.replaceAll("\\*\\*([^*]+)\\*\\*", "$1");
+        r = r.replaceAll("__([^_]+)__", "$1");
+        r = r.replaceAll("`([^`]+)`", "$1");
+        return r.trim();
+    }
+
+    private static String matchLanguageCodeFromHeading(String title) {
+        String norm = cleanMarkdownInline(title).toLowerCase(Locale.ROOT);
+        if (norm.contains("繁體中文") || norm.contains("繁体中文") || norm.contains("traditional chinese") || "zh-tw".equals(norm)) {
+            return ConfigStore.LANG_ZH_TW;
+        }
+        if (norm.contains("简体中文") || norm.contains("簡體中文") || norm.contains("simplified chinese") || "zh-cn".equals(norm)) {
+            return ConfigStore.LANG_ZH_CN;
+        }
+        if ("english".equals(norm) || "en".equals(norm) || norm.startsWith("english ")) {
+            return ConfigStore.LANG_EN;
+        }
+        return null;
+    }
+
+    private CharSequence formatLocalizedChangelog(RepoReleaseInfo info, CouiBottomSheet.Palette pal) {
         if (info == null || info.changelogRaw == null || info.changelogRaw.trim().isEmpty()) {
             return "";
         }
-        String text = info.changelogRaw;
+        String text = unescapeUnicodeLiterals(info.changelogRaw);
+        text = text.replace("\r\n", "\n").replace("\r", "\n");
+
         if (info.isHtmlChangelog) {
+            // Convert HTML structure into <br> markers BEFORE Html.fromHtml so line breaks never collapse to spaces
             String prepped = text
-                    .replaceAll("(?i)<h[1-6][^>]*>", "\n### ")
-                    .replaceAll("(?i)</h[1-6]>", "\n")
-                    .replaceAll("(?i)<li[^>]*>", "\n• ")
-                    .replaceAll("(?i)</li>", "")
-                    .replaceAll("(?i)</p>", "\n")
-                    .replaceAll("(?i)<br\\s*/?>", "\n");
+                    .replaceAll("(?i)<h[1-6][^>]*>", "<br>@@HDR@@ ")
+                    .replaceAll("(?i)</h[1-6]>", "<br>")
+                    .replaceAll("(?i)<li[^>]*>", "<br>• ")
+                    .replaceAll("(?i)</li>", "<br>")
+                    .replaceAll("(?i)<p[^>]*>", "<br>")
+                    .replaceAll("(?i)</p>", "<br>")
+                    .replaceAll("(?i)<br\\s*/?>", "<br>");
             text = Html.fromHtml(prepped, Html.FROM_HTML_MODE_LEGACY).toString();
-        } else {
-            text = text.replace("\r\n", "\n");
         }
+        text = Normalizer.normalize(text, Normalizer.Form.NFC);
 
-        String lang = ConfigStore.getEffectiveAppLanguage(this);
-        String targetMarker;
-        if (ConfigStore.LANG_ZH_CN.equals(lang)) {
-            targetMarker = "简体中文";
-        } else if (ConfigStore.LANG_EN.equals(lang)) {
-            targetMarker = "English";
-        } else {
-            targetMarker = "繁體中文";
-        }
-
+        String targetLang = ConfigStore.getEffectiveAppLanguage(this);
         String[] lines = text.split("\n");
-        StringBuilder section = new StringBuilder();
-        StringBuilder allCleaned = new StringBuilder();
+
+        List<String> targetLines = new ArrayList<>();
+        List<String> allLines = new ArrayList<>();
         boolean inTarget = false;
         boolean foundTarget = false;
+        boolean hasLangSections = false;
 
         for (String rawLine : lines) {
-            String line = rawLine.trim();
+            String line = Normalizer.normalize(rawLine, Normalizer.Form.NFC).trim();
             if (line.isEmpty()) {
                 continue;
             }
-            if (line.startsWith("###")) {
-                String headerTitle = line.replaceFirst("^#+\\s*", "").trim();
-                if (headerTitle.equalsIgnoreCase(targetMarker)) {
-                    inTarget = true;
-                    foundTarget = true;
-                } else if (inTarget) {
-                    break;
+
+            boolean isHeading = false;
+            if (line.startsWith("@@HDR@@")) {
+                isHeading = true;
+                line = line.substring("@@HDR@@".length()).trim();
+            } else if (line.matches("^#{1,6}(\\s*.*)$")) {
+                isHeading = true;
+                line = line.replaceFirst("^#{1,6}\\s*", "").trim();
+            }
+
+            if (isHeading) {
+                String cleanHead = cleanMarkdownInline(line);
+                if (cleanHead.isEmpty()) continue;
+
+                String langCode = matchLanguageCodeFromHeading(cleanHead);
+                if (langCode != null) {
+                    hasLangSections = true;
+                    inTarget = langCode.equals(targetLang);
+                    if (inTarget) {
+                        foundTarget = true;
+                    }
+                    continue;
                 }
+                String entry = "\u0001" + cleanHead;
+                if (inTarget) targetLines.add(entry);
+                allLines.add(entry);
                 continue;
             }
-            if (line.startsWith("- ") || line.startsWith("* ")) {
+
+            if (line.startsWith(">")) {
+                line = line.replaceFirst("^>+\\s*", "").trim();
+            }
+            if (line.matches("^[-*+·]\\s+.*")) {
                 line = "• " + line.substring(2).trim();
+            } else if (line.startsWith("• • ")) {
+                line = "• " + line.substring(4).trim();
             }
-            if (inTarget) {
-                if (section.length() > 0) section.append('\n');
-                section.append(line);
-            }
-            if (allCleaned.length() > 0) allCleaned.append('\n');
-            allCleaned.append(line);
+            line = cleanMarkdownInline(line);
+            if (line.isEmpty()) continue;
+
+            if (inTarget) targetLines.add(line);
+            allLines.add(line);
         }
 
-        String chosen = (foundTarget && section.length() > 0) ? section.toString() : allCleaned.toString();
-        return chosen.trim();
+        List<String> chosen = (hasLangSections && foundTarget && !targetLines.isEmpty()) ? targetLines : allLines;
+        SpannableStringBuilder out = new SpannableStringBuilder();
+        for (int i = 0; i < chosen.size(); i++) {
+            String entry = chosen.get(i);
+            boolean isSubHdr = entry.startsWith("\u0001");
+            String bodyLine = isSubHdr ? entry.substring(1) : entry;
+            if (out.length() > 0) {
+                out.append(isSubHdr ? "\n\n" : "\n");
+            }
+            int start = out.length();
+            out.append(bodyLine);
+            if (isSubHdr) {
+                int end = out.length();
+                out.setSpan(new StyleSpan(Typeface.BOLD), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new ForegroundColorSpan(pal.textPrimary), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        }
+        return out;
     }
 
     private void showUpdateResultDialog(final RepoReleaseInfo info) {
@@ -2051,143 +2509,71 @@ public class MainActivity extends Activity {
         final String curVerLabel = formatVerLabel(getInstalledVersionName());
         final String latestVerLabel = formatVerLabel(info.versionName);
 
-        final Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.createCenter(this, pal);
+        String latestSubtitle = curVerLabel.equalsIgnoreCase(latestVerLabel)
+                ? getString(R.string.dialog_update_latest_msg_fmt, curVerLabel, latestVerLabel)
+                : getString(R.string.dialog_update_ahead_msg_fmt, curVerLabel, latestVerLabel);
+        CouiBottomSheet.addHeader(
+                this, sheet.card, pal,
+                hasUpdate
+                        ? getString(R.string.dialog_update_available_title_fmt, latestVerLabel)
+                        : getString(R.string.dialog_update_latest_title),
+                hasUpdate
+                        ? getString(R.string.dialog_update_ver_compare_fmt, curVerLabel, latestVerLabel)
+                        : latestSubtitle,
+                null);
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundResource(R.drawable.bg_coui_card);
-        root.setPadding(dp(20), dp(20), dp(20), dp(18));
+        CharSequence changelog = formatLocalizedChangelog(info, pal);
+        if (changelog.length() > 0) {
+            ScrollView scroll = CouiBottomSheet.createMaxHeightScrollView(
+                    this, Math.round(getResources().getDisplayMetrics().heightPixels * 0.40f));
+            LinearLayout list = new LinearLayout(this);
+            list.setOrientation(LinearLayout.VERTICAL);
+            addChangelogItem(list, pal, latestVerLabel, changelog, false);
+            scroll.addView(list);
 
-        TextView tvTitle = new TextView(this);
-        tvTitle.setText(hasUpdate
-                ? getString(R.string.dialog_update_available_title_fmt, latestVerLabel)
-                : getString(R.string.dialog_update_latest_title));
-        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f);
-        tvTitle.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        tvTitle.setTextColor(ConfigStore.resolveThemeColor(this, R.attr.couiTextPrimary, R.color.coui_text_primary));
-        root.addView(tvTitle);
-
-        TextView tvSub = new TextView(this);
-        tvSub.setText(hasUpdate
-                ? getString(R.string.dialog_update_ver_compare_fmt, curVerLabel, latestVerLabel)
-                : getString(R.string.dialog_update_latest_msg_fmt, curVerLabel, latestVerLabel));
-        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
-        tvSub.setLineSpacing(0f, 1.25f);
-        tvSub.setTextColor(ConfigStore.resolveThemeColor(this, R.attr.couiTextSecondary, R.color.coui_text_secondary));
-        LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        subLp.topMargin = dp(6);
-        root.addView(tvSub, subLp);
-
-        String changelog = formatLocalizedChangelog(info);
-        if (!changelog.isEmpty()) {
-            ScrollView scroll = new ScrollView(this);
-            scroll.setVerticalScrollBarEnabled(false);
-            LinearLayout card = new LinearLayout(this);
-            card.setOrientation(LinearLayout.VERTICAL);
-            card.setBackgroundResource(R.drawable.bg_coui_subcard);
-            card.setPadding(dp(14), dp(12), dp(14), dp(12));
-
-            TextView badge = new TextView(this);
-            badge.setText(latestVerLabel);
-            badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-            badge.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            badge.setTextColor(DynamicThemeHelper.getAccent(this));
-            badge.setBackgroundResource(R.drawable.bg_coui_chip);
-            badge.setTag("accent_chip");
-            badge.setPadding(dp(9), dp(3), dp(9), dp(3));
-            LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            card.addView(badge, badgeLp);
-
-            TextView body = new TextView(this);
-            body.setText(changelog);
-            body.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-            body.setLineSpacing(0f, 1.32f);
-            body.setTextColor(ConfigStore.resolveThemeColor(this, R.attr.couiTextSecondary, R.color.coui_text_secondary));
-            LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            bodyLp.topMargin = dp(8);
-            card.addView(body, bodyLp);
-
-            scroll.addView(card);
             LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             scrollLp.topMargin = dp(14);
-            root.addView(scroll, scrollLp);
+            sheet.card.addView(scroll, scrollLp);
         }
 
         if (hasUpdate && info.downloadUrl != null && !info.downloadUrl.isEmpty()) {
-            Button btnDownload = new Button(this);
-            btnDownload.setText(R.string.btn_update_download);
-            btnDownload.setAllCaps(false);
-            btnDownload.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
-            btnDownload.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            btnDownload.setTextColor(DynamicThemeHelper.getOnAccent(this));
-            btnDownload.setBackgroundResource(R.drawable.bg_coui_btn_primary);
-            btnDownload.setStateListAnimator(null);
-            btnDownload.setTag("accent_btn");
-            btnDownload.setOnClickListener(v -> {
-                dialog.dismiss();
-                if (!tryStartView(info.downloadUrl)) {
-                    Toast.makeText(MainActivity.this, R.string.toast_open_link_failed, Toast.LENGTH_SHORT).show();
-                }
-            });
-            LinearLayout.LayoutParams dlLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
-            dlLp.topMargin = dp(16);
-            root.addView(btnDownload, dlLp);
+            CouiBottomSheet.addSingleButton(this, sheet.card, pal,
+                    getString(R.string.btn_update_download), 1, 16, v -> {
+                        sheet.dialog.dismiss();
+                        if (!tryStartView(info.downloadUrl)) {
+                            Toast.makeText(MainActivity.this, R.string.toast_open_link_failed, Toast.LENGTH_SHORT).show();
+                        }
+                    });
         }
 
-        Button btnRepo = new Button(this);
-        btnRepo.setText(R.string.btn_update_open_repo);
-        btnRepo.setAllCaps(false);
-        btnRepo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
-        btnRepo.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        btnRepo.setTextColor(ConfigStore.resolveThemeColor(this, R.attr.couiTextPrimary, R.color.coui_text_primary));
-        btnRepo.setBackgroundResource(R.drawable.bg_coui_btn_secondary);
-        btnRepo.setStateListAnimator(null);
-        btnRepo.setOnClickListener(v -> {
-            dialog.dismiss();
-            String targetUrl = (info.repoPageUrl != null && !info.repoPageUrl.isEmpty())
-                    ? info.repoPageUrl : LSPOSED_REPO_PAGE_URL;
-            if (!tryStartView(targetUrl)) {
-                Toast.makeText(MainActivity.this, R.string.toast_open_link_failed, Toast.LENGTH_SHORT).show();
-            }
-        });
-        LinearLayout.LayoutParams repoLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
-        repoLp.topMargin = dp(hasUpdate ? 10 : 16);
-        root.addView(btnRepo, repoLp);
-
-        Button btnClose = new Button(this);
-        btnClose.setText(R.string.btn_close);
-        btnClose.setAllCaps(false);
-        btnClose.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
-        btnClose.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        String repoText = getString(R.string.btn_update_open_repo);
+        String closeText = getString(R.string.btn_close);
         if (hasUpdate) {
-            btnClose.setTextColor(ConfigStore.resolveThemeColor(this, R.attr.couiTextSecondary, R.color.coui_text_secondary));
-            btnClose.setBackgroundResource(R.drawable.bg_coui_btn_secondary);
+            CouiBottomSheet.addSingleButton(this, sheet.card, pal, repoText, 0,
+                    (info.downloadUrl != null && !info.downloadUrl.isEmpty()) ? 10 : 16, v -> {
+                        sheet.dialog.dismiss();
+                        String targetUrl = (info.repoPageUrl != null && !info.repoPageUrl.isEmpty())
+                                ? info.repoPageUrl : LSPOSED_REPO_PAGE_URL;
+                        if (!tryStartView(targetUrl)) {
+                            Toast.makeText(MainActivity.this, R.string.toast_open_link_failed, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+            CouiBottomSheet.addSingleButton(this, sheet.card, pal, closeText, 0, 10, v -> sheet.dialog.dismiss());
         } else {
-            btnClose.setTextColor(DynamicThemeHelper.getOnAccent(this));
-            btnClose.setBackgroundResource(R.drawable.bg_coui_btn_primary);
-            btnClose.setTag("accent_btn");
+            CouiBottomSheet.addButtonRow(this, sheet.card, pal,
+                    repoText, 0, v -> {
+                        sheet.dialog.dismiss();
+                        String targetUrl = (info.repoPageUrl != null && !info.repoPageUrl.isEmpty())
+                                ? info.repoPageUrl : LSPOSED_REPO_PAGE_URL;
+                        if (!tryStartView(targetUrl)) {
+                            Toast.makeText(MainActivity.this, R.string.toast_open_link_failed, Toast.LENGTH_SHORT).show();
+                        }
+                    },
+                    closeText, 1, v -> sheet.dialog.dismiss());
         }
-        btnClose.setStateListAnimator(null);
-        btnClose.setOnClickListener(v -> dialog.dismiss());
-        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
-        closeLp.topMargin = dp(10);
-        root.addView(btnClose, closeLp);
-
-        DynamicThemeHelper.applyAccent(root, this);
-        dialog.setContentView(root);
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            int width = Math.round(getResources().getDisplayMetrics().widthPixels * 0.90f);
-            dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
-        }
-        dialog.show();
+        sheet.dialog.show();
     }
 }

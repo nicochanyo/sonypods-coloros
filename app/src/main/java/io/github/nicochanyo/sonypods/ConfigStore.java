@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.LocaleList;
 import android.os.SystemClock;
 import android.provider.Settings;
@@ -52,6 +53,14 @@ public final class ConfigStore {
     public static final String CMD_PAIR_AND_CONNECT = "pair_and_connect";
     public static final String CMD_DISMISS_PAIRING = "dismiss_pairing";
     public static final String CMD_SET_CODEC = "set_codec";
+    public static final String CMD_SET_EQ = "set_eq";
+    public static final String CMD_SET_SPEAK_DETAIL = "set_speak_detail";
+    public static final String CMD_SET_TOUCH_SENSOR = "set_touch_sensor";
+    public static final String CMD_SET_MULTIPOINT = "set_multipoint";
+    public static final String CMD_MULTIPOINT_ACTION = "multipoint_action";
+    public static final String CMD_SET_CONNECTION_MODE = "set_connection_mode";
+    public static final String CMD_SET_WEAR_DETECT = "set_wear_detect";
+    public static final String CMD_SET_AUTO_POWER_OFF = "set_auto_power_off";
 
     public static final String EXTRA_CMD = "cmd";
     public static final String EXTRA_MAC = "mac";
@@ -62,6 +71,15 @@ public final class ConfigStore {
     public static final String EXTRA_CODEC_TYPE = "codec_type";
     public static final String EXTRA_HANDOVER_ACTIVE = "handover_active";
     public static final String EXTRA_STATE_SERIALIZED = "state_serialized";
+    public static final String EXTRA_EQ_PRESET = "eq_preset";
+    public static final String EXTRA_EQ_BANDS = "eq_bands";
+    public static final String EXTRA_SPEAK_SENSITIVITY = "speak_sensitivity";
+    public static final String EXTRA_SPEAK_TIMEOUT = "speak_timeout";
+    public static final String EXTRA_TOUCH_LEFT = "touch_left";
+    public static final String EXTRA_TOUCH_RIGHT = "touch_right";
+    public static final String EXTRA_TARGET_MAC = "target_mac";
+    public static final String EXTRA_MULTIPOINT_ACTION = "multipoint_action";
+    public static final String EXTRA_INT_VAL = "int_val";
 
     // Settings.Global keys for zero-permission cross-process read from SystemUI/Settings/MyDevices
     public static final String GLOBAL_KEY_STATE = "sonypods_coloros_state";
@@ -562,6 +580,36 @@ public final class ConfigStore {
         public long updatedAtMs = 0L;
         public String lastEvent = "";
 
+        // Extended Sound Connect features
+        public boolean supportsEq = false;
+        public int eqPresetId = 0x00;
+        public int eqBandCount = 6;
+        public int[] eqBands = new int[6]; // [400Hz, 1kHz, 2.5kHz, 6.3kHz, 16kHz, ClearBass], range -10..+10
+
+        public int speakSensitivity = 0; // 0=Auto, 1=High, 2=Low
+        public int speakTimeout = 1;     // 0=Fast(5s), 1=Mid(15s), 2=Slow(30s), 3=None
+
+        public boolean supportsTouchSensor = false;
+        public int touchInquiredType = 0x03;
+        public int touchLeftPreset = 0x00;
+        public int touchRightPreset = 0x20;
+
+        public boolean supportsMultipoint = false;
+        public int multipointInquiredType = 0x00;
+        public boolean multipointEnabled = false;
+        public String multipointDevices = ""; // mac~name~connected;...
+
+        public boolean supportsConnectionMode = false;
+        public int connectionModeInquiredType = 0x00;
+        public int connectionPriorMode = 0; // 0=Sound Quality, 1=Stable Connection
+
+        public boolean supportsWearDetect = false;
+        public boolean wearAutoPause = true;
+
+        public boolean supportsAutoPowerOff = false;
+        public int autoPowerOffInquiredType = 0x05;
+        public int autoPowerOffElement = 0x10;
+
         public HeadsetState copy() {
             HeadsetState c = new HeadsetState();
             c.connected = connected;
@@ -595,6 +643,28 @@ public final class ConfigStore {
             c.wearing = wearing;
             c.updatedAtMs = updatedAtMs;
             c.lastEvent = lastEvent;
+            c.supportsEq = supportsEq;
+            c.eqPresetId = eqPresetId;
+            c.eqBandCount = eqBandCount;
+            c.eqBands = eqBands != null ? eqBands.clone() : new int[6];
+            c.speakSensitivity = speakSensitivity;
+            c.speakTimeout = speakTimeout;
+            c.supportsTouchSensor = supportsTouchSensor;
+            c.touchInquiredType = touchInquiredType;
+            c.touchLeftPreset = touchLeftPreset;
+            c.touchRightPreset = touchRightPreset;
+            c.supportsMultipoint = supportsMultipoint;
+            c.multipointInquiredType = multipointInquiredType;
+            c.multipointEnabled = multipointEnabled;
+            c.multipointDevices = multipointDevices;
+            c.supportsConnectionMode = supportsConnectionMode;
+            c.connectionModeInquiredType = connectionModeInquiredType;
+            c.connectionPriorMode = connectionPriorMode;
+            c.supportsWearDetect = supportsWearDetect;
+            c.wearAutoPause = wearAutoPause;
+            c.supportsAutoPowerOff = supportsAutoPowerOff;
+            c.autoPowerOffInquiredType = autoPowerOffInquiredType;
+            c.autoPowerOffElement = autoPowerOffElement;
             return c;
         }
 
@@ -668,12 +738,45 @@ public final class ConfigStore {
             return raw == null ? "" : raw.replace('|', ' ').replace('\n', ' ').trim();
         }
 
+        public static int clampEqBand(int v) {
+            return Math.max(-10, Math.min(10, v));
+        }
+
+        public static String encodeEqBands(int[] bands) {
+            if (bands == null || bands.length == 0) {
+                return "0,0,0,0,0,0";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < bands.length; i++) {
+                if (i > 0) sb.append(',');
+                sb.append(clampEqBand(bands[i]));
+            }
+            return sb.toString();
+        }
+
+        public static int[] decodeEqBands(String raw) {
+            int[] out = new int[6];
+            if (raw == null || raw.isEmpty()) {
+                return out;
+            }
+            String[] parts = raw.split(",", -1);
+            int n = Math.min(out.length, parts.length);
+            for (int i = 0; i < n; i++) {
+                try {
+                    out[i] = clampEqBand(Integer.parseInt(parts[i].trim()));
+                } catch (Throwable ignored) {
+                }
+            }
+            return out;
+        }
+
         public String serialize() {
             String safeName = cleanToken(name);
             String safeModel = cleanToken(modelName);
             String safeEq = cleanToken(eqPresetName);
+            String safeMultiDevs = cleanToken(multipointDevices);
             String safeMac = (mac == null ? "" : mac.trim().toUpperCase(Locale.US));
-            return "v2|"
+            return "v3|"
                     + (connected ? 1 : 0) + "|"
                     + safeMac + "|"
                     + safeName + "|"
@@ -703,7 +806,29 @@ public final class ConfigStore {
                     + singleBattery + "|"
                     + (singleCharging ? 1 : 0) + "|"
                     + (wearing ? 1 : 0) + "|"
-                    + updatedAtMs;
+                    + updatedAtMs + "|"
+                    + (supportsEq ? 1 : 0) + "|"
+                    + eqPresetId + "|"
+                    + eqBandCount + "|"
+                    + encodeEqBands(eqBands) + "|"
+                    + speakSensitivity + "|"
+                    + speakTimeout + "|"
+                    + (supportsTouchSensor ? 1 : 0) + "|"
+                    + touchInquiredType + "|"
+                    + touchLeftPreset + "|"
+                    + touchRightPreset + "|"
+                    + (supportsMultipoint ? 1 : 0) + "|"
+                    + multipointInquiredType + "|"
+                    + (multipointEnabled ? 1 : 0) + "|"
+                    + safeMultiDevs + "|"
+                    + (supportsConnectionMode ? 1 : 0) + "|"
+                    + connectionModeInquiredType + "|"
+                    + connectionPriorMode + "|"
+                    + (supportsWearDetect ? 1 : 0) + "|"
+                    + (wearAutoPause ? 1 : 0) + "|"
+                    + (supportsAutoPowerOff ? 1 : 0) + "|"
+                    + autoPowerOffInquiredType + "|"
+                    + autoPowerOffElement;
         }
 
         public static HeadsetState deserialize(String raw) {
@@ -713,7 +838,7 @@ public final class ConfigStore {
             }
             String[] p = raw.split("\\|", -1);
             try {
-                if (raw.startsWith("v2|") && p.length >= 31) {
+                if ((raw.startsWith("v3|") || raw.startsWith("v2|")) && p.length >= 31) {
                     s.connected = "1".equals(p[1]);
                     s.mac = p[2];
                     s.name = p[3];
@@ -744,6 +869,30 @@ public final class ConfigStore {
                     s.singleCharging = "1".equals(p[28]);
                     s.wearing = "1".equals(p[29]);
                     s.updatedAtMs = Long.parseLong(p[30]);
+                    if (p.length >= 53) {
+                        s.supportsEq = "1".equals(p[31]);
+                        s.eqPresetId = Integer.parseInt(p[32]);
+                        s.eqBandCount = Integer.parseInt(p[33]);
+                        s.eqBands = decodeEqBands(p[34]);
+                        s.speakSensitivity = Integer.parseInt(p[35]);
+                        s.speakTimeout = Integer.parseInt(p[36]);
+                        s.supportsTouchSensor = "1".equals(p[37]);
+                        s.touchInquiredType = Integer.parseInt(p[38]);
+                        s.touchLeftPreset = Integer.parseInt(p[39]);
+                        s.touchRightPreset = Integer.parseInt(p[40]);
+                        s.supportsMultipoint = "1".equals(p[41]);
+                        s.multipointInquiredType = Integer.parseInt(p[42]);
+                        s.multipointEnabled = "1".equals(p[43]);
+                        s.multipointDevices = p[44];
+                        s.supportsConnectionMode = "1".equals(p[45]);
+                        s.connectionModeInquiredType = Integer.parseInt(p[46]);
+                        s.connectionPriorMode = Integer.parseInt(p[47]);
+                        s.supportsWearDetect = "1".equals(p[48]);
+                        s.wearAutoPause = "1".equals(p[49]);
+                        s.supportsAutoPowerOff = "1".equals(p[50]);
+                        s.autoPowerOffInquiredType = Integer.parseInt(p[51]);
+                        s.autoPowerOffElement = Integer.parseInt(p[52]);
+                    }
                 } else if (raw.startsWith("v1|") && p.length >= 25) {
                     s.connected = "1".equals(p[1]);
                     s.mac = p[3];
@@ -879,18 +1028,59 @@ public final class ConfigStore {
         return false;
     }
 
-    public static void sendCommandBroadcast(Context ctx, String cmd, String mac, int ancMode, int asmLevel, boolean voiceFocus, boolean boolVal) {
+    private static void dispatchCommand(Context ctx, String cmd, String mac, Bundle extras) {
         if (ctx == null) {
             return;
         }
         Intent intent = new Intent(ACTION_COMMAND);
+        intent.setPackage("com.android.bluetooth");
         intent.putExtra(EXTRA_CMD, cmd);
         if (mac != null) intent.putExtra(EXTRA_MAC, mac);
-        intent.putExtra(EXTRA_ANC_MODE, ancMode);
-        intent.putExtra(EXTRA_ASM_LEVEL, asmLevel);
-        intent.putExtra(EXTRA_VOICE_FOCUS, voiceFocus);
-        intent.putExtra(EXTRA_BOOL_VAL, boolVal);
+        if (extras != null) intent.putExtras(extras);
         ctx.sendBroadcast(intent);
+    }
+
+    public static void sendCommandBroadcast(Context ctx, String cmd, String mac, int ancMode, int asmLevel, boolean voiceFocus, boolean boolVal) {
+        Bundle b = new Bundle();
+        b.putInt(EXTRA_ANC_MODE, ancMode);
+        b.putInt(EXTRA_ASM_LEVEL, asmLevel);
+        b.putBoolean(EXTRA_VOICE_FOCUS, voiceFocus);
+        b.putBoolean(EXTRA_BOOL_VAL, boolVal);
+        dispatchCommand(ctx, cmd, mac, b);
+    }
+
+    public static void sendIntCommandBroadcast(Context ctx, String cmd, String mac, int val) {
+        Bundle b = new Bundle();
+        b.putInt(EXTRA_INT_VAL, val);
+        dispatchCommand(ctx, cmd, mac, b);
+    }
+
+    public static void sendEqCommandBroadcast(Context ctx, String mac, int presetId, int[] bands) {
+        Bundle b = new Bundle();
+        b.putInt(EXTRA_EQ_PRESET, presetId);
+        if (bands != null) b.putIntArray(EXTRA_EQ_BANDS, bands);
+        dispatchCommand(ctx, CMD_SET_EQ, mac, b);
+    }
+
+    public static void sendSpeakDetailCommandBroadcast(Context ctx, String mac, int sensitivity, int timeout) {
+        Bundle b = new Bundle();
+        b.putInt(EXTRA_SPEAK_SENSITIVITY, sensitivity);
+        b.putInt(EXTRA_SPEAK_TIMEOUT, timeout);
+        dispatchCommand(ctx, CMD_SET_SPEAK_DETAIL, mac, b);
+    }
+
+    public static void sendTouchSensorCommandBroadcast(Context ctx, String mac, int leftPreset, int rightPreset) {
+        Bundle b = new Bundle();
+        b.putInt(EXTRA_TOUCH_LEFT, leftPreset);
+        b.putInt(EXTRA_TOUCH_RIGHT, rightPreset);
+        dispatchCommand(ctx, CMD_SET_TOUCH_SENSOR, mac, b);
+    }
+
+    public static void sendMultipointActionBroadcast(Context ctx, String mac, String targetMac, int actionType) {
+        Bundle b = new Bundle();
+        if (targetMac != null) b.putString(EXTRA_TARGET_MAC, targetMac);
+        b.putInt(EXTRA_MULTIPOINT_ACTION, actionType);
+        dispatchCommand(ctx, CMD_MULTIPOINT_ACTION, mac, b);
     }
 
     public static final class CodecState {

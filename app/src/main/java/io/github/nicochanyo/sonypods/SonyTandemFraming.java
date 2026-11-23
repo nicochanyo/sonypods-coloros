@@ -57,6 +57,10 @@ public final class SonyTandemFraming {
         return encodeFrame(DATA_TYPE_DATA_MDR, seq, payload);
     }
 
+    public static byte[] encodeDataMdrNo2(byte seq, byte[] payload) {
+        return encodeFrame(DATA_TYPE_DATA_MDR_NO2, seq, payload);
+    }
+
     public static byte[] encodeFrame(byte dataType, byte sequence, byte[] payload) {
         int len = payload != null ? payload.length : 0;
         byte[] raw = new byte[6 + len + 1];
