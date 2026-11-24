@@ -6,7 +6,16 @@
     <!-- Bottom Navigation & Header -->
     <string name="nav_headset">耳机</string>
     <string name="nav_integration">系统整合</string>
+    <string name="nav_integration_short">整合</string>
     <string name="nav_about">关于</string>
+    <string name="living_flow_chip">Living Flow</string>
+    <string name="anc_quick_label">降噪控制</string>
+    <string name="cd_quick_refresh">刷新状态</string>
+    <string name="cd_quick_panel">打开原生耳机控制卡</string>
+    <string name="cd_quick_appearance">外观与界面风格</string>
+    <string name="quick_menu_toggle_dark">切换深浅色模式</string>
+    <string name="quick_menu_switch_classic">切换为经典界面</string>
+    <string name="quick_menu_toggle_monet">切换动态取色</string>
 
     <string name="page_title_headset">SonyPods ColorOS</string>
     <string name="page_subtitle_headset">电量状态与附加功能</string>
@@ -19,11 +28,11 @@
     <!-- Top Status Card -->
     <string name="status_title_active">模块已启用</string>
     <string name="status_title_inactive">模块未启用</string>
-    <string name="status_sub_active">v1.0.2 · API 102</string>
+    <string name="status_sub_active">v1.0.3 · API 102</string>
     <string name="status_sub_inactive">请在 LSPosed 勾选作用域并重启蓝牙</string>
     <string name="badge_api_102">API 102</string>
 
-    <string name="chip_version">v1.0.2</string>
+    <string name="chip_version">v1.0.3</string>
     <string name="chip_coloros">ColorOS 16/17</string>
     <string name="chip_lsposed">API 102</string>
 
@@ -70,7 +79,7 @@
 
     <string name="section_control_prefs">切换与接管</string>
     <string name="pref_cycle_mode_title">模式循环顺序</string>
-    <string name="pref_cycle_mode_summary">通过快捷入口切换时的循环方式</string>
+    <string name="pref_cycle_mode_summary">快捷循环切换方式</string>
     <string name="cycle_mode_3way">降噪 ⇄ 环境音 ⇄ 关闭</string>
     <string name="cycle_mode_2way">降噪 ⇄ 环境音</string>
     <string name="dialog_cycle_mode_title">选择切换顺序</string>
@@ -163,13 +172,22 @@
     <string name="section_environment">运行环境</string>
     <string name="about_sys_ver_title">系统版本</string>
     <string name="about_device_title">设备型号</string>
+    <string name="about_app_ver_title">APP 版本</string>
     <string name="about_env_channel_title">配置同步</string>
     <string name="channel_xsp">LSPosed 远程同步</string>
     <string name="channel_private_warn">仅限本地（模块未生效）</string>
     <string name="about_scope_title">建议作用域</string>
+    <string name="about_scope_summary_fmt">%1$d 项系统组件</string>
+    <string name="about_status_sub_active_fmt">LSPosed 远程同步 · v%1$s</string>
     <string name="about_scope_value">com.android.bluetooth, com.heytap.mydevices, com.oplus.wirelesssettings, com.oplus.melody, com.android.settings, com.android.systemui, com.heytap.accessory, com.sony.songpal.mdr</string>
 
     <string name="section_appearance">外观与语言</string>
+    <string name="about_ui_style_title">界面风格</string>
+    <string name="about_ui_style_summary">切换 ColorOS 17 Living Flow 光影新界面或经典界面</string>
+    <string name="ui_style_living_flow">Living Flow</string>
+    <string name="ui_style_living_flow_desc">Living Flow（ColorOS 17 光影流体）</string>
+    <string name="ui_style_classic">经典界面</string>
+    <string name="ui_style_classic_desc">经典界面（保留旧版样式）</string>
     <string name="about_language_title">界面语言</string>
     <string name="about_language_summary">默认依系统语言自动切换</string>
     <string name="dialog_language_title">界面语言</string>
@@ -187,13 +205,19 @@
     <string name="dark_mode_dark">深色</string>
 
     <string name="about_monet_title">动态取色</string>
-    <string name="about_monet_summary">将按钮与开关强调色跟随系统壁纸</string>
+    <string name="about_monet_summary">跟随 ColorOS 系统主题色彩强调色</string>
 
     <string name="section_debug">诊断与维护</string>
     <string name="about_changelog_title">更新日志</string>
     <string name="about_changelog_summary">查看各版本更新内容</string>
     <string name="about_check_update_title">检查更新</string>
     <string name="about_check_update_summary">从 LSPosed 模块仓库检查新版本</string>
+    <string name="lf_software_update_title">软件更新</string>
+    <string name="lf_update_notes_title">更新说明</string>
+    <string name="lf_software_version_label">软件版本</string>
+    <string name="lf_checking_update_status">正在检查更新…</string>
+    <string name="lf_btn_recheck_update">重新检查更新</string>
+    <string name="lf_btn_view_changelog">查看更新说明</string>
     <string name="chip_update_checking">检查中…</string>
     <string name="chip_update_latest">已是最新</string>
     <string name="chip_update_available_fmt">新版 %1$s</string>
@@ -207,6 +231,8 @@
     <string name="btn_update_download">下载更新 APK</string>
     <string name="btn_update_open_repo">打开仓库页面</string>
     <string name="dialog_changelog_title">更新日志</string>
+    <string name="changelog_v103_title">v1.0.3</string>
+    <string name="changelog_v103_body" formatted="false">• 新增 ColorOS 17 Living Flow 光影新界面并保留经典界面实时切换，按系统版本自动默认（ColorOS 17 默认 Living Flow，16 及以下默认经典），完整兼容 ColorOS 15 ~ 17\n• 优化 ColorOS 17 锚点弹出菜单、毛玻璃返回键、更新说明页与深色模式视觉体验\n• 修复 WF-1000XM3 等 Tandem V1 耳机连接后自动关机问题（修正协议版本判断并拦截误发关机指令），完整适配 V1 降噪／环境音、DSEE HX、连接质量、佩戴自动暂停、自动关机、触控分配与均衡器\n• 大幅优化配对与已配对开盖弹窗速度：修复 BLE 硬件 APCF ScanFilter 与 ColorOS 扫描限频、新增跨 RPA 关联及后台预扫描\n• 优先查询耳机电量并缩短连接等待、RFCOMM 重连退避与双耳电量同步延迟，状态广播改为后台异步发送\n• 弹窗图标全面异步加载并加入内存缓存，消除主线程卡顿与未连接状态无效轮询</string>
     <string name="changelog_v102_title">v1.0.2</string>
     <string name="changelog_v102_body" formatted="false">• 修复控制中心卡片与小组件电量及图标：改按耳机最低电量显示并保留左右耳电量，不再误显示充电盒\n• 优化控制中心展开面板二、三级标题渐层模糊，跟随系统动态底色显示\n• 新增更新后首次打开自动弹出更新日志</string>
     <string name="changelog_v101_title">v1.0.1</string>
@@ -234,6 +260,27 @@
     <string name="btn_cancel">取消</string>
     <string name="btn_apply">应用</string>
     <string name="btn_copy_logs">复制诊断信息</string>
+    <string name="diag_section_env">模块与环境状态</string>
+    <string name="diag_key_xposed">LSPosed 服务状态</string>
+    <string name="diag_val_xposed_on">已连接 · API 102</string>
+    <string name="diag_val_xposed_off">未连接</string>
+    <string name="diag_key_root">Root 权限状态</string>
+    <string name="diag_val_root_ready">已获取</string>
+    <string name="diag_val_root_denied">未获取</string>
+    <string name="diag_key_model">当前连接设备</string>
+    <string name="diag_key_mac">蓝牙地址与配色</string>
+    <string name="diag_key_protocol">通信协议版本</string>
+    <string name="diag_key_anc_mode">当前降噪模式</string>
+    <string name="diag_key_smart">环境音与智能功能</string>
+    <string name="diag_key_voice_focus">关注语音</string>
+    <string name="diag_key_speak_chat">智能免摘</string>
+    <string name="diag_key_dsee">DSEE 还原</string>
+    <string name="diag_state_on">开启</string>
+    <string name="diag_state_off">关闭</string>
+    <string name="diag_logs_section">进程调试日志</string>
+    <string name="diag_logs_empty">当前暂无调试日志记录；开启「详细调试日志」后将记录通信与 Hook 状态。</string>
+    <string name="about_module_status_title">模块状态</string>
+    <string name="about_hero_new_ver_fmt">发现新版本 %1$s</string>
     <string name="toast_copied">已复制到剪贴板</string>
     <string name="dialog_model_override_sub">输入型号名称或点击常用机型，留空则自动识别</string>
     <string name="dialog_restart_custom_sub">勾选要通过 Root 重载的系统组件</string>

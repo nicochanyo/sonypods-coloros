@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
+import android.util.LruCache;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,6 +37,12 @@ public final class SonyAssetProvider extends ContentProvider {
         return t;
     });
     private static final Map<String, Boolean> DIRECT_IN_FLIGHT = new ConcurrentHashMap<>();
+    private static final LruCache<String, Bitmap> MEM_CACHE = new LruCache<String, Bitmap>(8 * 1024 * 1024) {
+        @Override
+        protected int sizeOf(String key, Bitmap value) {
+            return value != null ? value.getAllocationByteCount() : 1;
+        }
+    };
 
     public static Uri buildArtworkUri(String modelName, int colorCode) {
         String safe = (modelName == null || modelName.trim().isEmpty())
@@ -89,52 +96,135 @@ public final class SonyAssetProvider extends ContentProvider {
             Runnable onOfficialCached
     ) {
         if (ctx != null) {
+            boolean onMainThread = Looper.myLooper() == Looper.getMainLooper();
             boolean wantCustom = customUriStr != null && !customUriStr.trim().isEmpty();
             if (wantCustom) {
+                String customMemKey = "custom:" + targetSizePx;
+                Bitmap memCustom = getMemCached(customMemKey);
+                if (memCustom != null) {
+                    return memCustom;
+                }
                 File customCache = getCallerCacheFile(ctx, modelName, colorCode, true);
-                Bitmap custom = decodeFromProviderUri(ctx, buildCustomUri(), targetSizePx);
-                if (custom != null) {
-                    writeCallerCacheBitmap(customCache, custom);
-                    return custom;
+                if (onMainThread) {
+                    Bitmap cachedCustom = decodeCallerCacheFile(customCache);
+                    if (cachedCustom != null) {
+                        putMemCached(customMemKey, cachedCustom);
+                        return cachedCustom;
+                    }
+                    scheduleAsyncCustomFetch(ctx, targetSizePx, customCache, customMemKey, onOfficialCached);
+                } else {
+                    Bitmap custom = decodeFromProviderUri(ctx, buildCustomUri(), targetSizePx);
+                    if (custom != null) {
+                        writeCallerCacheBitmap(customCache, custom);
+                        putMemCached(customMemKey, custom);
+                        return custom;
+                    }
+                    Bitmap cachedCustom = decodeCallerCacheFile(customCache);
+                    if (cachedCustom != null) {
+                        putMemCached(customMemKey, cachedCustom);
+                        return cachedCustom;
+                    }
                 }
-                Bitmap cachedCustom = decodeCallerCacheFile(customCache);
-                if (cachedCustom != null) {
-                    return cachedCustom;
-                }
+            }
+
+            String safeModelKey = buildSafeModelKey(modelName);
+            String officialMemKey = "art:" + safeModelKey + ":" + colorCode + ":" + targetSizePx;
+            Bitmap memOfficial = getMemCached(officialMemKey);
+            if (memOfficial != null) {
+                return memOfficial;
             }
 
             File officialCache = getCallerCacheFile(ctx, modelName, colorCode, false);
             Bitmap cachedOfficial = decodeCallerCacheFile(officialCache);
             if (cachedOfficial != null) {
+                putMemCached(officialMemKey, cachedOfficial);
                 return cachedOfficial;
             }
-
-            Bitmap fromIpc = decodeFromProviderUri(ctx, buildArtworkUri(modelName, colorCode), targetSizePx);
-            if (fromIpc != null) {
-                writeCallerCacheBitmap(officialCache, fromIpc);
-                return fromIpc;
+            if (colorCode < 0) {
+                File anyColorCache = findAnyCachedModelFile(ctx, modelName);
+                Bitmap anyCached = decodeCallerCacheFile(anyColorCache);
+                if (anyCached != null) {
+                    putMemCached(officialMemKey, anyCached);
+                    return anyCached;
+                }
             }
 
-            if (Looper.myLooper() != Looper.getMainLooper()) {
+            if (onMainThread) {
+                scheduleAsyncOfficialFetch(ctx, modelName, colorCode, targetSizePx,
+                        officialCache, officialMemKey, onOfficialCached);
+            } else {
+                Bitmap fromIpc = decodeFromProviderUri(ctx, buildArtworkUri(modelName, colorCode), targetSizePx);
+                if (fromIpc != null) {
+                    writeCallerCacheBitmap(officialCache, fromIpc);
+                    putMemCached(officialMemKey, fromIpc);
+                    return fromIpc;
+                }
                 Bitmap direct = SonyModelImageManager.downloadOfficialBitmapDirect(
                         ctx, modelName, colorCode, targetSizePx);
                 if (direct != null) {
                     writeCallerCacheBitmap(officialCache, direct);
+                    putMemCached(officialMemKey, direct);
                     return direct;
                 }
-            } else {
-                scheduleDirectOfficialFetch(ctx, modelName, colorCode, targetSizePx, officialCache, onOfficialCached);
             }
         }
         return SonyArtworkFallback.createFallbackBitmap(modelName, colorCode, targetSizePx);
     }
 
-    private static void scheduleDirectOfficialFetch(
+    private static Bitmap getMemCached(String key) {
+        if (key == null) return null;
+        Bitmap bmp = MEM_CACHE.get(key);
+        if (bmp != null && bmp.isRecycled()) {
+            MEM_CACHE.remove(key);
+            return null;
+        }
+        return bmp;
+    }
+
+    private static void putMemCached(String key, Bitmap bmp) {
+        if (key != null && bmp != null && !bmp.isRecycled()) {
+            MEM_CACHE.put(key, bmp);
+        }
+    }
+
+    private static void scheduleAsyncCustomFetch(
+            Context ctx,
+            int targetSizePx,
+            File cacheFile,
+            String memKey,
+            Runnable onOfficialCached
+    ) {
+        if (ctx == null || cacheFile == null) {
+            return;
+        }
+        String key = "custom:" + cacheFile.getAbsolutePath();
+        if (DIRECT_IN_FLIGHT.putIfAbsent(key, Boolean.TRUE) != null) {
+            return;
+        }
+        final Context appCtx = ctx.getApplicationContext() != null ? ctx.getApplicationContext() : ctx;
+        DIRECT_FETCH_EXEC.execute(() -> {
+            try {
+                Bitmap bmp = decodeFromProviderUri(appCtx, buildCustomUri(), targetSizePx);
+                if (bmp != null) {
+                    writeCallerCacheBitmap(cacheFile, bmp);
+                    putMemCached(memKey, bmp);
+                    if (onOfficialCached != null) {
+                        MAIN_HANDLER.post(onOfficialCached);
+                    }
+                }
+            } finally {
+                DIRECT_IN_FLIGHT.remove(key);
+            }
+        });
+    }
+
+    private static void scheduleAsyncOfficialFetch(
             Context ctx,
             String modelName,
             int colorCode,
             int targetSizePx,
             File cacheFile,
+            String memKey,
             Runnable onOfficialCached
     ) {
         if (ctx == null || modelName == null || modelName.trim().isEmpty() || cacheFile == null) {
@@ -147,11 +237,14 @@ public final class SonyAssetProvider extends ContentProvider {
         final Context appCtx = ctx.getApplicationContext() != null ? ctx.getApplicationContext() : ctx;
         DIRECT_FETCH_EXEC.execute(() -> {
             try {
-                Bitmap bmp = SonyModelImageManager.downloadOfficialBitmapDirect(
-                        appCtx, modelName, colorCode, targetSizePx);
+                Bitmap bmp = decodeFromProviderUri(appCtx, buildArtworkUri(modelName, colorCode), targetSizePx);
+                if (bmp == null) {
+                    bmp = SonyModelImageManager.downloadOfficialBitmapDirect(
+                            appCtx, modelName, colorCode, targetSizePx);
+                }
                 if (bmp != null) {
                     writeCallerCacheBitmap(cacheFile, bmp);
-                    bmp.recycle();
+                    putMemCached(memKey, bmp);
                     if (onOfficialCached != null) {
                         MAIN_HANDLER.post(onOfficialCached);
                     }
@@ -162,17 +255,42 @@ public final class SonyAssetProvider extends ContentProvider {
         });
     }
 
+    private static String buildSafeModelKey(String modelName) {
+        String norm = (modelName == null || modelName.trim().isEmpty())
+                ? "sony"
+                : SonyDeviceDetector.normalizeModelName(modelName);
+        String safe = norm.toLowerCase(Locale.US).replaceAll("[^a-z0-9]+", "_");
+        return safe.isEmpty() ? "sony" : safe;
+    }
+
+    private static File findAnyCachedModelFile(Context ctx, String modelName) {
+        try {
+            File dir = new File(ctx.getCacheDir(), "sonypods_art");
+            File[] files = dir.listFiles();
+            if (files == null || files.length == 0) {
+                return null;
+            }
+            String prefix = "art_" + buildSafeModelKey(modelName) + "_";
+            for (File f : files) {
+                if (f != null && f.isFile() && f.length() > 0) {
+                    String n = f.getName();
+                    if (n.startsWith(prefix) && n.endsWith(".png") && !n.endsWith(".tmp")) {
+                        return f;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
+    }
+
     private static File getCallerCacheFile(Context ctx, String modelName, int colorCode, boolean isCustom) {
         try {
             File dir = new File(ctx.getCacheDir(), "sonypods_art");
             if (isCustom) {
                 return new File(dir, "custom.png");
             }
-            String norm = (modelName == null || modelName.trim().isEmpty())
-                    ? "sony"
-                    : SonyDeviceDetector.normalizeModelName(modelName);
-            String safe = norm.toLowerCase(Locale.US).replaceAll("[^a-z0-9]+", "_");
-            if (safe.isEmpty()) safe = "sony";
+            String safe = buildSafeModelKey(modelName);
             return new File(dir, "art_" + safe + "_" + colorCode + ".png");
         } catch (Throwable ignored) {
             return null;

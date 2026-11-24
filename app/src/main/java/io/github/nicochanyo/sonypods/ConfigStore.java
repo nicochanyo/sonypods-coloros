@@ -14,6 +14,7 @@ import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.TypedValue;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -115,6 +116,10 @@ public final class ConfigStore {
     public static final String KEY_APP_LANG = "app_lang";
     public static final String KEY_APP_MONET = "app_monet";
     public static final String KEY_APP_DARK_MODE = "app_dark_mode";
+    public static final String KEY_APP_UI_STYLE = "app_ui_style";
+
+    public static final int UI_STYLE_CLASSIC = 0;
+    public static final int UI_STYLE_LIVING_FLOW = 1;
 
     public static final int DARK_MODE_SYSTEM = 0;
     public static final int DARK_MODE_LIGHT = 1;
@@ -356,6 +361,148 @@ public final class ConfigStore {
         }
         SharedPreferences sp = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         sp.edit().putInt(KEY_APP_DARK_MODE, normalizeDarkMode(mode)).commit();
+    }
+
+    private static final String[] COLOROS_VERSION_PROPS = {
+            "ro.build.version.oplusrom",
+            "ro.build.version.oplusrom.display",
+            "ro.build.version.oplusrom.confidential",
+            "ro.rom.different.version"
+    };
+    private static volatile int sCachedColorOsMajorVersion = Integer.MIN_VALUE;
+    private static volatile int sCachedDefaultUiStyle = -1;
+
+    /**
+     * Detects the ColorOS major version from Oplus ROM system properties,
+     * returning {@code -1} if running on a non-ColorOS or unreadable build.
+     */
+    public static int getColorOsMajorVersion() {
+        int cached = sCachedColorOsMajorVersion;
+        if (cached != Integer.MIN_VALUE) {
+            return cached;
+        }
+        int detected = -1;
+        try {
+            Class<?> spCls = Class.forName("android.os.SystemProperties");
+            Method getM = spCls.getMethod("get", String.class, String.class);
+            for (String key : COLOROS_VERSION_PROPS) {
+                Object rawObj = getM.invoke(null, key, "");
+                String raw = (rawObj instanceof String) ? (String) rawObj : "";
+                int parsed = parseMajorVersion(raw);
+                if (parsed > 0) {
+                    detected = parsed;
+                    break;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        sCachedColorOsMajorVersion = detected;
+        return detected;
+    }
+
+    static int parseMajorVersion(String raw) {
+        if (raw == null) {
+            return -1;
+        }
+        String s = raw.trim();
+        if (s.isEmpty()) {
+            return -1;
+        }
+        int dotted = scanVersionToken(s, true);
+        if (dotted > 0) {
+            return dotted;
+        }
+        return scanVersionToken(s, false);
+    }
+
+    private static int scanVersionToken(String s, boolean requireDot) {
+        int len = s.length();
+        int i = 0;
+        while (i < len) {
+            char c = s.charAt(i);
+            if (c < '0' || c > '9') {
+                i++;
+                continue;
+            }
+            int j = i;
+            int value = 0;
+            while (j < len) {
+                char d = s.charAt(j);
+                if (d < '0' || d > '9') {
+                    break;
+                }
+                if (value <= 100) {
+                    value = value * 10 + (d - '0');
+                }
+                j++;
+            }
+            boolean validBoundary = requireDot
+                    ? (j < len && s.charAt(j) == '.')
+                    : (j == len || Character.isWhitespace(s.charAt(j)));
+            if (validBoundary && value >= 1 && value <= 99) {
+                return value;
+            }
+            i = j;
+        }
+        return -1;
+    }
+
+    /**
+     * Resolves the OS-appropriate default UI style: Living Flow on ColorOS 17+
+     * (or Android 17+ fallback) and Classic on ColorOS 16 and below.
+     */
+    public static int getDefaultUiStyle() {
+        int cached = sCachedDefaultUiStyle;
+        if (cached != -1) {
+            return cached;
+        }
+        int major = getColorOsMajorVersion();
+        int resolved;
+        if (major > 0) {
+            resolved = major >= 17 ? UI_STYLE_LIVING_FLOW : UI_STYLE_CLASSIC;
+        } else {
+            resolved = Build.VERSION.SDK_INT >= 37 ? UI_STYLE_LIVING_FLOW : UI_STYLE_CLASSIC;
+        }
+        sCachedDefaultUiStyle = resolved;
+        return resolved;
+    }
+
+    public static int normalizeUiStyle(int raw) {
+        if (raw == UI_STYLE_CLASSIC) {
+            return UI_STYLE_CLASSIC;
+        }
+        if (raw == UI_STYLE_LIVING_FLOW) {
+            return UI_STYLE_LIVING_FLOW;
+        }
+        return getDefaultUiStyle();
+    }
+
+    public static int getAppUiStyle(Context ctx) {
+        int defaultStyle = getDefaultUiStyle();
+        if (ctx == null) {
+            return defaultStyle;
+        }
+        try {
+            SharedPreferences sp = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            if (!sp.contains(KEY_APP_UI_STYLE)) {
+                return defaultStyle;
+            }
+            return normalizeUiStyle(sp.getInt(KEY_APP_UI_STYLE, defaultStyle));
+        } catch (Throwable ignored) {
+            return defaultStyle;
+        }
+    }
+
+    public static void setAppUiStyle(Context ctx, int style) {
+        if (ctx == null) {
+            return;
+        }
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        sp.edit().putInt(KEY_APP_UI_STYLE, normalizeUiStyle(style)).commit();
+    }
+
+    public static boolean isLivingFlowUi(Context ctx) {
+        return getAppUiStyle(ctx) == UI_STYLE_LIVING_FLOW;
     }
 
     public static boolean isDarkThemeActive(Context ctx) {
@@ -941,6 +1088,7 @@ public final class ConfigStore {
         }
         try {
             Intent intent = new Intent(ACTION_STATE_CHANGED);
+            intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
             intent.putExtra(EXTRA_STATE_SERIALIZED, serialized);
             ctx.sendBroadcast(intent);
         } catch (Throwable ignored) {

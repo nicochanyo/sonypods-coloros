@@ -1,6 +1,7 @@
 package io.github.nicochanyo.sonypods;
 
 import android.app.AlertDialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -11,6 +12,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
+import android.provider.Settings;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -19,16 +21,19 @@ import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import org.json.JSONObject;
+
 /**
  * Accent-only vivid dynamic color helper that preserves neutral COUI light/dark surfaces.
  */
 public final class DynamicThemeHelper {
-    private static final int STOCK_ACCENT_LIGHT = 0xFF0066FF;
-    private static final int STOCK_ACCENT_DARK = 0xFF3B82FF;
-    private static final int STOCK_TONAL_LIGHT = 0x1F0066FF;
-    private static final int STOCK_TONAL_DARK = 0x2E3B82FF;
+    private static final int STOCK_ACCENT_LIGHT = 0xFF007DFF;
+    private static final int STOCK_ACCENT_DARK = 0xFF1A8CFF;
+    private static final int STOCK_TONAL_LIGHT = 0x1F007DFF;
+    private static final int STOCK_TONAL_DARK = 0x2E1A8CFF;
 
     private static final String TAG_ICON = "accent_icon";
+    private static final String TAG_ICON_BG = "accent_icon_bg";
     private static final String TAG_TEXT = "accent_text";
     private static final String TAG_CHIP = "accent_chip";
     private static final String TAG_BTN = "accent_btn";
@@ -46,6 +51,13 @@ public final class DynamicThemeHelper {
         if (!isDynamicColorActive(ctx) || ctx == null) {
             return fallback;
         }
+        if (ConfigStore.isLivingFlowUi(ctx)) {
+            int sysAccent = readColorOsSystemAccent(ctx, isDark);
+            if (sysAccent != 0) {
+                return sysAccent;
+            }
+            return fallback;
+        }
         int seed = readWallpaperAccent(ctx);
         if (seed == 0) {
             return fallback;
@@ -60,7 +72,25 @@ public final class DynamicThemeHelper {
 
     public static int getOnAccent(Context ctx) {
         int accent = getAccent(ctx);
-        return luminance(accent) < 0.66f ? 0xFFFFFFFF : 0xFF121214;
+        if (ctx != null && ConfigStore.isLivingFlowUi(ctx)) {
+            return luminance(accent) < 0.78f ? 0xFFFFFFFF : 0xFF101215;
+        }
+        return luminance(accent) < 0.50f ? 0xFFFFFFFF : 0xFF101215;
+    }
+
+    public static Drawable createRadioIndicator(Context ctx, boolean selected) {
+        float d = ctx.getResources().getDisplayMetrics().density;
+        boolean dark = ConfigStore.isDarkThemeActive(ctx);
+        GradientDrawable ring = new GradientDrawable();
+        ring.setShape(GradientDrawable.OVAL);
+        if (selected) {
+            ring.setColor(ctx.getColor(R.color.lf_card));
+            ring.setStroke(Math.round(5.5f * d), getAccent(ctx));
+        } else {
+            ring.setColor(Color.TRANSPARENT);
+            ring.setStroke(Math.max(1, Math.round(1.5f * d)), dark ? 0x45FFFFFF : 0x38000000);
+        }
+        return ring;
     }
 
     public static int getTonal(Context ctx) {
@@ -86,7 +116,11 @@ public final class DynamicThemeHelper {
         int switchOff = ConfigStore.resolveThemeColor(ctx, R.attr.couiSwitchOff, R.color.coui_switch_off);
         int ripple = ConfigStore.resolveThemeColor(ctx, R.attr.couiRipple, R.color.coui_ripple);
         float density = ctx.getResources().getDisplayMetrics().density;
-        applyRecursive(root, accent, onAccent, tonal, switchOff, ripple, density, animatingSwitch);
+        boolean isDark = ConfigStore.isDarkThemeActive(ctx);
+        boolean livingFlow = ConfigStore.isLivingFlowUi(ctx);
+        boolean monet = isDynamicColorActive(ctx);
+        applyRecursive(root, accent, onAccent, tonal, switchOff, ripple, density,
+                isDark, livingFlow, monet, animatingSwitch);
     }
 
     public static void tintAlertDialog(AlertDialog dialog, Context ctx) {
@@ -104,6 +138,105 @@ public final class DynamicThemeHelper {
             if (btn != null) {
                 btn.setTextColor(accent);
             }
+        }
+    }
+
+    private static int readColorOsSystemAccent(Context ctx, boolean isDark) {
+        try {
+            ContentResolver cr = ctx.getContentResolver();
+            if (cr != null) {
+                String jsonStr = Settings.Secure.getString(cr, "theme_customization_overlay_packages");
+                if (jsonStr != null && !jsonStr.trim().isEmpty()) {
+                    try {
+                        JSONObject obj = new JSONObject(jsonStr);
+                        int monetEnable = obj.optInt("material_you_overlay_enable", 1);
+                        String colorSource = obj.optString("android.theme.customization.color_source", "");
+                        if (monetEnable == 0 && !"preset".equalsIgnoreCase(colorSource)) {
+                            return isDark ? STOCK_ACCENT_DARK : STOCK_ACCENT_LIGHT;
+                        }
+                        String hex = obj.optString("android.theme.customization.accent_color", "");
+                        if (hex.isEmpty()) {
+                            hex = obj.optString("android.theme.customization.system_palette", "");
+                        }
+                        int parsed = parseHexRgb(hex);
+                        if (parsed != 0) {
+                            float[] hsv = new float[3];
+                            Color.colorToHSV(parsed, hsv);
+                            if (hsv[1] >= 0.03f) {
+                                if (isDark && luminance(parsed) < 0.20f) {
+                                    hsv[2] = Math.max(hsv[2], 0.58f);
+                                    return Color.HSVToColor(0xFF, hsv);
+                                }
+                                return parsed;
+                            }
+                        }
+                    } catch (Throwable ignored) {
+                    }
+                }
+
+                try {
+                    int customInt = Settings.System.getInt(cr, "coui_theme_custom_color", 0);
+                    if (customInt != 0) {
+                        int c = 0xFF000000 | (customInt & 0x00FFFFFF);
+                        float[] hsv = new float[3];
+                        Color.colorToHSV(c, hsv);
+                        if (hsv[1] >= 0.03f) {
+                            return c;
+                        }
+                    }
+                } catch (Throwable ignored) {
+                }
+
+                try {
+                    int sysUiAccent = parseHexRgb(Settings.Secure.getString(cr, "sysui_type_accent_color"));
+                    if (sysUiAccent != 0) {
+                        float[] hsv = new float[3];
+                        Color.colorToHSV(sysUiAccent, hsv);
+                        if (hsv[1] >= 0.03f) {
+                            return sysUiAccent;
+                        }
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+
+        if (Build.VERSION.SDK_INT >= 31) {
+            int[] monetIds = isDark
+                    ? new int[]{android.R.color.system_accent1_300, android.R.color.system_accent1_400, android.R.color.system_accent1_500}
+                    : new int[]{android.R.color.system_accent1_400, android.R.color.system_accent1_500};
+            float[] hsv = new float[3];
+            for (int resId : monetIds) {
+                try {
+                    int color = ctx.getColor(resId);
+                    Color.colorToHSV(color, hsv);
+                    if (hsv[1] >= 0.04f) {
+                        return color;
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+        return 0;
+    }
+
+    private static int parseHexRgb(String raw) {
+        if (raw == null) return 0;
+        String clean = raw.trim();
+        if (clean.startsWith("#")) {
+            clean = clean.substring(1);
+        } else if (clean.startsWith("0x") || clean.startsWith("0X")) {
+            clean = clean.substring(2);
+        }
+        if (clean.length() != 6 && clean.length() != 8) {
+            return 0;
+        }
+        try {
+            long val = Long.parseLong(clean, 16);
+            return 0xFF000000 | ((int) val & 0x00FFFFFF);
+        } catch (Throwable ignored) {
+            return 0;
         }
     }
 
@@ -156,13 +289,14 @@ public final class DynamicThemeHelper {
 
     private static void applyRecursive(View v, int accent, int onAccent, int tonal,
                                        int switchOff, int ripple, float density,
+                                       boolean isDark, boolean livingFlow, boolean monet,
                                        Switch animatingSwitch) {
         if (v instanceof Switch) {
             tintSwitchTrack((Switch) v, accent, switchOff, density, v == animatingSwitch);
         } else if (v instanceof SeekBar) {
             v.invalidate();
         }
-        if (v.getId() == R.id.vNavSlidingPill) {
+        if (v.getId() == R.id.vNavSlidingPill && !livingFlow) {
             GradientDrawable pill = new GradientDrawable();
             pill.setShape(GradientDrawable.RECTANGLE);
             pill.setColor(tonal);
@@ -175,6 +309,12 @@ public final class DynamicThemeHelper {
             String tag = (String) tagObj;
             if (TAG_ICON.equals(tag) && v instanceof ImageView) {
                 ((ImageView) v).setColorFilter(accent, PorterDuff.Mode.SRC_IN);
+            } else if (TAG_ICON_BG.equals(tag)) {
+                GradientDrawable squircle = new GradientDrawable();
+                squircle.setShape(GradientDrawable.RECTANGLE);
+                squircle.setCornerRadius(11f * density);
+                squircle.setColor(((isDark ? 0x28 : 0x16) << 24) | (accent & 0x00FFFFFF));
+                v.setBackground(squircle);
             } else if (TAG_TEXT.equals(tag) && v instanceof TextView) {
                 ((TextView) v).setTextColor(accent);
             } else if (TAG_CHIP.equals(tag) && v instanceof TextView) {
@@ -190,20 +330,21 @@ public final class DynamicThemeHelper {
                 }
                 tv.setTextColor(accent);
                 tintCompoundDrawables(tv, accent);
-            } else if (TAG_BTN.equals(tag) && v instanceof Button) {
+            } else if (TAG_BTN.equals(tag) && v instanceof TextView) {
                 GradientDrawable shape = new GradientDrawable();
                 shape.setShape(GradientDrawable.RECTANGLE);
                 shape.setColor(accent);
-                shape.setCornerRadius(24f * density);
+                shape.setCornerRadius((livingFlow ? 999f : 24f) * density);
                 v.setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), shape, shape));
-                ((Button) v).setTextColor(onAccent);
+                ((TextView) v).setTextColor(onAccent);
             }
         }
 
         if (v instanceof ViewGroup) {
             ViewGroup vg = (ViewGroup) v;
             for (int i = 0; i < vg.getChildCount(); i++) {
-                applyRecursive(vg.getChildAt(i), accent, onAccent, tonal, switchOff, ripple, density, animatingSwitch);
+                applyRecursive(vg.getChildAt(i), accent, onAccent, tonal, switchOff, ripple,
+                        density, isDark, livingFlow, monet, animatingSwitch);
             }
         }
     }

@@ -1052,14 +1052,16 @@ public final class SoundConnectSheets {
             root.setClipToOutline(true);
         } else {
             root.setBackgroundColor(resolveFullScreenPageBg(uiCtx, pal));
+            root.setClipChildren(false);
+            root.setClipToPadding(false);
         }
 
         int statusInset = embedded ? 0 : resolveStatusBarFallbackPx(uiCtx);
-        int headerPadH = Math.round(14f * d);
-        int headerPadTop = statusInset + Math.round((embedded ? 6f : 10f) * d);
-        int headerPadBot = Math.round((embedded ? 6f : 8f) * d);
-        int btnBoxSize = Math.round(52f * d); // 42dp circle + 5dp shadow margin each side
-        int headerHeightPx = headerPadTop + btnBoxSize + headerPadBot;
+        int headerPadH = Math.round(16f * d);
+        int headerPadTop = statusInset + Math.round((embedded ? 10f : 14f) * d);
+        int headerPadBot = Math.round((embedded ? 10f : 12f) * d);
+        int btnSize = Math.round(42f * d);
+        int headerHeightPx = headerPadTop + btnSize + headerPadBot;
         int blurExtraPx = Math.round((embedded ? 8f : 22f) * d);
 
         LinearLayout body = new LinearLayout(uiCtx);
@@ -1097,6 +1099,8 @@ public final class SoundConnectSheets {
 
         root.addView(topBlur, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, headerHeightPx + blurExtraPx, Gravity.TOP));
+        topBlur.setOutlineProvider(null);
+        topBlur.setTranslationZ(4f * d);
 
         root.bindProgressiveBlur(contentContainer, topBlur);
         scrollView.getViewTreeObserver().addOnScrollChangedListener(topBlur::notifyTargetInvalidated);
@@ -1104,14 +1108,17 @@ public final class SoundConnectSheets {
 
         // Top header bar: floating circular back button + bold title (non-collapsing)
         LinearLayout headerWrap = new LinearLayout(uiCtx);
+        headerWrap.setOutlineProvider(null);
+        headerWrap.setTranslationZ(12f * d);
         headerWrap.setOrientation(LinearLayout.HORIZONTAL);
         headerWrap.setGravity(Gravity.CENTER_VERTICAL);
+        headerWrap.setClipChildren(false);
+        headerWrap.setClipToPadding(false);
         headerWrap.setPadding(headerPadH, headerPadTop, Math.round(20f * d), headerPadBot);
 
-        int backBtnFill = pal.dark ? 0xFF28282C : (Color.alpha(cardColor) >= 0xE0 ? cardColor : 0xFFFFFFFF);
-        FloatingBackButtonView backBtn = new FloatingBackButtonView(uiCtx, pal, backBtnFill);
+        FloatingBackButtonView backBtn = new FloatingBackButtonView(uiCtx, pal, embedded);
         backBtn.setOnClickListener(v -> popStagePage(stage));
-        headerWrap.addView(backBtn, new LinearLayout.LayoutParams(btnBoxSize, btnBoxSize));
+        headerWrap.addView(backBtn, new LinearLayout.LayoutParams(btnSize, btnSize));
 
         TextView tvTitle = new TextView(uiCtx);
         tvTitle.setText(title);
@@ -1122,7 +1129,7 @@ public final class SoundConnectSheets {
         tvTitle.setEllipsize(TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        titleLp.setMarginStart(Math.round(9f * d));
+        titleLp.setMarginStart(Math.round(14f * d));
         headerWrap.addView(tvTitle, titleLp);
 
         root.addView(headerWrap, new FrameLayout.LayoutParams(
@@ -1137,8 +1144,8 @@ public final class SoundConnectSheets {
                         ? insets.getInsets(WindowInsets.Type.systemBars()).bottom
                         : insets.getSystemWindowInsetBottom();
                 int actualTop = top > 0 ? top : statusInset;
-                int newHeaderTopPad = actualTop + Math.round(10f * d);
-                int newHeaderH = newHeaderTopPad + btnBoxSize + headerPadBot;
+                int newHeaderTopPad = actualTop + Math.round(14f * d);
+                int newHeaderH = newHeaderTopPad + btnSize + headerPadBot;
                 headerWrap.setPadding(headerPadH, newHeaderTopPad, Math.round(20f * d), headerPadBot);
                 scrollView.setPadding(scrollPadH, newHeaderH + Math.round(4f * d), scrollPadH, bottom + Math.round(28f * d));
                 topBlur.setStatusBarTopPx(actualTop);
@@ -1734,87 +1741,55 @@ public final class SoundConnectSheets {
     // ==================== Drawn Vector & Interactive Equalizer Widgets ====================
 
     /**
-     * Floating circular back button ({@code ←}) with soft ambient drop shadow in light mode
-     * (and no shadow in dark mode), matching HeyMelody and ColorOS 17 sub-page headers.
+     * ColorOS 17 circular frosted-glass back button ({@code ←}) using
+     * {@link ColorOsLivingFlowEngine.GlassPreset#TOP_BAR_CIRCLE}, matching official sub-page headers.
      */
-    private static final class FloatingBackButtonView extends View {
-        private final Paint circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Paint pressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private static final class FloatingBackButtonView extends FrameLayout {
+        private final float d;
         private final Paint arrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path arrowPath = new Path();
-        private final boolean dark;
-        private final float shadowInset;
-        private boolean pressedState;
 
-        FloatingBackButtonView(Context ctx, CouiBottomSheet.Palette pal, int fillColor) {
+        FloatingBackButtonView(Context ctx, CouiBottomSheet.Palette pal, boolean embedded) {
             super(ctx);
-            this.dark = pal.dark;
-            float d = ctx.getResources().getDisplayMetrics().density;
-            this.shadowInset = 5f * d;
+            this.d = ctx.getResources().getDisplayMetrics().density;
+            setWillNotDraw(false);
+            setClickable(true);
+            setFocusable(true);
 
-            circlePaint.setStyle(Paint.Style.FILL);
-            circlePaint.setColor(fillColor);
-            if (!dark) {
-                circlePaint.setShadowLayer(5.5f * d, 0f, 2f * d, 0x16000000);
-            }
-
-            pressPaint.setStyle(Paint.Style.FILL);
-            pressPaint.setColor(pal.ripple);
-
-            strokePaint.setStyle(Paint.Style.STROKE);
-            strokePaint.setStrokeWidth(Math.max(1f, 0.6f * d));
-            strokePaint.setColor(dark ? 0x18FFFFFF : 0x08000000);
+            ColorOsLivingFlowEngine.applyGlassSurface(
+                    this,
+                    embedded
+                            ? ColorOsLivingFlowEngine.GlassPreset.EMBEDDED_TOP_CIRCLE
+                            : ColorOsLivingFlowEngine.GlassPreset.TOP_BAR_CIRCLE,
+                    pal.dark, 21f, true, false);
 
             arrowPaint.setStyle(Paint.Style.STROKE);
             arrowPaint.setStrokeCap(Paint.Cap.ROUND);
             arrowPaint.setStrokeJoin(Paint.Join.ROUND);
-            arrowPaint.setStrokeWidth(1.9f * d);
+            arrowPaint.setStrokeWidth(2.0f * d);
             arrowPaint.setColor(pal.textPrimary);
 
-            setClickable(true);
-            setFocusable(true);
-        }
-
-        @Override
-        public boolean onTouchEvent(MotionEvent event) {
-            int action = event.getActionMasked();
-            if (action == MotionEvent.ACTION_DOWN) {
-                pressedState = true;
-                animate().scaleX(0.92f).scaleY(0.92f).setDuration(100L).start();
-                invalidate();
-            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                pressedState = false;
-                animate().scaleX(1f).scaleY(1f).setDuration(140L).start();
-                invalidate();
-            }
-            return super.onTouchEvent(event);
+            LivingFlowEffects.TouchFeedback.attach(
+                    this, LivingFlowEffects.TouchFeedback.Profile.GLASS_CIRCLE,
+                    pal.dark, 21f, true, false, true);
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
             float w = getWidth();
             float h = getHeight();
             if (w <= 0f || h <= 0f) return;
             float cx = w * 0.5f;
             float cy = h * 0.5f;
-            float r = Math.min(w, h) * 0.5f - shadowInset;
-            if (r <= 0f) return;
-
-            canvas.drawCircle(cx, cy, r, circlePaint);
-            if (pressedState) {
-                canvas.drawCircle(cx, cy, r, pressPaint);
-            }
-            canvas.drawCircle(cx, cy, r, strokePaint);
-
-            float span = r * 0.36f;
-            float wing = r * 0.28f;
+            float arm = 7.2f * d;
+            float head = 5.4f * d;
             arrowPath.reset();
-            arrowPath.moveTo(cx - span + wing, cy - wing);
-            arrowPath.lineTo(cx - span, cy);
-            arrowPath.lineTo(cx - span + wing, cy + wing);
-            arrowPath.moveTo(cx - span + 0.5f, cy);
-            arrowPath.lineTo(cx + span, cy);
+            arrowPath.moveTo(cx + arm, cy);
+            arrowPath.lineTo(cx - arm, cy);
+            arrowPath.moveTo(cx - arm + head, cy - head);
+            arrowPath.lineTo(cx - arm, cy);
+            arrowPath.lineTo(cx - arm + head, cy + head);
             canvas.drawPath(arrowPath, arrowPaint);
         }
     }
@@ -2278,7 +2253,7 @@ public final class SoundConnectSheets {
             } catch (Throwable ignored) {
             }
         }
-        return 0xFFF5F6F8;
+        return pal.livingFlow ? 0xFFF2F3F5 : 0xFFF5F6F8;
     }
 
     private static String formatUnifiedQualityShort(Context ctx, ConfigStore.HeadsetState st,

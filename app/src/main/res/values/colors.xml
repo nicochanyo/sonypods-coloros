@@ -28,4 +28,25 @@
     <color name="coui_status_ok_fg">#1EA855</color>
     <color name="coui_status_warn_bg">#FFF3E0</color>
     <color name="coui_status_warn_fg">#D97706</color>
+
+    <!-- ColorOS 17 Living Flow Design Tokens (Light) -->
+    <color name="lf_bg">#FFF2F3F5</color>
+    <color name="lf_card">#FFFFFFFF</color>
+    <color name="lf_subcard">#FFF5F6F8</color>
+    <color name="lf_card_stroke">#00000000</color>
+    <color name="lf_divider">#12000000</color>
+    <color name="lf_press_bg">#12000000</color>
+    <color name="lf_text_primary">#E6000000</color>
+    <color name="lf_text_secondary">#8A000000</color>
+    <color name="lf_chevron">#42000000</color>
+    <color name="lf_nav_active">#E6000000</color>
+    <color name="lf_nav_inactive">#73000000</color>
+    <color name="lf_destructive">#FFDB382C</color>
+    <color name="lf_anc_track">#ECEFF5</color>
+    <color name="lf_anc_pill">#FFFFFF</color>
+    <color name="lf_bat_good">#22C55E</color>
+    <color name="lf_bat_mid">#F59E0B</color>
+    <color name="lf_bat_low">#EF4444</color>
+    <color name="lf_scrim_mid">#05000000</color>
+    <color name="lf_scrim_end">#11000000</color>
 </resources>

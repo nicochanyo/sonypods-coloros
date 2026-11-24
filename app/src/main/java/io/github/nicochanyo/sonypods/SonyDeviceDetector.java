@@ -65,6 +65,10 @@ public final class SonyDeviceDetector {
         SONY_FAST_PAIR_MODEL_IDS.put(0xA921CA, "ULT WEAR");
         SONY_FAST_PAIR_MODEL_IDS.put(0x859A7E, "LinkBuds Fit");
         SONY_FAST_PAIR_MODEL_IDS.put(0xC71D34, "LinkBuds Open");
+        SONY_FAST_PAIR_MODEL_IDS.put(0x0E30C3, "WH-1000XM5");
+        SONY_FAST_PAIR_MODEL_IDS.put(0x00C95C, "WF-1000X");
+        SONY_FAST_PAIR_MODEL_IDS.put(0x01C95C, "WF-1000X");
+        SONY_FAST_PAIR_MODEL_IDS.put(0x02C95C, "WF-1000X");
     }
 
     private static final String[] NAME_KEYWORDS = {
@@ -203,6 +207,25 @@ public final class SonyDeviceDetector {
         return false;
     }
 
+    private static final Set<String> KNOWN_V1_MODELS = new java.util.HashSet<>(java.util.Arrays.asList(
+            "WF-1000XM3", "WF-1000X", "WF-SP800N", "WF-SP700N", "WF-H800",
+            "WH-1000XM3", "WH-1000XM2", "WH-XB900N", "WH-XB700", "WH-CH700N",
+            "WH-H910N", "WH-H900N", "WH-H810", "WH-H800",
+            "WI-1000XM2", "WI-1000X", "WI-C600N", "WI-H700", "WI-SP600N"
+    ));
+
+    /** Returns true for confirmed Sony Tandem V1 headset models. */
+    public static boolean isKnownV1ModelName(String modelOrName) {
+        if (modelOrName == null) {
+            return false;
+        }
+        String normalized = normalizeModelName(modelOrName);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+        return KNOWN_V1_MODELS.contains(normalized.toUpperCase(Locale.US));
+    }
+
     public static int detectPreferredVersion(BluetoothDevice device) {
         if (device == null) {
             return 2;
@@ -224,6 +247,12 @@ public final class SonyDeviceDetector {
                 if (hasV1) {
                     return 1;
                 }
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            if (isKnownV1ModelName(device.getName())) {
+                return 1;
             }
         } catch (Throwable ignored) {
         }
@@ -349,14 +378,20 @@ public final class SonyDeviceDetector {
         }
         try {
             BluetoothDevice dev = result.getDevice();
-            if (dev != null && (isSonyMacOrBonded(dev) || isRecentSonyBleMac(dev.getAddress()))) {
-                return true;
-            }
             if (isSonyBleScanRecord(result.getScanRecord())) {
                 if (dev != null) {
                     markRecentSonyBleMac(dev.getAddress());
                 }
                 return true;
+            }
+            if (dev != null) {
+                String addr = dev.getAddress();
+                if (isKnownSonyMac(addr) || isRecentSonyBleMac(addr)) {
+                    return true;
+                }
+                if (isSonyMacOrBonded(dev)) {
+                    return true;
+                }
             }
         } catch (Throwable ignored) {
         }

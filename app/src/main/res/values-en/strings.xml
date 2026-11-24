@@ -6,7 +6,16 @@
     <!-- Bottom Navigation & Header -->
     <string name="nav_headset">Headset</string>
     <string name="nav_integration">Integration</string>
+    <string name="nav_integration_short">System</string>
     <string name="nav_about">About</string>
+    <string name="living_flow_chip">Living Flow</string>
+    <string name="anc_quick_label">Noise Control</string>
+    <string name="cd_quick_refresh">Refresh status</string>
+    <string name="cd_quick_panel">Open native headset panel</string>
+    <string name="cd_quick_appearance">Appearance &amp; UI style</string>
+    <string name="quick_menu_toggle_dark">Toggle Light / Dark</string>
+    <string name="quick_menu_switch_classic">Switch to Classic UI</string>
+    <string name="quick_menu_toggle_monet">Toggle Dynamic Color</string>
 
     <string name="page_title_headset">SonyPods ColorOS</string>
     <string name="page_subtitle_headset">Battery and extra features</string>
@@ -19,11 +28,11 @@
     <!-- Top Status Card -->
     <string name="status_title_active">Module Active</string>
     <string name="status_title_inactive">Module Inactive</string>
-    <string name="status_sub_active">v1.0.2 · API 102</string>
+    <string name="status_sub_active">v1.0.3 · API 102</string>
     <string name="status_sub_inactive">Enable module in LSPosed and restart Bluetooth</string>
     <string name="badge_api_102">API 102</string>
 
-    <string name="chip_version">v1.0.2</string>
+    <string name="chip_version">v1.0.3</string>
     <string name="chip_coloros">ColorOS 16/17</string>
     <string name="chip_lsposed">API 102</string>
 
@@ -70,7 +79,7 @@
 
     <string name="section_control_prefs">Switching &amp; Handover</string>
     <string name="pref_cycle_mode_title">Cycle Order</string>
-    <string name="pref_cycle_mode_summary">Modes included when cycling from shortcuts</string>
+    <string name="pref_cycle_mode_summary">Shortcut cycle order</string>
     <string name="cycle_mode_3way">ANC ⇄ Ambient ⇄ Off</string>
     <string name="cycle_mode_2way">ANC ⇄ Ambient</string>
     <string name="dialog_cycle_mode_title">Cycle Order</string>
@@ -163,13 +172,22 @@
     <string name="section_environment">Environment</string>
     <string name="about_sys_ver_title">System Version</string>
     <string name="about_device_title">Device Model</string>
+    <string name="about_app_ver_title">App Version</string>
     <string name="about_env_channel_title">Config Sync</string>
     <string name="channel_xsp">LSPosed RemotePreferences</string>
     <string name="channel_private_warn">Local only (module inactive)</string>
     <string name="about_scope_title">Recommended Scope</string>
+    <string name="about_scope_summary_fmt">%1$d system packages</string>
+    <string name="about_status_sub_active_fmt">LSPosed Remote Sync · v%1$s</string>
     <string name="about_scope_value">com.android.bluetooth, com.heytap.mydevices, com.oplus.wirelesssettings, com.oplus.melody, com.android.settings, com.android.systemui, com.heytap.accessory, com.sony.songpal.mdr</string>
 
     <string name="section_appearance">Appearance</string>
+    <string name="about_ui_style_title">UI Style</string>
+    <string name="about_ui_style_summary">Switch between ColorOS 17 Living Flow and Classic UI</string>
+    <string name="ui_style_living_flow">Living Flow</string>
+    <string name="ui_style_living_flow_desc">Living Flow (ColorOS 17)</string>
+    <string name="ui_style_classic">Classic</string>
+    <string name="ui_style_classic_desc">Classic UI (Legacy)</string>
     <string name="about_language_title">Language</string>
     <string name="about_language_summary">Follows system language by default</string>
     <string name="dialog_language_title">Language</string>
@@ -187,13 +205,19 @@
     <string name="dark_mode_dark">Dark</string>
 
     <string name="about_monet_title">Dynamic Color</string>
-    <string name="about_monet_summary">Tint accents using system wallpaper colors</string>
+    <string name="about_monet_summary">Sync accents with ColorOS system theme color</string>
 
     <string name="section_debug">Diagnostics</string>
     <string name="about_changelog_title">Changelog</string>
     <string name="about_changelog_summary">View version history</string>
     <string name="about_check_update_title">Check for Updates</string>
     <string name="about_check_update_summary">Check for new releases from LSPosed Repository</string>
+    <string name="lf_software_update_title">Software Update</string>
+    <string name="lf_update_notes_title">Update Log</string>
+    <string name="lf_software_version_label">Software Version</string>
+    <string name="lf_checking_update_status">Checking for updates…</string>
+    <string name="lf_btn_recheck_update">Check Again</string>
+    <string name="lf_btn_view_changelog">What\'s New</string>
     <string name="chip_update_checking">Checking…</string>
     <string name="chip_update_latest">Up to date</string>
     <string name="chip_update_available_fmt">New %1$s</string>
@@ -207,6 +231,8 @@
     <string name="btn_update_download">Download Update APK</string>
     <string name="btn_update_open_repo">Open Repo</string>
     <string name="dialog_changelog_title">Changelog</string>
+    <string name="changelog_v103_title">v1.0.3</string>
+    <string name="changelog_v103_body" formatted="false">• Added ColorOS 17 Living Flow UI alongside live Classic UI switching with auto OS-version defaults (Living Flow on ColorOS 17+, Classic on ColorOS 16 &amp; below) and full ColorOS 15–17 compatibility\n• Refined ColorOS 17 anchored popup menus, circular glass back buttons, Update Notes page, and dark-mode visuals\n• Fixed WF-1000XM3 &amp; Tandem V1 auto power-off bug (fixed protocol version detection and blocked unsafe 0x22 frames) and adapted full V1 controls (NC/ASM, DSEE HX, connection mode, wear pause, auto power off, touch sensors, and EQ)\n• Significantly sped up pairing and open-case popups: fixed BLE hardware APCF ScanFilter and ColorOS scan throttling, added cross-RPA correlation and BR/EDR pre-discovery\n• Prioritized initial battery probes with faster RFCOMM backoff, lower dual-ear sync delay, and async foreground state broadcasts\n• Eliminated main-thread UI stalls with in-memory artwork caching, async IPC/CDN artwork loading, and skipping idle battery polling on unpaired popups</string>
     <string name="changelog_v102_title">v1.0.2</string>
     <string name="changelog_v102_body" formatted="false">• Fixed Control Center &amp; widget battery/icon readout: shows lowest earbud battery while keeping L/R indicators instead of the charging case\n• Improved Control Center expanded sheet top blur to blend with the live dynamic backdrop\n• Added automatic changelog popup on first launch after updating</string>
     <string name="changelog_v101_title">v1.0.1</string>
@@ -234,6 +260,27 @@
     <string name="btn_cancel">Cancel</string>
     <string name="btn_apply">Apply</string>
     <string name="btn_copy_logs">Copy Snapshot</string>
+    <string name="diag_section_env">Module &amp; Environment</string>
+    <string name="diag_key_xposed">LSPosed Service</string>
+    <string name="diag_val_xposed_on">Connected · API 102</string>
+    <string name="diag_val_xposed_off">Not Connected</string>
+    <string name="diag_key_root">Root Access</string>
+    <string name="diag_val_root_ready">Granted</string>
+    <string name="diag_val_root_denied">Unavailable</string>
+    <string name="diag_key_model">Active Headset</string>
+    <string name="diag_key_mac">MAC &amp; Color Code</string>
+    <string name="diag_key_protocol">Protocol Version</string>
+    <string name="diag_key_anc_mode">Noise Control</string>
+    <string name="diag_key_smart">Ambient &amp; Smart Audio</string>
+    <string name="diag_key_voice_focus">Voice Focus</string>
+    <string name="diag_key_speak_chat">Speak-to-Chat</string>
+    <string name="diag_key_dsee">DSEE</string>
+    <string name="diag_state_on">ON</string>
+    <string name="diag_state_off">OFF</string>
+    <string name="diag_logs_section">Process Debug Logs</string>
+    <string name="diag_logs_empty">No debug logs recorded yet. Enable Verbose Debug Logs to trace packet &amp; hook events.</string>
+    <string name="about_module_status_title">Module Status</string>
+    <string name="about_hero_new_ver_fmt">Update available · %1$s</string>
     <string name="toast_copied">Copied to clipboard</string>
     <string name="dialog_model_override_sub">Enter an official model name or tap a preset; leave empty for auto</string>
     <string name="dialog_restart_custom_sub">Select system components to restart via root</string>

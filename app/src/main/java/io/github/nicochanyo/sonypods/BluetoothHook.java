@@ -35,6 +35,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Core Bluetooth process hook (com.android.bluetooth).
@@ -44,20 +47,33 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class BluetoothHook {
     private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
+    private static final ExecutorService POPUP_WORK_EXEC = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "SonyPods-PopupWork");
+        t.setDaemon(true);
+        return t;
+    });
+    private static final ExecutorService STATE_PUBLISH_EXEC = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "SonyPods-StatePub");
+        t.setDaemon(true);
+        return t;
+    });
+    private static final AtomicReference<ConfigStore.HeadsetState> PENDING_GLOBAL_STATE =
+            new AtomicReference<>();
     private static final Map<String, SonyTandemSession> SESSIONS = new ConcurrentHashMap<>();
-    private static final long POPUP_COOLDOWN_MS = 45_000L;
-    private static final long PAIRING_POPUP_COOLDOWN_MS = 10_000L;
-    private static final long DISMISS_POPUP_COOLDOWN_MS = 60_000L;
-    private static final long BLE_EDGE_ABSENCE_MS = 4_000L;
+    private static final long POPUP_COOLDOWN_MS = 8_000L;
+    private static final long PAIRING_POPUP_COOLDOWN_MS = 4_000L;
+    private static final long DISMISS_POPUP_COOLDOWN_MS = 20_000L;
+    private static final long BLE_EDGE_ABSENCE_MS = 2_000L;
     private static final long BOOT_POPUP_GRACE_MS = 45_000L;
-    private static final long DISCONNECT_GRACE_MS = 6_000L;
-    private static final int OPEN_CASE_MIN_RSSI = -82;
-    private static final int FAST_PAIR_MIN_RSSI = -82;
+    private static final long DISCONNECT_GRACE_MS = 1_500L;
+    private static final int OPEN_CASE_MIN_RSSI = -88;
+    private static final int FAST_PAIR_MIN_RSSI = -88;
+    private static final long CONNECT_POPUP_BATTERY_WAIT_MS = 350L;
     private static final String ACTION_A2DP_CODEC_CONFIG_CHANGED =
             "android.bluetooth.a2dp.profile.action.CODEC_CONFIG_CHANGED";
     private static final Object POPUP_LOCK = new Object();
     private static final Object SCAN_LOCK = new Object();
-    private static final long PAIRING_SCAN_LOW_LATENCY_MS = 120_000L;
+    private static final long PAIRING_SCAN_REFRESH_MS = 15L * 60_000L;
 
     private static volatile Context sBtContext;
     private static volatile ConfigStore.HookConfig sConfig;
@@ -66,6 +82,10 @@ public final class BluetoothHook {
     private static volatile long sLastDisconnectMs;
     private static volatile long sLastAnySonyBleSeenMs;
     private static volatile long sDismissSuppressUntilMs;
+    private static volatile long sLastFpDiscMs;
+    private static volatile String sLastFpDiscAddr = "";
+    private static volatile long sLastSonyAdvMs;
+    private static volatile String sLastSonyAdvModel = "";
     private static volatile Method sScanClientPkgMethod;
     private static volatile Object sAdapterService;
     private static volatile Object sA2dpService;
@@ -84,9 +104,16 @@ public final class BluetoothHook {
     private static volatile BluetoothDevice sPendingExternalPairingDevice;
     private static volatile long sPendingExternalPairingMs;
     private static volatile Runnable sPairTimeoutTask;
+    private static volatile boolean sPreDiscoveringForPopup;
+    private static volatile String sPreDiscoverTargetModel = "";
+    private static volatile BluetoothDevice sPreDiscoveredBredrDevice;
+    private static volatile String sPreDiscoveredBredrModel = "";
+    private static volatile long sPreDiscoveredBredrMs;
+    private static volatile Runnable sPreDiscoverTimeoutTask;
 
     private static final long BLE_ADV_CACHE_TTL_MS = 3_500L;
-    private static final long SCAN_RSP_MERGE_DELAY_MS = 60L;
+    private static final long CROSS_RPA_WINDOW_MS = 3_000L;
+    private static final long SCAN_RSP_MERGE_DELAY_MS = 40L;
     private static final Map<String, BleAdvInfo> BLE_ADV_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, String> RECENT_BREDR_SONY_BY_MODEL = new ConcurrentHashMap<>();
     private static final Set<String> PENDING_CONNECT_POPUP_MACS = ConcurrentHashMap.newKeySet();
@@ -475,11 +502,26 @@ public final class BluetoothHook {
                 final String finalModel = resolvedModel;
                 MAIN_HANDLER.postDelayed(() -> {
                     if (PENDING_CONNECT_POPUP_MACS.remove(mac) && SESSIONS.containsKey(mac)) {
-                        maybeTriggerOpenCasePopup(device, finalModel, "connect", false);
+                        POPUP_WORK_EXEC.execute(() ->
+                                maybeTriggerOpenCasePopup(device, finalModel, "connect", false));
                     }
-                }, 2500L);
+                }, CONNECT_POPUP_BATTERY_WAIT_MS);
             }
         }
+    }
+
+    private static void publishGlobalStateAsync(Context ctx, ConfigStore.HeadsetState state) {
+        if (ctx == null || state == null) {
+            return;
+        }
+        final Context appCtx = ctx.getApplicationContext() != null ? ctx.getApplicationContext() : ctx;
+        PENDING_GLOBAL_STATE.set(state.copy());
+        STATE_PUBLISH_EXEC.execute(() -> {
+            ConfigStore.HeadsetState latest = PENDING_GLOBAL_STATE.getAndSet(null);
+            if (latest != null) {
+                ConfigStore.writeGlobalState(appCtx, latest);
+            }
+        });
     }
 
     private static void stopSessionForAddress(String mac, BluetoothDevice dev) {
@@ -489,18 +531,22 @@ public final class BluetoothHook {
         PENDING_CONNECT_POPUP_MACS.remove(mac);
         SonyTandemSession removed = SESSIONS.remove(mac);
         if (removed != null) {
-            sLastDisconnectMs = SystemClock.elapsedRealtime();
+            long now = SystemClock.elapsedRealtime();
+            synchronized (POPUP_LOCK) {
+                sLastDisconnectMs = now;
+                sLastPopupMs = 0L;
+            }
             XposedCompat.log("Stopping SonyTandemSession for " + mac);
             removed.stop();
             BluetoothDevice targetDev = dev != null ? dev : removed.getDevice();
             ColorOsNativeAirPodsBridge.clearDevice(targetDev, mac);
             Context ctx = sBtContext;
             if (ctx != null && SESSIONS.isEmpty()) {
-                ConfigStore.writeGlobalState(ctx, new ConfigStore.HeadsetState());
+                publishGlobalStateAsync(ctx, new ConfigStore.HeadsetState());
                 ConfigStore.writeGlobalCodecState(ctx, "", -1, false, false);
             }
             if (SESSIONS.isEmpty()) {
-                MAIN_HANDLER.postDelayed(() -> updateSonyPairingBleScan(true), 1500L);
+                MAIN_HANDLER.postDelayed(() -> updateSonyPairingBleScan(true), 400L);
             }
         }
     }
@@ -514,7 +560,7 @@ public final class BluetoothHook {
         SESSIONS.clear();
         stopSonyPairingBleScan();
         if (sBtContext != null) {
-            ConfigStore.writeGlobalState(sBtContext, new ConfigStore.HeadsetState());
+            publishGlobalStateAsync(sBtContext, new ConfigStore.HeadsetState());
             ConfigStore.writeGlobalCodecState(sBtContext, "", -1, false, false);
         }
     }
@@ -528,15 +574,17 @@ public final class BluetoothHook {
         if (cfg != null) {
             cfg.reload(false);
         }
-        ConfigStore.writeGlobalState(ctx, state);
         ColorOsNativeAirPodsBridge.updateDeviceState(device, state);
         if (state.connected
                 && (state.leftBattery >= 0 || state.rightBattery >= 0 || state.singleBattery >= 0)) {
             String mac = safeMac(device);
             if (!mac.isEmpty() && PENDING_CONNECT_POPUP_MACS.remove(mac)) {
-                maybeTriggerOpenCasePopup(device, state.effectiveModelName(), "connect", false);
+                final String model = state.effectiveModelName();
+                POPUP_WORK_EXEC.execute(() ->
+                        maybeTriggerOpenCasePopup(device, model, "connect", false));
             }
         }
+        publishGlobalStateAsync(ctx, state);
     }
 
     private static void handleModuleCommand(Intent intent) {
@@ -700,19 +748,19 @@ public final class BluetoothHook {
                     if (!Boolean.TRUE.equals(param.getResult())) {
                         return;
                     }
-                    ConfigStore.HookConfig cfg = sConfig;
-                    if (cfg != null) {
-                        cfg.reload(false);
-                        if (!cfg.suppressNativePairing) {
-                            return;
-                        }
-                    }
                     if (param.args == null || param.args.length < 2 || !(param.args[1] instanceof ScanResult)) {
                         return;
                     }
                     String callingPkg = getScanClientPackage(param.args[0]);
                     if (callingPkg == null || !callingPkg.startsWith("com.google.android.gms")) {
                         return;
+                    }
+                    ConfigStore.HookConfig cfg = sConfig;
+                    if (cfg != null) {
+                        cfg.reload(false);
+                        if (!cfg.suppressNativePairing) {
+                            return;
+                        }
                     }
                     ScanResult result = (ScanResult) param.args[1];
                     if (SonyDeviceDetector.isSonyScanResult(result)) {
@@ -772,7 +820,7 @@ public final class BluetoothHook {
 
             XposedCompat.hookAllMethods(scanControllerCls, "onScanResultInternal", new XposedCompat.XC_MethodHook() {
                 @Override
-                protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
+                protected void beforeHookedMethod(XposedCompat.MethodHookParam param) {
                     if (param.args == null || param.args.length < 10
                             || !(param.args[7] instanceof Integer)
                             || !(param.args[9] instanceof byte[])) {
@@ -1030,6 +1078,21 @@ public final class BluetoothHook {
                 int uuid16 = (adv[dataStart] & 0xFF) | ((adv[dataStart + 1] & 0xFF) << 8);
                 if (uuid16 == 0xFE2C) {
                     out.hasFastPair = true;
+                    if (dataLen == 6 && (adv[dataStart + 2] & 0xFF) == 0x00) {
+                        byte[] fpIdExt = new byte[] {
+                                adv[dataStart + 3],
+                                adv[dataStart + 4],
+                                adv[dataStart + 5]
+                        };
+                        String fpModelExt = SonyDeviceDetector.getSonyFastPairModelName(fpIdExt);
+                        if (!fpModelExt.isEmpty()) {
+                            out.isFastPairDiscoverable = true;
+                            out.isSony = true;
+                            if (out.modelName.isEmpty()) {
+                                out.modelName = fpModelExt;
+                            }
+                        }
+                    }
                     if (dataLen >= 5) {
                         byte[] fpId = new byte[] {
                                 adv[dataStart + 2],
@@ -1068,6 +1131,29 @@ public final class BluetoothHook {
             return;
         }
         long now = SystemClock.elapsedRealtime();
+        boolean fpCorrMatch = false;
+        String fpCorrModel = "";
+        boolean sonyCorrMatch = false;
+        synchronized (POPUP_LOCK) {
+            if (parsed.isSony && !parsed.modelName.isEmpty()
+                    && !"Sony".equalsIgnoreCase(parsed.modelName)) {
+                sLastSonyAdvMs = now;
+                sLastSonyAdvModel = parsed.modelName;
+                if (sLastFpDiscMs != 0L && (now - sLastFpDiscMs) <= CROSS_RPA_WINDOW_MS) {
+                    sonyCorrMatch = true;
+                }
+            }
+            if (parsed.isFastPairDiscoverable) {
+                sLastFpDiscMs = now;
+                sLastFpDiscAddr = advAddress;
+                if (sLastSonyAdvMs != 0L && (now - sLastSonyAdvMs) <= CROSS_RPA_WINDOW_MS
+                        && !sLastSonyAdvModel.isEmpty()) {
+                    fpCorrMatch = true;
+                    fpCorrModel = sLastSonyAdvModel;
+                }
+            }
+        }
+
         if (BLE_ADV_CACHE.size() > 32) {
             BLE_ADV_CACHE.entrySet().removeIf(e -> (now - e.getValue().lastSeenMs) > BLE_ADV_CACHE_TTL_MS);
         }
@@ -1097,6 +1183,16 @@ public final class BluetoothHook {
             if (!parsed.modelName.isEmpty()) {
                 merged.modelName = parsed.modelName;
             }
+            if (fpCorrMatch) {
+                merged.isSony = true;
+                if (merged.modelName.isEmpty()) {
+                    merged.modelName = fpCorrModel;
+                }
+            }
+            if (sonyCorrMatch) {
+                merged.hasFastPair = true;
+                merged.isFastPairDiscoverable = true;
+            }
             if (!merged.isPairingMode()) {
                 return;
             }
@@ -1120,9 +1216,11 @@ public final class BluetoothHook {
         }
 
         if (fireNow) {
-            dispatchBleAdvPopupNow(advAddress, merged);
+            POPUP_WORK_EXEC.execute(() -> dispatchBleAdvPopupNow(advAddress, merged));
         } else if (scheduleWait) {
-            MAIN_HANDLER.postDelayed(() -> dispatchBleAdvPopupNow(advAddress, merged), SCAN_RSP_MERGE_DELAY_MS);
+            MAIN_HANDLER.postDelayed(
+                    () -> POPUP_WORK_EXEC.execute(() -> dispatchBleAdvPopupNow(advAddress, merged)),
+                    SCAN_RSP_MERGE_DELAY_MS);
         }
     }
 
@@ -1407,6 +1505,95 @@ public final class BluetoothHook {
             }
         }
 
+        // Pre-discovered Classic BR/EDR device ready for instant zero-discovery bond, or promote active pre-discovery
+        synchronized (PAIR_LOCK) {
+            long nowPre = SystemClock.elapsedRealtime();
+            BluetoothDevice preDev = sPreDiscoveredBredrDevice;
+            String preModel = sPreDiscoveredBredrModel;
+            long preMs = sPreDiscoveredBredrMs;
+            if (preDev != null && (nowPre - preMs) < 25_000L && !isBleOnlyOrLeAlias(preDev)) {
+                String preNorm = !preModel.isEmpty()
+                        ? preModel : SonyDeviceDetector.normalizeModelName(stName(preDev));
+                boolean matchesModel = cleanModel.isEmpty()
+                        || "Sony".equalsIgnoreCase(cleanModel)
+                        || preNorm.isEmpty()
+                        || "Sony".equalsIgnoreCase(preNorm)
+                        || SonyDeviceDetector.normalizeModelName(cleanModel).equalsIgnoreCase(preNorm);
+                if (matchesModel) {
+                    sPreDiscoveredBredrDevice = null;
+                    sPreDiscoveredBredrModel = "";
+                    sPreDiscoveredBredrMs = 0L;
+                    sPreDiscoveringForPopup = false;
+                    sPreDiscoverTargetModel = "";
+                    cancelPreDiscoverTimeoutLocked();
+                    String preMac = safeMac(preDev);
+                    if (BluetoothAdapter.checkBluetoothAddress(preMac)) {
+                        stopSonyPairingBleScan();
+                        String bondModel = !cleanModel.isEmpty() && !"Sony".equalsIgnoreCase(cleanModel)
+                                ? cleanModel : (!preNorm.isEmpty() ? preNorm : "Sony");
+                        ConfigStore.writeActivePairMarker(ctx, preMac, bondModel);
+                        if (getBondStateSafe(preDev) == BluetoothDevice.BOND_BONDED) {
+                            ConfigStore.clearActivePairMarker(ctx);
+                            sDiscoveringForPair = false;
+                            sPendingPairMac = "";
+                            sPendingPairModel = "";
+                            sPendingConnectMac = preMac;
+                            sPendingConnectModel = bondModel;
+                            schedulePairTimeoutLocked(15_000L, bondModel, preMac);
+                            sendPairStatusBroadcast("connecting", bondModel, preMac, preDev);
+                            connectProfilesForDevice(preDev);
+                            XposedCompat.log("Instant reconnect via pre-discovered Sony " + bondModel + " [" + preMac + "]");
+                            return;
+                        }
+                        sDiscoveringForPair = false;
+                        sPendingPairMac = preMac;
+                        sPendingPairModel = bondModel;
+                        schedulePairTimeoutLocked(18_000L, bondModel, preMac);
+                        sendPairStatusBroadcast("pairing", bondModel, preMac, preDev);
+                        try {
+                            if (adapter.isDiscovering()) {
+                                adapter.cancelDiscovery();
+                            }
+                        } catch (Throwable ignored) {
+                        }
+                        if (!createBondBredr(preDev)) {
+                            cancelPairTimeoutLocked();
+                            sPendingPairMac = "";
+                            sPendingPairModel = "";
+                            ConfigStore.clearActivePairMarker(ctx);
+                            sendPairStatusBroadcast("failed", bondModel, preMac, preDev);
+                            MAIN_HANDLER.postDelayed(() -> updateSonyPairingBleScan(false), 1500L);
+                        } else {
+                            XposedCompat.log("Started instant BR/EDR bond from pre-discovery: "
+                                    + bondModel + " [" + preMac + "]");
+                        }
+                        return;
+                    }
+                }
+            }
+
+            if (sPreDiscoveringForPopup) {
+                boolean activelyDiscovering = false;
+                try {
+                    activelyDiscovering = adapter.isDiscovering();
+                } catch (Throwable ignored) {
+                }
+                sPreDiscoveringForPopup = false;
+                sPreDiscoverTargetModel = "";
+                cancelPreDiscoverTimeoutLocked();
+                if (activelyDiscovering) {
+                    sPendingPairMac = "";
+                    sPendingPairModel = cleanModel;
+                    sDiscoveringForPair = true;
+                    schedulePairTimeoutLocked(12_000L, cleanModel, cleanMac);
+                    ConfigStore.writeActivePairMarker(ctx, cleanMac, cleanModel);
+                    sendPairStatusBroadcast("pairing", cleanModel, cleanMac, dev);
+                    XposedCompat.log("Promoted active BR/EDR pre-discovery to pairing for " + cleanModel);
+                    return;
+                }
+            }
+        }
+
         stopSonyPairingBleScan();
         ConfigStore.writeActivePairMarker(ctx, cleanMac, cleanModel);
         sendPairStatusBroadcast("pairing", cleanModel, cleanMac, dev);
@@ -1475,13 +1662,107 @@ public final class BluetoothHook {
         return null;
     }
 
-    private static void handleDeviceFoundForPair(BluetoothDevice found) {
-        String pendingModel;
+    private static void startPreDiscoveryForPairingPopup(String model) {
+        String cleanModel = model != null ? model.trim() : "";
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null || !adapter.isEnabled() || !SESSIONS.isEmpty()) {
+            return;
+        }
+        if (hasBondedClassicSonyForModel(cleanModel)) {
+            return;
+        }
         synchronized (PAIR_LOCK) {
-            if (!sDiscoveringForPair) {
+            if (sDiscoveringForPair || !sPendingPairMac.isEmpty()
+                    || !sPendingConnectMac.isEmpty() || sPreDiscoveringForPopup) {
                 return;
             }
-            pendingModel = sPendingPairModel;
+            BluetoothDevice cached = sPreDiscoveredBredrDevice;
+            if (cached != null && (SystemClock.elapsedRealtime() - sPreDiscoveredBredrMs) < 25_000L
+                    && getBondStateSafe(cached) != BluetoothDevice.BOND_BONDED) {
+                String cNorm = !sPreDiscoveredBredrModel.isEmpty()
+                        ? sPreDiscoveredBredrModel
+                        : SonyDeviceDetector.normalizeModelName(stName(cached));
+                if (cleanModel.isEmpty() || "Sony".equalsIgnoreCase(cleanModel)
+                        || SonyDeviceDetector.normalizeModelName(cleanModel).equalsIgnoreCase(cNorm)) {
+                    return;
+                }
+            }
+            sPreDiscoveringForPopup = true;
+            sPreDiscoverTargetModel = cleanModel;
+            sPreDiscoveredBredrDevice = null;
+            sPreDiscoveredBredrModel = "";
+            sPreDiscoveredBredrMs = 0L;
+            cancelPreDiscoverTimeoutLocked();
+            Runnable task = () -> {
+                boolean wasPre;
+                synchronized (PAIR_LOCK) {
+                    wasPre = sPreDiscoveringForPopup;
+                    sPreDiscoveringForPopup = false;
+                    sPreDiscoverTargetModel = "";
+                    sPreDiscoverTimeoutTask = null;
+                }
+                if (wasPre) {
+                    try {
+                        BluetoothAdapter a = BluetoothAdapter.getDefaultAdapter();
+                        if (a != null && a.isDiscovering()) {
+                            a.cancelDiscovery();
+                        }
+                    } catch (Throwable ignored) {
+                    }
+                    if (SESSIONS.isEmpty()) {
+                        MAIN_HANDLER.postDelayed(() -> updateSonyPairingBleScan(true), 200L);
+                    }
+                }
+            };
+            sPreDiscoverTimeoutTask = task;
+            MAIN_HANDLER.postDelayed(task, 6_000L);
+        }
+
+        stopSonyPairingBleScan();
+        try {
+            boolean started = adapter.isDiscovering() || adapter.startDiscovery();
+            XposedCompat.debug("Pairing popup BR/EDR pre-discovery started=" + started + " model=" + cleanModel);
+            if (!started) {
+                synchronized (PAIR_LOCK) {
+                    sPreDiscoveringForPopup = false;
+                    sPreDiscoverTargetModel = "";
+                    cancelPreDiscoverTimeoutLocked();
+                }
+                if (SESSIONS.isEmpty()) {
+                    MAIN_HANDLER.postDelayed(() -> updateSonyPairingBleScan(true), 200L);
+                }
+            }
+        } catch (Throwable t) {
+            synchronized (PAIR_LOCK) {
+                sPreDiscoveringForPopup = false;
+                sPreDiscoverTargetModel = "";
+                cancelPreDiscoverTimeoutLocked();
+            }
+            if (SESSIONS.isEmpty()) {
+                MAIN_HANDLER.postDelayed(() -> updateSonyPairingBleScan(true), 200L);
+            }
+        }
+    }
+
+    private static void cancelPreDiscoverTimeoutLocked() {
+        Runnable prev = sPreDiscoverTimeoutTask;
+        if (prev != null) {
+            MAIN_HANDLER.removeCallbacks(prev);
+            sPreDiscoverTimeoutTask = null;
+        }
+    }
+
+    private static void handleDeviceFoundForPair(BluetoothDevice found) {
+        String pendingModel;
+        boolean forPair;
+        boolean forPre;
+        synchronized (PAIR_LOCK) {
+            forPair = sDiscoveringForPair;
+            forPre = !forPair && sPreDiscoveringForPopup;
+            if (!forPair && !forPre) {
+                return;
+            }
+            pendingModel = forPair ? sPendingPairModel : sPreDiscoverTargetModel;
         }
         String foundMac = safeMac(found);
         if (isBleOnlyOrLeAlias(found)
@@ -1503,14 +1784,27 @@ public final class BluetoothHook {
         }
         recordClassicSonyMac(foundNorm, foundMac);
 
+        boolean promotedToPair = false;
         synchronized (PAIR_LOCK) {
-            if (!sDiscoveringForPair) {
+            if (sDiscoveringForPair) {
+                sDiscoveringForPair = false;
+                sPendingPairMac = foundMac;
+                sPreDiscoveringForPopup = false;
+                sPreDiscoverTargetModel = "";
+                cancelPreDiscoverTimeoutLocked();
+                cancelPairTimeoutLocked();
+                schedulePairTimeoutLocked(18_000L, pendingModel, foundMac);
+                promotedToPair = true;
+            } else if (sPreDiscoveringForPopup) {
+                sPreDiscoveringForPopup = false;
+                sPreDiscoverTargetModel = "";
+                cancelPreDiscoverTimeoutLocked();
+                sPreDiscoveredBredrDevice = found;
+                sPreDiscoveredBredrModel = foundNorm;
+                sPreDiscoveredBredrMs = SystemClock.elapsedRealtime();
+            } else {
                 return;
             }
-            sDiscoveringForPair = false;
-            sPendingPairMac = foundMac;
-            cancelPairTimeoutLocked();
-            schedulePairTimeoutLocked(18_000L, pendingModel, foundMac);
         }
         try {
             BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
@@ -1518,6 +1812,13 @@ public final class BluetoothHook {
                 adapter.cancelDiscovery();
             }
         } catch (Throwable ignored) {
+        }
+        if (!promotedToPair) {
+            XposedCompat.debug("Pre-discovered BR/EDR Sony device for popup: " + stName(found) + " [" + foundMac + "]");
+            if (SESSIONS.isEmpty()) {
+                MAIN_HANDLER.postDelayed(() -> updateSonyPairingBleScan(true), 200L);
+            }
+            return;
         }
         XposedCompat.log("Found BR/EDR Sony device for pairing: " + stName(found) + " [" + foundMac + "]");
         if (found.getBondState() == BluetoothDevice.BOND_BONDED) {
@@ -1546,6 +1847,7 @@ public final class BluetoothHook {
     private static void handleDismissPairingCommand() {
         BluetoothDevice dev = null;
         boolean wasDiscovering;
+        boolean wasPreDiscovering;
         synchronized (PAIR_LOCK) {
             if (sPendingExternalPairingDevice != null
                     && (SystemClock.elapsedRealtime() - sPendingExternalPairingMs) < 25_000L) {
@@ -1554,11 +1856,18 @@ public final class BluetoothHook {
             sPendingExternalPairingDevice = null;
             sPendingExternalPairingMs = 0L;
             wasDiscovering = sDiscoveringForPair;
+            wasPreDiscovering = sPreDiscoveringForPopup;
             sDiscoveringForPair = false;
+            sPreDiscoveringForPopup = false;
+            sPreDiscoverTargetModel = "";
+            sPreDiscoveredBredrDevice = null;
+            sPreDiscoveredBredrModel = "";
+            sPreDiscoveredBredrMs = 0L;
             sPendingPairMac = "";
             sPendingPairModel = "";
             sPendingConnectMac = "";
             sPendingConnectModel = "";
+            cancelPreDiscoverTimeoutLocked();
             cancelPairTimeoutLocked();
         }
         synchronized (POPUP_LOCK) {
@@ -1567,13 +1876,16 @@ public final class BluetoothHook {
             sDismissSuppressUntilMs = now + DISMISS_POPUP_COOLDOWN_MS;
         }
         ConfigStore.clearActivePairMarker(sBtContext);
-        if (wasDiscovering) {
+        if (wasDiscovering || wasPreDiscovering) {
             try {
                 BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
                 if (adapter != null && adapter.isDiscovering()) {
                     adapter.cancelDiscovery();
                 }
             } catch (Throwable ignored) {
+            }
+            if (SESSIONS.isEmpty()) {
+                MAIN_HANDLER.postDelayed(() -> updateSonyPairingBleScan(true), 300L);
             }
         }
         if (dev != null && getBondStateSafe(dev) == BluetoothDevice.BOND_BONDING) {
@@ -1941,9 +2253,18 @@ public final class BluetoothHook {
             XposedCompat.log("Dispatched open-case popup (" + source + ", bonded="
                     + (bondState == BluetoothDevice.BOND_BONDED) + ", connected=" + isConnected
                     + ") for " + resolvedModel + " [" + mac + "]");
+            if (isPairingModeTrigger
+                    && bondState != BluetoothDevice.BOND_BONDED
+                    && isBleOnlyOrLeAlias(device)) {
+                startPreDiscoveryForPairingPopup(resolvedModel);
+            }
         } catch (Throwable t) {
             XposedCompat.log("Open-case popup dispatch failed: " + t.getMessage());
         }
+    }
+
+    static boolean isPairingScanActive() {
+        return sPairingScanActive && sPairingScanLowLatency;
     }
 
     private static boolean canRunPairingBleScan(BluetoothAdapter adapter) {
@@ -1995,15 +2316,12 @@ public final class BluetoothHook {
                 if (scanner == null) {
                     return;
                 }
-                List<ScanFilter> filters = new ArrayList<>(3);
+                List<ScanFilter> filters = new ArrayList<>(2);
                 filters.add(new ScanFilter.Builder()
-                        .setManufacturerData(SonyDeviceDetector.SONY_MANUFACTURER_ID, new byte[0])
+                        .setManufacturerData(SonyDeviceDetector.SONY_MANUFACTURER_ID, new byte[]{0}, new byte[]{0})
                         .build());
                 filters.add(new ScanFilter.Builder()
-                        .setServiceData(SonyDeviceDetector.FAST_PAIR_SERVICE_UUID, new byte[0])
-                        .build());
-                filters.add(new ScanFilter.Builder()
-                        .setServiceUuid(SonyDeviceDetector.FAST_PAIR_SERVICE_UUID)
+                        .setServiceData(SonyDeviceDetector.FAST_PAIR_SERVICE_UUID, new byte[]{0}, new byte[]{0})
                         .build());
                 ScanSettings.Builder sb = new ScanSettings.Builder()
                         .setScanMode(burstLowLatency
@@ -2011,18 +2329,20 @@ public final class BluetoothHook {
                                 : ScanSettings.SCAN_MODE_BALANCED)
                         .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
                         .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
-                        .setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
+                        .setNumOfMatches(ScanSettings.MATCH_NUM_FEW_ADVERTISEMENT)
                         .setReportDelay(0L);
                 if (Build.VERSION.SDK_INT >= 26) {
                     sb.setLegacy(false);
+                    sb.setPhy(ScanSettings.PHY_LE_ALL_SUPPORTED);
                 }
                 ScanSettings settings = sb.build();
                 ScanCallback cb = new ScanCallback() {
                 };
                 sPairingScannerCallback = cb;
-                scanner.startScan(filters, settings, cb);
+                // Mark active before startScan() so ColorOS CustomScanStrategy hooks apply on initial setup
                 sPairingScanActive = true;
                 sPairingScanLowLatency = burstLowLatency;
+                scanner.startScan(filters, settings, cb);
                 if (burstLowLatency) {
                     scheduleStepDownLocked();
                 } else {
@@ -2031,6 +2351,8 @@ public final class BluetoothHook {
                 XposedCompat.log("Sony pairing BLE scan active (lowLatency=" + burstLowLatency + ")");
             } catch (Throwable t) {
                 sPairingScanActive = false;
+                sPairingScanLowLatency = false;
+                sPairingScannerCallback = null;
                 cancelStepDownLocked();
                 XposedCompat.debug("updateSonyPairingBleScan failed: " + t.getMessage());
             }
@@ -2069,15 +2391,17 @@ public final class BluetoothHook {
     private static void scheduleStepDownLocked() {
         cancelStepDownLocked();
         Runnable task = () -> {
-            updateSonyPairingBleScan(false);
+            synchronized (SCAN_LOCK) {
+                stopSonyPairingBleScanLocked(BluetoothAdapter.getDefaultAdapter());
+            }
             MAIN_HANDLER.postDelayed(() -> {
                 if (canRunPairingBleScan(BluetoothAdapter.getDefaultAdapter())) {
                     updateSonyPairingBleScan(true);
                 }
-            }, 2_000L);
+            }, 80L);
         };
         sPairingScanStepDownTask = task;
-        MAIN_HANDLER.postDelayed(task, PAIRING_SCAN_LOW_LATENCY_MS);
+        MAIN_HANDLER.postDelayed(task, PAIRING_SCAN_REFRESH_MS);
     }
 
     private static void cancelStepDownLocked() {
@@ -2111,6 +2435,7 @@ public final class BluetoothHook {
     private static boolean isPairingOrConnecting() {
         synchronized (PAIR_LOCK) {
             return sDiscoveringForPair
+                    || sPreDiscoveringForPopup
                     || !sPendingPairMac.isEmpty()
                     || !sPendingConnectMac.isEmpty();
         }

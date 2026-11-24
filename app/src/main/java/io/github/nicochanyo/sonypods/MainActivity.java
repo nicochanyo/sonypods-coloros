@@ -12,12 +12,20 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Rect;
+import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RectShape;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -131,6 +139,7 @@ public class MainActivity extends Activity {
     private ValueAnimator headerCollapseAnimator;
     private ValueAnimator subtitleTabFadeAnimator;
     private float headerCollapseProgress;
+    private float headerTitleTabAlpha = 1f;
     private float subtitleTabAlpha = 1f;
     private int statusBarTopPx;
     private int headerTitleShiftPx;
@@ -220,11 +229,61 @@ public class MainActivity extends Activity {
     private TextView tvAboutUpdateChip;
     private TextView tvAboutLanguageVal;
     private TextView tvAboutDarkModeVal;
+    private TextView tvAboutUiStyleVal;
     private Switch swAboutMonet;
     private Switch swAboutDebugMode;
     private boolean updateCheckRunning;
     private static RepoReleaseInfo sCachedLatestRelease;
     private static boolean sSilentUpdateCheckDone;
+
+    // ColorOS 17 Living Flow UI state & views
+    private boolean livingFlowUi;
+    private View btnTopQuickAppearance;
+    private View cardAboutDynamicHero;
+    private ColorOsDynamicBackdropView vAboutDynamicBg;
+    private View layoutAboutHeroLogo;
+    private TextView tvAboutHeroVer;
+    private TextView tvAboutHeroUpdateStatus;
+    private TextView tvAboutBuildSub;
+    private View bannerModuleInactive;
+    private View vBannerWarnEmblem;
+    private View cardAboutModuleStatus;
+    private View vAboutStatusEmblem;
+    private ImageView ivAboutStatusIcon;
+    private TextView tvAboutStatusTitle;
+    private TextView tvAboutStatusBadge;
+    private TextView tvAboutStatusSubtitle;
+    private View rowAboutScopeToggle;
+    private TextView tvAboutScopeCount;
+    private ImageView ivAboutScopeChevron;
+    private LinearLayout layoutAboutScopeBody;
+    private TextView tvAboutScopeList;
+    private boolean aboutScopeExpanded;
+    private ValueAnimator aboutScopeAnimator;
+    private View cardHeadsetHero;
+    private View vHeroGlowAura;
+    private View vBatBarLeft;
+    private View vBatBarRight;
+    private View vBatBarCase;
+    private View layoutQuickAncCapsule;
+    private View btnAncNc;
+    private View btnAncAmbient;
+    private View btnAncOff;
+    private ImageView ivAncIconNc;
+    private ImageView ivAncIconAmbient;
+    private ImageView ivAncIconOff;
+    private TextView tvAncLabelNc;
+    private TextView tvAncLabelAmbient;
+    private TextView tvAncLabelOff;
+    private View ivAncRadioNc;
+    private View ivAncRadioAmbient;
+    private View ivAncRadioOff;
+    private LivingFlowEffects.SpotLightDrawable navSpotLight;
+    private LivingFlowEffects.NavBarElasticController navElasticController;
+    private int lastAppliedAccent;
+    private float lastNavRawX;
+    private float navDragVx;
+    private long lastNavEventMs;
 
     private final BroadcastReceiver stateReceiver = new BroadcastReceiver() {
         @Override
@@ -250,8 +309,12 @@ public class MainActivity extends Activity {
         boolean isDark = ConfigStore.isDarkThemeActive(this);
         setTheme(isDark ? R.style.Theme_CouiSonyPods_Dark : R.style.Theme_CouiSonyPods_Light);
         super.onCreate(savedInstanceState);
+        livingFlowUi = ConfigStore.isLivingFlowUi(this);
         setupEdgeToEdge();
-        setContentView(R.layout.activity_main);
+        setContentView(livingFlowUi ? R.layout.activity_main_living_flow : R.layout.activity_main);
+        if (livingFlowUi) {
+            getWindow().setBackgroundDrawable(new ColorDrawable(getColor(R.color.lf_bg)));
+        }
         touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
 
         ConfigStore.AppPrefs opened = ConfigStore.openAppPrefs(this);
@@ -273,6 +336,7 @@ public class MainActivity extends Activity {
         syncUiState();
         refreshHeadsetStateUi();
         DynamicThemeHelper.applyAccent(findViewById(android.R.id.content), this);
+        lastAppliedAccent = DynamicThemeHelper.getAccent(this);
         switchTab(activeTab, false);
         if (sCachedLatestRelease != null) {
             applyUpdateChipState(sCachedLatestRelease);
@@ -312,11 +376,33 @@ public class MainActivity extends Activity {
         } else {
             registerReceiver(stateReceiver, filter);
         }
+        if (livingFlowUi) {
+            int curAccent = DynamicThemeHelper.getAccent(this);
+            if (curAccent != lastAppliedAccent) {
+                lastAppliedAccent = curAccent;
+                DynamicThemeHelper.applyAccent(findViewById(android.R.id.content), this);
+                updateNavIndicator(activeTab, activeTab, 0, false, false);
+                boolean darkNow = ConfigStore.isDarkThemeActive(this);
+                View b1 = findViewById(R.id.btnOpenNativePanel);
+                View b2 = findViewById(R.id.btnOpenNativePanelTab2);
+                if (b1 != null) ColorOsLivingFlowEngine.applyLuminousPillButton(b1, true, curAccent, darkNow, true);
+                if (b2 != null) ColorOsLivingFlowEngine.applyLuminousPillButton(b2, true, curAccent, darkNow, true);
+                syncUiState();
+            }
+            if (vAboutDynamicBg != null && activeTab == TAB_ABOUT && !LivingFlowUpdatePages.hasActiveStage(this)) {
+                vAboutDynamicBg.resumePlayback();
+            }
+            LivingFlowUpdatePages.onHostResume(this);
+        }
         refreshHeadsetStateUi();
     }
 
     @Override
     protected void onPause() {
+        if (vAboutDynamicBg != null) {
+            vAboutDynamicBg.pausePlayback();
+        }
+        LivingFlowUpdatePages.onHostPause(this);
         try {
             unregisterReceiver(stateReceiver);
         } catch (Throwable ignored) {
@@ -384,6 +470,18 @@ public class MainActivity extends Activity {
         if (tvPageSubtitle != null) tvPageSubtitle.animate().cancel();
         if (layoutBottomNav != null) layoutBottomNav.animate().cancel();
         if (vNavSlidingPill != null) vNavSlidingPill.animate().cancel();
+        if (navElasticController != null) {
+            navElasticController.cancel();
+            navElasticController = null;
+        }
+        if (navSpotLight != null) {
+            navSpotLight.cancel();
+            navSpotLight = null;
+        }
+        if (aboutScopeAnimator != null) {
+            aboutScopeAnimator.cancel();
+            aboutScopeAnimator = null;
+        }
         syncExecutor.shutdownNow();
         super.onDestroy();
     }
@@ -432,10 +530,14 @@ public class MainActivity extends Activity {
         }
         if (layoutPageContainer == null || !layoutPageContainer.isShown()
                 || SoundConnectSheets.hasActiveStage(this)
+                || LivingFlowDiagnosticsPage.hasActiveStage(this)
+                || LivingFlowUpdatePages.hasActiveStage(this)
                 || !isPointInView(layoutPageContainer, rawX, rawY)) {
             return false;
         }
-        if (isPointInView(layoutBottomNavContainer, rawX, rawY)) {
+        if (isPointInView(layoutBottomNavContainer, rawX, rawY)
+                || isPointInView(btnTopQuickAppearance, rawX, rawY)
+                || isPointInView(layoutQuickAncCapsule, rawX, rawY)) {
             return false;
         }
         return !isPointInInteractiveChild(pages[activeTab], rawX, rawY);
@@ -489,11 +591,12 @@ public class MainActivity extends Activity {
     }
 
     private void applyInsetsPadding() {
-        final int headerPadH = dp(24);
-        final int headerTopBase = dp(28);
-        final int headerBotBase = dp(16);
+        final int headerPadStart = livingFlowUi ? dp(22) : dp(24);
+        final int headerPadEnd = livingFlowUi ? dp(18) : dp(24);
+        final int headerTopBase = livingFlowUi ? 0 : dp(28);
+        final int headerBotBase = livingFlowUi ? dp(12) : dp(16);
         headerTitleShiftPx = dp(24);
-        headerSubtitleShiftPx = dp(26);
+        headerSubtitleShiftPx = livingFlowUi ? dp(34) : dp(26);
         headerCollapseRangePx = dp(64);
 
         layoutHeader.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -501,8 +604,11 @@ public class MainActivity extends Activity {
                     ? insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()).top
                     : insets.getSystemWindowInsetTop();
             statusBarTopPx = top;
-            v.setPadding(headerPadH, top + headerTopBase, headerPadH, headerBotBase);
+            v.setPaddingRelative(headerPadStart, top + headerTopBase, headerPadEnd, headerBotBase);
             if (vTopHeaderBlur != null) {
+                if (livingFlowUi) {
+                    vTopHeaderBlur.setSurfaceColor(getColor(R.color.lf_bg));
+                }
                 vTopHeaderBlur.setStatusBarTopPx(top);
             }
             syncHeaderGeometryAndScrollPadding();
@@ -515,15 +621,16 @@ public class MainActivity extends Activity {
         });
         layoutHeader.requestApplyInsets();
 
-        final int navBotBase = dp(14);
+        final int navBotBase = livingFlowUi ? dp(8) : dp(14);
         layoutBottomNavContainer.setOnApplyWindowInsetsListener((v, insets) -> {
             int bottom = Build.VERSION.SDK_INT >= 30
                     ? insets.getInsets(WindowInsets.Type.systemBars()).bottom
                     : insets.getSystemWindowInsetBottom();
             v.setPadding(0, 0, 0, bottom + navBotBase);
             if (vBottomNavShadow != null) {
+                vBottomNavShadow.setPadding(0, 0, 0, 0);
                 ViewGroup.LayoutParams lp = vBottomNavShadow.getLayoutParams();
-                int targetH = bottom + dp(104);
+                int targetH = bottom + dp(livingFlowUi ? 116 : 104);
                 if (lp != null && lp.height != targetH) {
                     lp.height = targetH;
                     vBottomNavShadow.setLayoutParams(lp);
@@ -552,9 +659,19 @@ public class MainActivity extends Activity {
                 }
             }
         }
+        if (livingFlowUi && tvPageTitle != null && tvPageTitle.getHeight() > 0) {
+            float collapsedH = tvPageTitle.getHeight() * 0.6875f;
+            float targetCollapsedTop = dp(26) - collapsedH * 0.5f;
+            headerTitleShiftPx = Math.max(dp(34), Math.round(dp(54) - targetCollapsedTop));
+        }
         if (vTopHeaderBlur != null && tvPageTitle != null && tvPageTitle.getHeight() > 0) {
-            int collapsedTitleH = Math.round(tvPageTitle.getHeight() * COLLAPSED_TITLE_SCALE);
-            int targetBlurH = statusBarTopPx + dp(4) + collapsedTitleH + dp(56);
+            int targetBlurH;
+            if (livingFlowUi) {
+                targetBlurH = statusBarTopPx + dp(70);
+            } else {
+                int collapsedTitleH = Math.round(tvPageTitle.getHeight() * COLLAPSED_TITLE_SCALE);
+                targetBlurH = statusBarTopPx + dp(4) + collapsedTitleH + dp(56);
+            }
             ViewGroup.LayoutParams lp = vTopHeaderBlur.getLayoutParams();
             if (lp != null && lp.height != targetBlurH) {
                 lp.height = targetBlurH;
@@ -589,6 +706,29 @@ public class MainActivity extends Activity {
 
     private void applyHeaderCollapseProgress(float p) {
         headerCollapseProgress = Math.max(0f, Math.min(1f, p));
+        if (livingFlowUi) {
+            if (tvPageTitle != null) {
+                float pivotX = (tvPageTitle.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL)
+                        ? tvPageTitle.getWidth() : 0f;
+                tvPageTitle.setPivotX(pivotX);
+                tvPageTitle.setPivotY(0f);
+                // Match Clock.apk: shrink 32sp -> 22sp (0.6875x) and stop without vanishing
+                float titleScale = 1f - (1f - 0.6875f) * headerCollapseProgress;
+                tvPageTitle.setScaleX(titleScale);
+                tvPageTitle.setScaleY(titleScale);
+                tvPageTitle.setTranslationY(-headerTitleShiftPx * headerCollapseProgress);
+                tvPageTitle.setAlpha(headerTitleTabAlpha);
+            }
+            if (tvPageSubtitle != null) {
+                float subT = Math.min(1f, headerCollapseProgress / 0.56f);
+                tvPageSubtitle.setScaleX(1f);
+                tvPageSubtitle.setScaleY(1f);
+                tvPageSubtitle.setTranslationY(-headerSubtitleShiftPx * subT);
+                float subAlpha = Math.max(0f, 1f - (float) Math.pow(subT, 1.35));
+                tvPageSubtitle.setAlpha(subAlpha * subtitleTabAlpha);
+            }
+            return;
+        }
         if (tvPageTitle != null) {
             float pivotX = (tvPageTitle.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL)
                     ? tvPageTitle.getWidth() : 0f;
@@ -598,6 +738,7 @@ public class MainActivity extends Activity {
             tvPageTitle.setScaleX(scale);
             tvPageTitle.setScaleY(scale);
             tvPageTitle.setTranslationY(-headerTitleShiftPx * headerCollapseProgress);
+            tvPageTitle.setAlpha(1f);
         }
         if (tvPageSubtitle != null) {
             float subT = Math.max(0f, Math.min(1f, headerCollapseProgress / SUBTITLE_FADE_END_PROGRESS));
@@ -612,8 +753,13 @@ public class MainActivity extends Activity {
             } else {
                 neededTravelPx = headerSubtitleShiftPx;
             }
+            tvPageSubtitle.setScaleX(1f);
+            tvPageSubtitle.setScaleY(1f);
             tvPageSubtitle.setTranslationY(-neededTravelPx * subT);
             tvPageSubtitle.setAlpha(computeSubtitleAlpha(headerCollapseProgress) * subtitleTabAlpha);
+        }
+        if (btnTopQuickAppearance != null) {
+            btnTopQuickAppearance.setTranslationY(0f);
         }
     }
 
@@ -641,6 +787,12 @@ public class MainActivity extends Activity {
         layoutHeader = findViewById(R.id.layoutHeader);
         tvPageTitle = findViewById(R.id.tvPageTitle);
         tvPageSubtitle = findViewById(R.id.tvPageSubtitle);
+        if (vTopHeaderBlur != null) {
+            vTopHeaderBlur.setOutlineProvider(null);
+        }
+        if (layoutHeader != null) {
+            layoutHeader.setOutlineProvider(null);
+        }
 
         layoutPageContainer = findViewById(R.id.layoutPageContainer);
         pages[TAB_HEADSET] = findViewById(R.id.pageHeadset);
@@ -681,6 +833,12 @@ public class MainActivity extends Activity {
 
         vBottomNavShadow = findViewById(R.id.vBottomNavShadow);
         layoutBottomNavContainer = findViewById(R.id.layoutBottomNavContainer);
+        if (vBottomNavShadow != null) {
+            vBottomNavShadow.setOutlineProvider(null);
+        }
+        if (layoutBottomNavContainer != null) {
+            layoutBottomNavContainer.setOutlineProvider(null);
+        }
         layoutBottomNav = findViewById(R.id.layoutBottomNav);
         layoutNavItems = findViewById(R.id.layoutNavItems);
         vNavSlidingPill = findViewById(R.id.vNavSlidingPill);
@@ -699,6 +857,9 @@ public class MainActivity extends Activity {
         bindHeadsetViews();
         bindIntegrationViews();
         bindAboutViews();
+        if (livingFlowUi) {
+            setupLivingFlowUi();
+        }
         applyCardOutlineClipping(pages[TAB_HEADSET]);
         applyCardOutlineClipping(pages[TAB_INTEGRATION]);
         applyCardOutlineClipping(pages[TAB_ABOUT]);
@@ -721,6 +882,11 @@ public class MainActivity extends Activity {
         ivStatusIcon = findViewById(R.id.ivStatusIcon);
         tvStatusTitle = findViewById(R.id.tvStatusTitle);
         tvStatusSubtitle = findViewById(R.id.tvStatusSubtitle);
+        bannerModuleInactive = findViewById(R.id.bannerModuleInactive);
+        vBannerWarnEmblem = findViewById(R.id.vBannerWarnEmblem);
+        if (bannerModuleInactive != null) {
+            bannerModuleInactive.setOnClickListener(v -> showDiagnosticsDialog());
+        }
 
         ivArtworkPreview = findViewById(R.id.ivArtworkPreview);
         tvHeadsetName = findViewById(R.id.tvHeadsetName);
@@ -786,6 +952,7 @@ public class MainActivity extends Activity {
         findViewById(R.id.rowVoiceFocus).setOnClickListener(v -> swVoiceFocus.toggle());
         swVoiceFocus.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (suppressUiCallbacks) return;
+            if (livingFlowUi) ColorOsLivingFlowEngine.performHaptic(buttonView, ColorOsLivingFlowEngine.HapticKind.SWITCH);
             data.defaultVoiceFocus = isChecked;
             persistImmediate();
             ConfigStore.sendCommandBroadcast(this, ConfigStore.CMD_SET_AMBIENT_PARAMS,
@@ -811,6 +978,7 @@ public class MainActivity extends Activity {
         findViewById(R.id.rowHandover).setOnClickListener(v -> swHandover.toggle());
         swHandover.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (suppressUiCallbacks) return;
+            if (livingFlowUi) ColorOsLivingFlowEngine.performHaptic(buttonView, ColorOsLivingFlowEngine.HapticKind.SWITCH);
             data.handover = isChecked;
             persistImmediate();
         });
@@ -866,13 +1034,7 @@ public class MainActivity extends Activity {
         findViewById(R.id.rowRootStatus).setOnClickListener(v -> refreshRootStatusAsync());
         findViewById(R.id.rowRestartCore).setOnClickListener(v -> runScopeRestartCore());
         findViewById(R.id.rowRestartCustom).setOnClickListener(v -> showCustomRestartScopeDialog());
-        findViewById(R.id.rowClearArtworkCache).setOnClickListener(v -> {
-            Toast.makeText(this, R.string.toast_restarting_scopes, Toast.LENGTH_SHORT).show();
-            ScopeRestarter.clearMyDevicesArtworkCacheAndRestartAsync((ok, msg) -> Toast.makeText(
-                    this,
-                    ok ? getString(R.string.toast_restart_done) : getString(R.string.toast_restart_failed, msg),
-                    Toast.LENGTH_SHORT).show());
-        });
+        findViewById(R.id.rowClearArtworkCache).setOnClickListener(v -> runClearArtworkCacheAndRestart());
         findViewById(R.id.rowPreviewOpenPopup).setOnClickListener(v -> triggerPreviewOpenCasePopup());
 
         findViewById(R.id.btnOpenNativePanelTab2).setOnClickListener(v -> openNativeColorOsPanel());
@@ -894,18 +1056,93 @@ public class MainActivity extends Activity {
         refreshRootStatusAsync();
     }
 
+    private void runClearArtworkCacheAndRestart() {
+        Toast.makeText(this, R.string.toast_restarting_scopes, Toast.LENGTH_SHORT).show();
+        ScopeRestarter.clearMyDevicesArtworkCacheAndRestartAsync((ok, msg) -> Toast.makeText(
+                this,
+                ok ? getString(R.string.toast_restart_done) : getString(R.string.toast_restart_failed, msg),
+                Toast.LENGTH_SHORT).show());
+    }
+
     private void bindAboutViews() {
         tvSysVersion = findViewById(R.id.tvSysVersion);
         tvDeviceModel = findViewById(R.id.tvDeviceModel);
         tvAboutChannel = findViewById(R.id.tvAboutChannel);
         tvAboutUpdateChip = findViewById(R.id.tvAboutUpdateChip);
+        tvAboutUiStyleVal = findViewById(R.id.tvAboutUiStyleVal);
         tvAboutLanguageVal = findViewById(R.id.tvAboutLanguageVal);
         tvAboutDarkModeVal = findViewById(R.id.tvAboutDarkModeVal);
         swAboutMonet = findViewById(R.id.swAboutMonet);
         swAboutDebugMode = findViewById(R.id.swAboutDebugMode);
 
+        cardAboutDynamicHero = findViewById(R.id.cardAboutDynamicHero);
+        vAboutDynamicBg = findViewById(R.id.vAboutDynamicBg);
+        layoutAboutHeroLogo = findViewById(R.id.layoutAboutHeroLogo);
+        tvAboutHeroVer = findViewById(R.id.tvAboutHeroVer);
+        tvAboutHeroUpdateStatus = findViewById(R.id.tvAboutHeroUpdateStatus);
+        tvAboutBuildSub = findViewById(R.id.tvAboutBuildSub);
+        cardAboutModuleStatus = findViewById(R.id.cardAboutModuleStatus);
+        vAboutStatusEmblem = findViewById(R.id.vAboutStatusEmblem);
+        ivAboutStatusIcon = findViewById(R.id.ivAboutStatusIcon);
+        tvAboutStatusTitle = findViewById(R.id.tvAboutStatusTitle);
+        tvAboutStatusBadge = findViewById(R.id.tvAboutStatusBadge);
+        tvAboutStatusSubtitle = findViewById(R.id.tvAboutStatusSubtitle);
+        rowAboutScopeToggle = findViewById(R.id.rowAboutScopeToggle);
+        tvAboutScopeCount = findViewById(R.id.tvAboutScopeCount);
+        ivAboutScopeChevron = findViewById(R.id.ivAboutScopeChevron);
+        layoutAboutScopeBody = findViewById(R.id.layoutAboutScopeBody);
+        tvAboutScopeList = findViewById(R.id.tvAboutScopeList);
+
         tvSysVersion.setText("Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
         tvDeviceModel.setText(Build.MANUFACTURER + " " + Build.MODEL);
+        if (tvAboutBuildSub != null) {
+            tvAboutBuildSub.setText("v" + getInstalledVersionName() + " (" + getInstalledVersionCode() + ")");
+        }
+
+        if (cardAboutDynamicHero != null) {
+            cardAboutDynamicHero.setOnClickListener(v -> {
+                if (livingFlowUi) {
+                    LivingFlowUpdatePages.showSoftwareUpdatePage(this);
+                } else {
+                    checkUpdateFromLsposedRepo(true);
+                }
+            });
+            cardAboutDynamicHero.setOnLongClickListener(v -> {
+                if (!livingFlowUi || vAboutDynamicBg == null) return false;
+                vAboutDynamicBg.playEasterEgg();
+                playAboutHeroEntrance(true);
+                ColorOsLivingFlowEngine.performHaptic(v, ColorOsLivingFlowEngine.HapticKind.CONFIRM);
+                return true;
+            });
+        }
+
+        if (cardAboutModuleStatus != null) {
+            cardAboutModuleStatus.setOnClickListener(v -> showDiagnosticsDialog());
+        }
+
+        if (tvAboutScopeList != null && tvAboutScopeCount != null) {
+            String[] rawPkgs = getString(R.string.about_scope_value).split(",");
+            StringBuilder sb = new StringBuilder();
+            int pkgCount = 0;
+            for (String raw : rawPkgs) {
+                String trimmed = raw.trim();
+                if (trimmed.isEmpty()) continue;
+                if (sb.length() > 0) sb.append('\n');
+                sb.append("• ").append(trimmed);
+                pkgCount++;
+            }
+            tvAboutScopeList.setText(sb.toString());
+            tvAboutScopeCount.setText(getString(R.string.about_scope_summary_fmt, pkgCount));
+        }
+        if (rowAboutScopeToggle != null) {
+            rowAboutScopeToggle.setOnClickListener(v -> toggleAboutScope());
+        }
+
+        View rowAboutUiStyle = findViewById(R.id.rowAboutUiStyle);
+        if (rowAboutUiStyle != null) {
+            CouiBottomSheet.trackTouchPoint(rowAboutUiStyle);
+            rowAboutUiStyle.setOnClickListener(v -> showUiStyleDialog(v));
+        }
 
         View rowAboutLanguage = findViewById(R.id.rowAboutLanguage);
         CouiBottomSheet.trackTouchPoint(rowAboutLanguage);
@@ -915,20 +1152,29 @@ public class MainActivity extends Activity {
         CouiBottomSheet.trackTouchPoint(rowAboutDarkMode);
         rowAboutDarkMode.setOnClickListener(v -> showDarkModeDialog(v));
         findViewById(R.id.rowAboutChangelog).setOnClickListener(v -> showChangelogDialog());
-        findViewById(R.id.rowAboutCheckUpdate).setOnClickListener(v -> checkUpdateFromLsposedRepo(true));
+        findViewById(R.id.rowAboutCheckUpdate).setOnClickListener(v -> {
+            if (livingFlowUi) {
+                LivingFlowUpdatePages.showSoftwareUpdatePage(this);
+            } else {
+                checkUpdateFromLsposedRepo(true);
+            }
+        });
 
         findViewById(R.id.rowAboutMonet).setOnClickListener(v -> swAboutMonet.toggle());
         swAboutMonet.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (suppressUiCallbacks) return;
+            if (livingFlowUi) ColorOsLivingFlowEngine.performHaptic(buttonView, ColorOsLivingFlowEngine.HapticKind.SWITCH);
             ConfigStore.setMonetEnabled(this, isChecked);
             DynamicThemeHelper.applyAccent(findViewById(android.R.id.content), this);
             updateNavIndicator(activeTab, activeTab, 0, false, false);
+            syncUiState();
             refreshHeadsetStateUi();
         });
 
         findViewById(R.id.rowAboutDebugMode).setOnClickListener(v -> swAboutDebugMode.toggle());
         swAboutDebugMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (suppressUiCallbacks) return;
+            if (livingFlowUi) ColorOsLivingFlowEngine.performHaptic(buttonView, ColorOsLivingFlowEngine.HapticKind.SWITCH);
             data.debugMode = isChecked;
             persistImmediate();
         });
@@ -949,6 +1195,7 @@ public class MainActivity extends Activity {
         findViewById(rowId).setOnClickListener(v -> sw.toggle());
         sw.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (suppressUiCallbacks) return;
+            if (livingFlowUi) ColorOsLivingFlowEngine.performHaptic(buttonView, ColorOsLivingFlowEngine.HapticKind.SWITCH);
             setter.accept(isChecked);
             persistImmediate();
         });
@@ -987,6 +1234,13 @@ public class MainActivity extends Activity {
             tvBatteryLeft.setText(formatBat(headsetState.effectiveLeft(), headsetState.leftCharging || headsetState.singleCharging));
             tvBatteryRight.setText(formatBat(headsetState.effectiveRight(), headsetState.rightCharging || headsetState.singleCharging));
             tvBatteryCase.setText(formatBat(headsetState.caseBattery, headsetState.caseCharging));
+            if (livingFlowUi) {
+                updateBatteryGauge(vBatBarLeft, headsetState.connected ? headsetState.effectiveLeft() : -1);
+                updateBatteryGauge(vBatBarRight, headsetState.connected ? headsetState.effectiveRight() : -1);
+                updateBatteryGauge(vBatBarCase, headsetState.connected ? headsetState.caseBattery : -1);
+                updateHeroGlowAura();
+                updateQuickAncSegment(headsetState.connected ? headsetState.ancMode : -1, false);
+            }
 
             int asm = headsetState.connected ? headsetState.asmLevel : data.defaultAsmLevel;
             tvAsmLevelVal.setText(String.valueOf(asm));
@@ -1176,15 +1430,7 @@ public class MainActivity extends Activity {
     private void showModelOverrideDialog() {
         final CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
         final CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
-        CouiBottomSheet.addHeader(
-                this, sheet.card, pal,
-                getString(R.string.dialog_model_override_title),
-                getString(R.string.dialog_model_override_sub),
-                null);
-
         final String curModel = data.customModelOverride != null ? data.customModelOverride.trim() : "";
-        final EditText input = CouiBottomSheet.addPillInputBox(this, sheet.card, pal, curModel,
-                getString(R.string.dialog_model_override_hint));
 
         final String autoLabel = getString(R.string.model_override_auto);
         final String[] presets = {
@@ -1195,6 +1441,58 @@ public class MainActivity extends Activity {
         for (int i = 0; i < presets.length; i++) {
             labels[i] = presets[i].isEmpty() ? autoLabel : presets[i];
         }
+
+        if (livingFlowUi) {
+            final EditText[] inputRef = new EditText[1];
+            CouiBottomSheet.addLivingFlowTopBar(
+                    this, sheet,
+                    getString(R.string.dialog_model_override_title),
+                    getString(R.string.btn_cancel),
+                    getString(R.string.btn_apply), 1, v -> {
+                        if (inputRef[0] != null) {
+                            data.customModelOverride = inputRef[0].getText().toString().trim();
+                        }
+                        persistImmediate();
+                        syncUiState();
+                        refreshHeadsetStateUi();
+                        sheet.dialog.dismiss();
+                    });
+
+            ScrollView scroll = CouiBottomSheet.createMaxHeightScrollView(
+                    this, Math.round(getResources().getDisplayMetrics().heightPixels * 0.62f));
+            LinearLayout bodyCol = new LinearLayout(this);
+            bodyCol.setOrientation(LinearLayout.VERTICAL);
+
+            inputRef[0] = CouiBottomSheet.addLivingFlowBorderlessInputCard(
+                    this, bodyCol, pal, curModel, getString(R.string.dialog_model_override_hint));
+
+            TextView tvSub = new TextView(this);
+            tvSub.setText(R.string.dialog_model_override_sub);
+            tvSub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
+            tvSub.setLineSpacing(0f, 1.25f);
+            tvSub.setTextColor(pal.textSecondary);
+            tvSub.setPadding(dp(16), dp(12), dp(16), dp(8));
+            bodyCol.addView(tvSub, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            CouiBottomSheet.addLivingFlowDonutPresetCard(this, bodyCol, pal, labels, presets, inputRef[0]);
+
+            scroll.addView(bodyCol, new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            sheet.card.addView(scroll, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            sheet.dialog.show();
+            return;
+        }
+
+        CouiBottomSheet.addHeader(
+                this, sheet.card, pal,
+                getString(R.string.dialog_model_override_title),
+                getString(R.string.dialog_model_override_sub),
+                null);
+
+        final EditText input = CouiBottomSheet.addPillInputBox(this, sheet.card, pal, curModel,
+                getString(R.string.dialog_model_override_hint));
         CouiBottomSheet.addChipFlowGroup(this, sheet.card, pal, labels, presets, input);
 
         CouiBottomSheet.addButtonRow(
@@ -1261,17 +1559,78 @@ public class MainActivity extends Activity {
 
         final CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
         final CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
-        final TextView countBadge = CouiBottomSheet.addHeader(
-                this, sheet.card, pal,
-                getString(R.string.dialog_restart_custom_title),
-                getString(R.string.dialog_restart_custom_sub),
-                "5 / " + pkgs.length);
+        final View.OnClickListener onRestartAction = v -> {
+            List<String> selected = new ArrayList<>();
+            boolean hasSysUi = false;
+            for (int i = 0; i < pkgs.length; i++) {
+                if (checked[i]) {
+                    selected.add(pkgs[i]);
+                    if (ScopeRestarter.PKG_SYSTEMUI.equals(pkgs[i])) {
+                        hasSysUi = true;
+                    }
+                }
+            }
+            if (selected.isEmpty()) return;
+            sheet.dialog.dismiss();
+            if (hasSysUi) {
+                confirmAndRestartSelected(selected);
+            } else {
+                executeRestartSelected(selected);
+            }
+        };
+
+        final TextView countBadge;
+        if (livingFlowUi) {
+            CouiBottomSheet.addLivingFlowTopBar(
+                    this, sheet,
+                    getString(R.string.dialog_restart_custom_title),
+                    getString(R.string.btn_cancel),
+                    getString(R.string.btn_restart_selected), 1, onRestartAction);
+
+            LinearLayout subRow = new LinearLayout(this);
+            subRow.setOrientation(LinearLayout.HORIZONTAL);
+            subRow.setGravity(Gravity.CENTER_VERTICAL);
+            subRow.setPadding(dp(6), 0, dp(6), dp(10));
+
+            TextView tvSub = new TextView(this);
+            tvSub.setText(R.string.dialog_restart_custom_sub);
+            tvSub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+            tvSub.setTextColor(pal.textSecondary);
+            LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            subLp.setMarginEnd(dp(8));
+            subRow.addView(tvSub, subLp);
+
+            TextView badge = new TextView(this);
+            badge.setText("5 / " + pkgs.length);
+            badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+            badge.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+            badge.setTextColor(pal.accent);
+            badge.setPadding(dp(10), dp(3), dp(10), dp(3));
+            GradientDrawable badgeBg = new GradientDrawable();
+            badgeBg.setShape(GradientDrawable.RECTANGLE);
+            badgeBg.setColor(pal.tonal);
+            badgeBg.setCornerRadius(999f * getResources().getDisplayMetrics().density);
+            badge.setBackground(badgeBg);
+            subRow.addView(badge, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            sheet.card.addView(subRow, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            countBadge = badge;
+        } else {
+            countBadge = CouiBottomSheet.addHeader(
+                    this, sheet.card, pal,
+                    getString(R.string.dialog_restart_custom_title),
+                    getString(R.string.dialog_restart_custom_sub),
+                    "5 / " + pkgs.length);
+        }
 
         ScrollView scroll = CouiBottomSheet.createMaxHeightScrollView(
-                this, Math.round(getResources().getDisplayMetrics().heightPixels * 0.44f));
+                this, Math.round(getResources().getDisplayMetrics().heightPixels * (livingFlowUi ? 0.50f : 0.44f)));
         LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        scrollLp.topMargin = dp(14);
+        if (!livingFlowUi) {
+            scrollLp.topMargin = dp(14);
+        }
         LinearLayout group = CouiBottomSheet.createSubcardGroup(this, pal);
         scroll.addView(group);
         sheet.card.addView(scroll, scrollLp);
@@ -1304,34 +1663,40 @@ public class MainActivity extends Activity {
                     });
         }
 
-        CouiBottomSheet.addButtonRow(
-                this, sheet.card, pal,
-                getString(R.string.btn_cancel), 0, v -> sheet.dialog.dismiss(),
-                getString(R.string.btn_restart_selected), 1, v -> {
-                    List<String> selected = new ArrayList<>();
-                    boolean hasSysUi = false;
-                    for (int i = 0; i < pkgs.length; i++) {
-                        if (checked[i]) {
-                            selected.add(pkgs[i]);
-                            if (ScopeRestarter.PKG_SYSTEMUI.equals(pkgs[i])) {
-                                hasSysUi = true;
-                            }
-                        }
-                    }
-                    if (selected.isEmpty()) return;
-                    sheet.dialog.dismiss();
-                    if (hasSysUi) {
-                        confirmAndRestartSelected(selected);
-                    } else {
-                        executeRestartSelected(selected);
-                    }
-                });
+        if (!livingFlowUi) {
+            CouiBottomSheet.addButtonRow(
+                    this, sheet.card, pal,
+                    getString(R.string.btn_cancel), 0, v -> sheet.dialog.dismiss(),
+                    getString(R.string.btn_restart_selected), 1, onRestartAction);
+        }
         sheet.dialog.show();
     }
 
     private void confirmAndRestartSelected(List<String> selected) {
         CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
         CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
+        if (livingFlowUi) {
+            CouiBottomSheet.addLivingFlowTopBar(
+                    this, sheet,
+                    getString(R.string.dialog_restart_custom_title),
+                    getString(R.string.btn_cancel),
+                    getString(R.string.btn_restart_selected), 2, v -> {
+                        sheet.dialog.dismiss();
+                        executeRestartSelected(selected);
+                    });
+            LinearLayout msgCard = CouiBottomSheet.createSubcardGroup(this, pal);
+            msgCard.setPadding(dp(18), dp(18), dp(18), dp(18));
+            TextView msgTv = new TextView(this);
+            msgTv.setText(R.string.dialog_restart_confirm_sysui);
+            msgTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
+            msgTv.setLineSpacing(0f, 1.35f);
+            msgTv.setTextColor(pal.textPrimary);
+            msgCard.addView(msgTv);
+            sheet.card.addView(msgCard, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            sheet.dialog.show();
+            return;
+        }
         CouiBottomSheet.addHeader(
                 this, sheet.card, pal,
                 getString(R.string.dialog_restart_custom_title),
@@ -1361,11 +1726,12 @@ public class MainActivity extends Activity {
     private void showCycleModeDialog(View anchor) {
         String[] labels = {getString(R.string.cycle_mode_3way), getString(R.string.cycle_mode_2way)};
         int cur = data.cycleMode == ConfigStore.CYCLE_2WAY ? 1 : 0;
-        CouiBottomSheet.showPopupMenu(this, anchor, CouiBottomSheet.Palette.fromModuleTheme(this),
-                labels, cur, which -> {
-                    data.cycleMode = which == 1 ? ConfigStore.CYCLE_2WAY : ConfigStore.CYCLE_3WAY;
-                    persistImmediate();
-                });
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.IntCallback cb = which -> {
+            data.cycleMode = which == 1 ? ConfigStore.CYCLE_2WAY : ConfigStore.CYCLE_3WAY;
+            persistImmediate();
+        };
+        CouiBottomSheet.showPopupMenu(this, anchor, pal, labels, cur, cb);
     }
 
     private void showOpenPopupModeDialog(View anchor) {
@@ -1374,13 +1740,14 @@ public class MainActivity extends Activity {
                 getString(R.string.popup_mode_pairing_and_connect_desc)
         };
         int cur = data.openCasePopupMode == ConfigStore.POPUP_MODE_PAIRING_AND_CONNECT ? 1 : 0;
-        CouiBottomSheet.showPopupMenu(this, anchor, CouiBottomSheet.Palette.fromModuleTheme(this),
-                labels, cur, which -> {
-                    data.openCasePopupMode = which == 1
-                            ? ConfigStore.POPUP_MODE_PAIRING_AND_CONNECT
-                            : ConfigStore.POPUP_MODE_PAIRING_ONLY;
-                    persistImmediate();
-                });
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.IntCallback cb = which -> {
+            data.openCasePopupMode = which == 1
+                    ? ConfigStore.POPUP_MODE_PAIRING_AND_CONNECT
+                    : ConfigStore.POPUP_MODE_PAIRING_ONLY;
+            persistImmediate();
+        };
+        CouiBottomSheet.showPopupMenu(this, anchor, pal, labels, cur, cb);
     }
 
     private void showLanguageDialog(View anchor) {
@@ -1402,15 +1769,20 @@ public class MainActivity extends Activity {
         for (int i = 0; i < codes.length; i++) {
             if (codes[i].equals(cur)) idx = i;
         }
-        CouiBottomSheet.showPopupMenu(this, anchor, CouiBottomSheet.Palette.fromModuleTheme(this),
-                names, idx, which -> {
-                    String chosen = codes[which];
-                    if (!chosen.equals(cur)) {
-                        ConfigStore.setAppLanguage(this, chosen);
-                        sPendingTabAfterRecreate = activeTab;
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.IntCallback cb = which -> {
+            String chosen = codes[which];
+            if (!chosen.equals(cur)) {
+                ConfigStore.setAppLanguage(this, chosen);
+                sPendingTabAfterRecreate = activeTab;
+                mainHandler.postDelayed(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
                         recreate();
                     }
-                });
+                }, 90L);
+            }
+        };
+        CouiBottomSheet.showPopupMenu(this, anchor, pal, names, idx, cb);
     }
 
     private void showDarkModeDialog(View anchor) {
@@ -1420,14 +1792,414 @@ public class MainActivity extends Activity {
                 getString(R.string.dark_mode_dark)
         };
         int cur = ConfigStore.getAppDarkMode(this);
-        CouiBottomSheet.showPopupMenu(this, anchor, CouiBottomSheet.Palette.fromModuleTheme(this),
-                names, cur, which -> {
-                    if (which != cur) {
-                        ConfigStore.setAppDarkMode(this, which);
-                        sPendingTabAfterRecreate = activeTab;
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.IntCallback cb = which -> {
+            if (which != cur) {
+                ConfigStore.setAppDarkMode(this, which);
+                sPendingTabAfterRecreate = activeTab;
+                mainHandler.postDelayed(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
                         recreate();
                     }
+                }, 90L);
+            }
+        };
+        CouiBottomSheet.showPopupMenu(this, anchor, pal, names, cur, cb);
+    }
+
+    private void showUiStyleDialog(View anchor) {
+        int curStyle = ConfigStore.getAppUiStyle(this);
+        int curIdx = (curStyle == ConfigStore.UI_STYLE_LIVING_FLOW) ? 0 : 1;
+        String[] names = {
+                getString(R.string.ui_style_living_flow),
+                getString(R.string.ui_style_classic)
+        };
+        CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
+        CouiBottomSheet.IntCallback cb = which -> {
+            int nextStyle = (which == 0) ? ConfigStore.UI_STYLE_LIVING_FLOW : ConfigStore.UI_STYLE_CLASSIC;
+            if (nextStyle != curStyle) {
+                ConfigStore.setAppUiStyle(this, nextStyle);
+                sPendingTabAfterRecreate = activeTab;
+                mainHandler.postDelayed(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        recreate();
+                    }
+                }, 90L);
+            }
+        };
+        CouiBottomSheet.showPopupMenu(this, anchor, pal, names, curIdx, cb);
+    }
+
+    private void showTopQuickActionsMenu(View anchor) {
+        String[] items = {
+                getString(R.string.pref_restart_core_title),
+                getString(R.string.pref_restart_custom_title),
+                getString(R.string.pref_clear_md_cache_title),
+                getString(R.string.btn_open_native_panel),
+                getString(R.string.pref_preview_open_popup_title)
+        };
+        CouiBottomSheet.showPopupMenu(this, anchor, CouiBottomSheet.Palette.fromModuleTheme(this),
+                items, -1, which -> {
+                    if (which == 0) {
+                        runScopeRestartCore();
+                    } else if (which == 1) {
+                        showCustomRestartScopeDialog();
+                    } else if (which == 2) {
+                        runClearArtworkCacheAndRestart();
+                    } else if (which == 3) {
+                        openNativeColorOsPanel();
+                    } else if (which == 4) {
+                        triggerPreviewOpenCasePopup();
+                    }
                 });
+    }
+
+    private void setupLivingFlowUi() {
+        btnTopQuickAppearance = findViewById(R.id.btnTopQuickAppearance);
+        cardHeadsetHero = findViewById(R.id.cardHeadsetHero);
+        vHeroGlowAura = findViewById(R.id.vHeroGlowAura);
+        vBatBarLeft = findViewById(R.id.vBatBarLeft);
+        vBatBarRight = findViewById(R.id.vBatBarRight);
+        vBatBarCase = findViewById(R.id.vBatBarCase);
+        layoutQuickAncCapsule = findViewById(R.id.layoutQuickAncCapsule);
+        btnAncNc = findViewById(R.id.btnAncNc);
+        btnAncAmbient = findViewById(R.id.btnAncAmbient);
+        btnAncOff = findViewById(R.id.btnAncOff);
+        ivAncIconNc = findViewById(R.id.ivAncIconNc);
+        ivAncIconAmbient = findViewById(R.id.ivAncIconAmbient);
+        ivAncIconOff = findViewById(R.id.ivAncIconOff);
+        tvAncLabelNc = findViewById(R.id.tvAncLabelNc);
+        tvAncLabelAmbient = findViewById(R.id.tvAncLabelAmbient);
+        tvAncLabelOff = findViewById(R.id.tvAncLabelOff);
+        ivAncRadioNc = findViewById(R.id.ivAncRadioNc);
+        ivAncRadioAmbient = findViewById(R.id.ivAncRadioAmbient);
+        ivAncRadioOff = findViewById(R.id.ivAncRadioOff);
+
+        final boolean dark = ConfigStore.isDarkThemeActive(this);
+        final float d = getResources().getDisplayMetrics().density;
+
+        if (vTopHeaderBlur != null) {
+            vTopHeaderBlur.setSurfaceColor(getColor(R.color.lf_bg));
+            vTopHeaderBlur.setOutlineProvider(null);
+            vTopHeaderBlur.setTranslationZ(4f * d);
+        }
+        if (layoutHeader != null) {
+            layoutHeader.setOutlineProvider(null);
+            layoutHeader.setTranslationZ(12f * d);
+        }
+        if (layoutBottomNavContainer != null) {
+            layoutBottomNavContainer.setOutlineProvider(null);
+            layoutBottomNavContainer.setTranslationZ(16f * d);
+        }
+
+        if (bannerModuleInactive != null) {
+            GradientDrawable warnBg = new GradientDrawable();
+            warnBg.setShape(GradientDrawable.RECTANGLE);
+            warnBg.setCornerRadius(20f * d);
+            warnBg.setColor(dark ? 0xFF2A2012 : 0xFFFFF5E8);
+            warnBg.setStroke(Math.max(1, Math.round(1.0f * d)), dark ? 0x4DFBBF24 : 0x40D97706);
+            bannerModuleInactive.setBackground(new RippleDrawable(
+                    ColorStateList.valueOf(getColor(R.color.lf_press_bg)), warnBg, warnBg));
+            bannerModuleInactive.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+            bannerModuleInactive.setClipToOutline(true);
+        }
+        if (vBannerWarnEmblem != null) {
+            GradientDrawable emblemBg = new GradientDrawable();
+            emblemBg.setShape(GradientDrawable.OVAL);
+            emblemBg.setColor(dark ? 0x2DFBBF24 : 0x1FD97706);
+            vBannerWarnEmblem.setBackground(emblemBg);
+        }
+
+        if (vBottomNavShadow != null) {
+            vBottomNavShadow.setOutlineProvider(null);
+            vBottomNavShadow.setTranslationZ(8f * d);
+            final int[] stopsColor = dark
+                    ? new int[]{0x00000000, 0x10000000, 0x2B000000, 0x4E000000, 0x72000000, 0x94000000}
+                    : new int[]{0x00000000, 0x03000000, 0x08000000, 0x10000000, 0x17000000, 0x1E000000};
+            final float[] stopsPos = new float[]{0f, 0.24f, 0.48f, 0.70f, 0.86f, 1.0f};
+            ShapeDrawable scrim = new ShapeDrawable(new RectShape());
+            scrim.getPaint().setDither(true);
+            scrim.setShaderFactory(new ShapeDrawable.ShaderFactory() {
+                @Override
+                public Shader resize(int width, int height) {
+                    return new LinearGradient(
+                            0f, 0f, 0f, Math.max(1f, height),
+                            stopsColor, stopsPos, Shader.TileMode.CLAMP);
+                }
+            });
+            vBottomNavShadow.setBackground(scrim);
+        }
+
+        ColorOsLivingFlowEngine.applyGlassSurface(layoutBottomNav, ColorOsLivingFlowEngine.GlassPreset.BOTTOM_BAR_PILL,
+                dark, 28f, false, true);
+        ColorOsLivingFlowEngine.applyGlassSurface(btnTopQuickAppearance, ColorOsLivingFlowEngine.GlassPreset.TOP_BAR_CIRCLE,
+                dark, 21f, true, false);
+
+        navSpotLight = new LivingFlowEffects.SpotLightDrawable(
+                dark, d, 28f, false, true, dark ? 0.24f : 0.30f, 88f);
+        if (layoutBottomNav != null) {
+            layoutBottomNav.setForeground(navSpotLight);
+            navElasticController = new LivingFlowEffects.NavBarElasticController(layoutBottomNav);
+        }
+
+        LivingFlowEffects.TouchFeedback.attach(btnTopQuickAppearance,
+                LivingFlowEffects.TouchFeedback.Profile.GLASS_CIRCLE, dark, 21f, true, false, true);
+
+        int accent = DynamicThemeHelper.getAccent(this);
+        int[] primaryBtnIds = {
+                R.id.btnRefreshState,
+                R.id.btnOpenNativePanel,
+                R.id.btnApplyDefaults,
+                R.id.btnOpenNativePanelTab2,
+                R.id.btnResetIntegration
+        };
+        for (int id : primaryBtnIds) {
+            View btn = findViewById(id);
+            if (btn != null) {
+                boolean isColoredPrimary = (id == R.id.btnOpenNativePanel || id == R.id.btnOpenNativePanelTab2);
+                LivingFlowEffects.TouchFeedback.attach(btn,
+                        LivingFlowEffects.TouchFeedback.Profile.PRIMARY_BUTTON, dark, 999f, false, true);
+                ColorOsLivingFlowEngine.applyLuminousPillButton(btn, isColoredPrimary, accent, dark, true);
+            }
+        }
+
+        if (cardAboutDynamicHero != null) {
+            ColorOsLivingFlowEngine.applySmoothCard(cardAboutDynamicHero, 24f, 2.0f, dark, false);
+            ColorOsLivingFlowEngine.installSmoothOutline(cardAboutDynamicHero, 24f, 2.0f, false, false);
+            cardAboutDynamicHero.setClipToOutline(true);
+            LivingFlowEffects.TouchFeedback.attach(cardAboutDynamicHero,
+                    LivingFlowEffects.TouchFeedback.Profile.HERO_CARD, dark, 24f, false, false);
+        }
+        if (tvAboutHeroVer != null) {
+            tvAboutHeroVer.setText("ColorOS · " + getInstalledVersionName());
+        }
+        if (tvAboutBuildSub != null) {
+            tvAboutBuildSub.setText("v" + getInstalledVersionName() + " (" + getInstalledVersionCode() + ")");
+        }
+
+        if (btnTopQuickAppearance != null) {
+            btnTopQuickAppearance.setOnClickListener(this::showTopQuickActionsMenu);
+        }
+
+        if (btnAncNc != null) btnAncNc.setOnClickListener(v -> onQuickAncClicked(ConfigStore.ANC_NC));
+        if (btnAncAmbient != null) btnAncAmbient.setOnClickListener(v -> onQuickAncClicked(ConfigStore.ANC_AMBIENT));
+        if (btnAncOff != null) btnAncOff.setOnClickListener(v -> onQuickAncClicked(ConfigStore.ANC_OFF));
+
+        updateHeroGlowAura();
+        updateQuickAncSegment(-1, false);
+        if (activeTab == TAB_ABOUT) {
+            playAboutHeroEntrance(false);
+        }
+    }
+
+    private void toggleAboutScope() {
+        if (layoutAboutScopeBody == null) return;
+        if (livingFlowUi && rowAboutScopeToggle != null) {
+            ColorOsLivingFlowEngine.performHaptic(rowAboutScopeToggle, ColorOsLivingFlowEngine.HapticKind.TICK);
+        }
+        aboutScopeExpanded = !aboutScopeExpanded;
+        if (ivAboutScopeChevron != null) {
+            ivAboutScopeChevron.animate().cancel();
+            ivAboutScopeChevron.animate()
+                    .rotation(aboutScopeExpanded ? 270f : 90f)
+                    .setDuration(260L)
+                    .setInterpolator(FLUID_EASE)
+                    .start();
+        }
+        if (aboutScopeAnimator != null) {
+            aboutScopeAnimator.cancel();
+            aboutScopeAnimator = null;
+        }
+        View parent = (layoutAboutScopeBody.getParent() instanceof View) ? (View) layoutAboutScopeBody.getParent() : null;
+        int availW = parent != null && parent.getWidth() > 0
+                ? Math.max(1, parent.getWidth() - parent.getPaddingLeft() - parent.getPaddingRight())
+                : Math.max(1, getResources().getDisplayMetrics().widthPixels - dp(72));
+        final boolean expanding = aboutScopeExpanded;
+        final int startH = (layoutAboutScopeBody.getVisibility() == View.VISIBLE)
+                ? layoutAboutScopeBody.getHeight() : 0;
+        final int targetH;
+        if (expanding) {
+            layoutAboutScopeBody.setVisibility(View.VISIBLE);
+            layoutAboutScopeBody.measure(
+                    View.MeasureSpec.makeMeasureSpec(availW, View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            targetH = Math.max(1, layoutAboutScopeBody.getMeasuredHeight());
+            ViewGroup.LayoutParams lp = layoutAboutScopeBody.getLayoutParams();
+            if (lp != null) {
+                lp.height = startH;
+                layoutAboutScopeBody.setLayoutParams(lp);
+            }
+            if (startH == 0) layoutAboutScopeBody.setAlpha(0f);
+        } else {
+            targetH = 0;
+        }
+
+        final int denom = Math.max(1, expanding ? targetH : startH);
+        ValueAnimator anim = ValueAnimator.ofInt(startH, targetH);
+        anim.setDuration(expanding ? 260L : 240L);
+        anim.setInterpolator(FLUID_EASE);
+        anim.addUpdateListener(a -> {
+            int curH = (Integer) a.getAnimatedValue();
+            ViewGroup.LayoutParams lp = layoutAboutScopeBody.getLayoutParams();
+            if (lp != null) {
+                lp.height = curH;
+                layoutAboutScopeBody.setLayoutParams(lp);
+            }
+            layoutAboutScopeBody.setAlpha(Math.max(0f, Math.min(1f, curH / (float) denom)));
+        });
+        anim.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                if (aboutScopeAnimator == animation) {
+                    aboutScopeAnimator = null;
+                }
+                if (expanding != aboutScopeExpanded) return;
+                ViewGroup.LayoutParams lp = layoutAboutScopeBody.getLayoutParams();
+                if (expanding) {
+                    if (lp != null) {
+                        lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                        layoutAboutScopeBody.setLayoutParams(lp);
+                    }
+                    layoutAboutScopeBody.setAlpha(1f);
+                } else {
+                    layoutAboutScopeBody.setVisibility(View.GONE);
+                    if (lp != null) {
+                        lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                        layoutAboutScopeBody.setLayoutParams(lp);
+                    }
+                    layoutAboutScopeBody.setAlpha(1f);
+                }
+            }
+        });
+        aboutScopeAnimator = anim;
+        anim.start();
+    }
+
+    private void onQuickAncClicked(int ancMode) {
+        headsetState = ConfigStore.readGlobalState(this);
+        if (!headsetState.connected) {
+            ColorOsLivingFlowEngine.performHaptic(layoutQuickAncCapsule, ColorOsLivingFlowEngine.HapticKind.TICK);
+            Toast.makeText(this, R.string.toast_headset_not_connected, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ColorOsLivingFlowEngine.performHaptic(layoutQuickAncCapsule, ColorOsLivingFlowEngine.HapticKind.SWITCH);
+        updateQuickAncSegment(ancMode, true);
+        if (tvCurrentAncBadge != null) {
+            int labelRes = (ancMode == ConfigStore.ANC_NC) ? R.string.mode_anc
+                    : (ancMode == ConfigStore.ANC_AMBIENT ? R.string.mode_ambient : R.string.mode_off);
+            tvCurrentAncBadge.setText(getString(R.string.readout_anc_format, getString(labelRes)));
+        }
+        ConfigStore.sendCommandBroadcast(this, ConfigStore.CMD_SET_ANC,
+                headsetState.mac, ancMode, data.defaultAsmLevel, data.defaultVoiceFocus, false);
+        mainHandler.postDelayed(this::refreshHeadsetStateUi, 260L);
+    }
+
+    private void updateQuickAncSegment(int ancMode, boolean animate) {
+        if (btnAncNc == null || btnAncAmbient == null || btnAncOff == null) {
+            return;
+        }
+        boolean connected = ancMode >= 0;
+        if (layoutQuickAncCapsule != null) {
+            layoutQuickAncCapsule.setAlpha(connected ? 1.0f : 0.55f);
+        }
+        int activeInk = getColor(R.color.lf_text_primary);
+        int activeLabel = getColor(R.color.lf_text_primary);
+        int inactiveColor = getColor(R.color.lf_nav_inactive);
+        Typeface regTf = Typeface.DEFAULT;
+        Typeface medTf = Typeface.create("sans-serif-medium", Typeface.NORMAL);
+
+        applyAncModeCell(ivAncIconNc, tvAncLabelNc, ivAncRadioNc,
+                connected && ancMode == ConfigStore.ANC_NC, activeInk, activeLabel, inactiveColor, medTf, regTf);
+        applyAncModeCell(ivAncIconAmbient, tvAncLabelAmbient, ivAncRadioAmbient,
+                connected && ancMode == ConfigStore.ANC_AMBIENT, activeInk, activeLabel, inactiveColor, medTf, regTf);
+        applyAncModeCell(ivAncIconOff, tvAncLabelOff, ivAncRadioOff,
+                connected && ancMode == ConfigStore.ANC_OFF, activeInk, activeLabel, inactiveColor, medTf, regTf);
+    }
+
+    private void applyAncModeCell(ImageView icon, TextView label, View radio, boolean selected,
+                                  int activeInk, int activeLabel, int inactiveColor,
+                                  Typeface medTf, Typeface regTf) {
+        if (icon != null) {
+            icon.setColorFilter(selected ? activeInk : inactiveColor);
+        }
+        if (label != null) {
+            label.setTextColor(selected ? activeLabel : getColor(R.color.lf_text_secondary));
+            label.setTypeface(selected ? medTf : regTf);
+        }
+        if (radio != null) {
+            radio.setBackground(DynamicThemeHelper.createRadioIndicator(this, selected));
+        }
+    }
+
+    private void updateBatteryGauge(View bar, int pct) {
+        if (bar == null) return;
+        bar.setTag(pct);
+        View parent = (bar.getParent() instanceof View) ? (View) bar.getParent() : null;
+        if (parent != null && bar.getTag(R.id.tvBatteryLeft) == null) {
+            bar.setTag(R.id.tvBatteryLeft, Boolean.TRUE);
+            parent.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+                if ((r - l) != (or - ol) && bar.getTag() instanceof Integer) {
+                    applyBatteryBarWidth(bar, (Integer) bar.getTag(), v.getWidth());
+                }
+            });
+        }
+        int trackW = parent != null ? parent.getWidth() : 0;
+        if (trackW > 0) {
+            applyBatteryBarWidth(bar, pct, trackW);
+        }
+    }
+
+    private void applyBatteryBarWidth(View bar, int pct, int trackW) {
+        ViewGroup.LayoutParams lp = bar.getLayoutParams();
+        if (lp == null) return;
+        if (pct < 0 || pct > 100 || trackW <= 0) {
+            if (lp.width != 0) {
+                lp.width = 0;
+                bar.setLayoutParams(lp);
+            }
+            return;
+        }
+        int targetW = Math.max(dp(4), Math.min(trackW, Math.round(trackW * (pct / 100f))));
+        if (lp.width != targetW) {
+            lp.width = targetW;
+            bar.setLayoutParams(lp);
+        }
+        int color;
+        if (pct <= 20) {
+            color = getColor(R.color.lf_bat_low);
+        } else if (pct <= 45) {
+            color = getColor(R.color.lf_bat_mid);
+        } else {
+            color = getColor(R.color.lf_bat_good);
+        }
+        GradientDrawable gd = new GradientDrawable();
+        gd.setShape(GradientDrawable.RECTANGLE);
+        gd.setCornerRadius(999f * getResources().getDisplayMetrics().density);
+        gd.setColor(color);
+        bar.setBackground(gd);
+    }
+
+    private void updateHeroGlowAura() {
+        if (vHeroGlowAura == null) return;
+        boolean dark = ConfigStore.isDarkThemeActive(this);
+        int baseColor;
+        int alphaCenter;
+        if (headsetState != null && headsetState.connected) {
+            if (headsetState.ancMode == ConfigStore.ANC_NC) {
+                baseColor = DynamicThemeHelper.getAccent(this);
+                alphaCenter = dark ? 0x36 : 0x30;
+            } else if (headsetState.ancMode == ConfigStore.ANC_AMBIENT) {
+                baseColor = 0xFF2CB5C9;
+                alphaCenter = dark ? 0x32 : 0x2B;
+            } else {
+                baseColor = DynamicThemeHelper.getAccent(this);
+                alphaCenter = dark ? 0x22 : 0x1D;
+            }
+        } else {
+            baseColor = dark ? 0xFFFFFFFF : DynamicThemeHelper.getAccent(this);
+            alphaCenter = dark ? 0x16 : 0x16;
+        }
+        vHeroGlowAura.setBackground(LivingFlowEffects.createSmoothRadialAuraDrawable(baseColor, alphaCenter));
     }
 
     private void addDiagnosticRow(LinearLayout group, CouiBottomSheet.Palette pal,
@@ -1461,6 +2233,10 @@ public class MainActivity extends Activity {
     }
 
     private void showDiagnosticsDialog() {
+        if (livingFlowUi) {
+            LivingFlowDiagnosticsPage.show(this, xspActive, rootAvailable);
+            return;
+        }
         ConfigStore.HeadsetState st = ConfigStore.readGlobalState(this);
         String protoStr = "Tandem V" + st.protocolVersion
                 + " (0x" + Integer.toHexString(st.ncAsmInquiredType)
@@ -1492,23 +2268,43 @@ public class MainActivity extends Activity {
 
         CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
         CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
-        CouiBottomSheet.addHeader(
-                this, sheet.card, pal,
-                getString(R.string.dialog_logs_title),
-                null,
-                xspActive ? "API 102" : "Offline");
+        final View.OnClickListener copyAction = v -> {
+            ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            if (cm != null) {
+                cm.setPrimaryClip(ClipData.newPlainText("SonyPods Diagnostics", copyText));
+                Toast.makeText(this, R.string.toast_copied, Toast.LENGTH_SHORT).show();
+            }
+        };
+        if (livingFlowUi) {
+            CouiBottomSheet.addLivingFlowTopBar(
+                    this, sheet,
+                    getString(R.string.dialog_logs_title),
+                    getString(R.string.btn_close),
+                    null, 0, null);
+        } else {
+            CouiBottomSheet.addHeader(
+                    this, sheet.card, pal,
+                    getString(R.string.dialog_logs_title),
+                    null,
+                    xspActive ? "API 102" : "Offline");
+        }
 
         ScrollView scroll = CouiBottomSheet.createMaxHeightScrollView(
-                this, Math.round(getResources().getDisplayMetrics().heightPixels * 0.46f));
+                this, Math.round(getResources().getDisplayMetrics().heightPixels * (livingFlowUi ? 0.52f : 0.46f)));
         LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        scrollLp.topMargin = dp(14);
+        if (!livingFlowUi) {
+            scrollLp.topMargin = dp(14);
+        }
         LinearLayout bodyCol = new LinearLayout(this);
         bodyCol.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(bodyCol);
         sheet.card.addView(scroll, scrollLp);
 
         LinearLayout infoCard = CouiBottomSheet.createSubcardGroup(this, pal);
+        if (livingFlowUi) {
+            addDiagnosticRow(infoCard, pal, "Xposed", xspActive ? "Connected (API 102)" : "Offline", true);
+        }
         addDiagnosticRow(infoCard, pal, "Device", devStr, true);
         addDiagnosticRow(infoCard, pal, "Protocol", protoStr, true);
         addDiagnosticRow(infoCard, pal, "Battery", batStr, true);
@@ -1533,22 +2329,47 @@ public class MainActivity extends Activity {
             bodyCol.addView(logCard, logLp);
         }
 
-        CouiBottomSheet.addButtonRow(
-                this, sheet.card, pal,
-                getString(R.string.btn_copy_logs), 0, v -> {
-                    ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                    if (cm != null) {
-                        cm.setPrimaryClip(ClipData.newPlainText("SonyPods Diagnostics", copyText));
-                        Toast.makeText(this, R.string.toast_copied, Toast.LENGTH_SHORT).show();
-                    }
-                },
-                getString(R.string.btn_close), 1, v -> sheet.dialog.dismiss());
+        if (livingFlowUi) {
+            CouiBottomSheet.addSingleButton(this, sheet.card, pal,
+                    getString(R.string.btn_copy_logs), 1, 14, copyAction);
+        } else {
+            CouiBottomSheet.addButtonRow(
+                    this, sheet.card, pal,
+                    getString(R.string.btn_copy_logs), 0, copyAction,
+                    getString(R.string.btn_close), 1, v -> sheet.dialog.dismiss());
+        }
         sheet.dialog.show();
     }
 
     private void showResetAllDialog() {
         CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
         CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.create(this, pal);
+        final View.OnClickListener resetAction = v -> {
+            sheet.dialog.dismiss();
+            data = ConfigStore.createDefaults();
+            persistImmediate();
+            refreshHeadsetStateUi();
+            Toast.makeText(this, R.string.toast_reset_done, Toast.LENGTH_SHORT).show();
+        };
+        if (livingFlowUi) {
+            CouiBottomSheet.addLivingFlowTopBar(
+                    this, sheet,
+                    getString(R.string.dialog_reset_all_title),
+                    getString(R.string.btn_cancel),
+                    getString(R.string.btn_confirm_reset), 2, resetAction);
+            LinearLayout msgCard = CouiBottomSheet.createSubcardGroup(this, pal);
+            msgCard.setPadding(dp(18), dp(18), dp(18), dp(18));
+            TextView msgTv = new TextView(this);
+            msgTv.setText(R.string.dialog_reset_all_msg);
+            msgTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
+            msgTv.setLineSpacing(0f, 1.35f);
+            msgTv.setTextColor(pal.textPrimary);
+            msgCard.addView(msgTv);
+            sheet.card.addView(msgCard, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            sheet.dialog.show();
+            return;
+        }
         CouiBottomSheet.addHeader(
                 this, sheet.card, pal,
                 getString(R.string.dialog_reset_all_title),
@@ -1557,13 +2378,7 @@ public class MainActivity extends Activity {
         CouiBottomSheet.addButtonRow(
                 this, sheet.card, pal,
                 getString(R.string.btn_cancel), 0, v -> sheet.dialog.dismiss(),
-                getString(R.string.btn_confirm_reset), 2, v -> {
-                    sheet.dialog.dismiss();
-                    data = ConfigStore.createDefaults();
-                    persistImmediate();
-                    refreshHeadsetStateUi();
-                    Toast.makeText(this, R.string.toast_reset_done, Toast.LENGTH_SHORT).show();
-                });
+                getString(R.string.btn_confirm_reset), 2, resetAction);
         sheet.dialog.show();
     }
 
@@ -1572,15 +2387,52 @@ public class MainActivity extends Activity {
         suppressUiCallbacks = true;
         try {
             if (xspActive) {
-                ivStatusIcon.setImageResource(R.drawable.ic_status_active);
-                tvStatusTitle.setText(R.string.status_title_active);
-                tvStatusSubtitle.setText(R.string.status_sub_active);
-                tvAboutChannel.setText(R.string.channel_xsp);
+                if (ivStatusIcon != null) ivStatusIcon.setImageResource(R.drawable.ic_status_active);
+                if (tvStatusTitle != null) tvStatusTitle.setText(R.string.status_title_active);
+                if (tvStatusSubtitle != null) tvStatusSubtitle.setText(R.string.status_sub_active);
+                if (tvAboutChannel != null) tvAboutChannel.setText(R.string.channel_xsp);
             } else {
-                ivStatusIcon.setImageResource(R.drawable.ic_status_warn);
-                tvStatusTitle.setText(R.string.status_title_inactive);
-                tvStatusSubtitle.setText(R.string.status_sub_inactive);
-                tvAboutChannel.setText(R.string.channel_private_warn);
+                if (ivStatusIcon != null) ivStatusIcon.setImageResource(R.drawable.ic_status_warn);
+                if (tvStatusTitle != null) tvStatusTitle.setText(R.string.status_title_inactive);
+                if (tvStatusSubtitle != null) tvStatusSubtitle.setText(R.string.status_sub_inactive);
+                if (tvAboutChannel != null) tvAboutChannel.setText(R.string.channel_private_warn);
+            }
+            if (bannerModuleInactive != null) {
+                bannerModuleInactive.setVisibility(xspActive ? View.GONE : View.VISIBLE);
+            }
+            if (cardAboutModuleStatus != null) {
+                boolean dark = ConfigStore.isDarkThemeActive(this);
+                int accent = DynamicThemeHelper.getAccent(this);
+                int statusColor = xspActive ? accent : getColor(R.color.coui_status_warn_fg);
+                int emblemFill = xspActive
+                        ? (((dark ? 0x26 : 0x16) << 24) | (accent & 0x00FFFFFF))
+                        : (dark ? 0x28FBBF24 : 0x1AD97706);
+                if (vAboutStatusEmblem != null) {
+                    GradientDrawable emblemBg = new GradientDrawable();
+                    emblemBg.setShape(GradientDrawable.OVAL);
+                    emblemBg.setColor(emblemFill);
+                    vAboutStatusEmblem.setBackground(emblemBg);
+                }
+                if (ivAboutStatusIcon != null) {
+                    ivAboutStatusIcon.setImageResource(xspActive ? R.drawable.ic_status_active : R.drawable.ic_status_warn);
+                    ivAboutStatusIcon.setColorFilter(statusColor);
+                }
+                if (tvAboutStatusTitle != null) {
+                    tvAboutStatusTitle.setText(xspActive ? R.string.status_title_active : R.string.status_title_inactive);
+                }
+                if (tvAboutStatusBadge != null) {
+                    tvAboutStatusBadge.setTextColor(statusColor);
+                    GradientDrawable badgeBg = new GradientDrawable();
+                    badgeBg.setShape(GradientDrawable.RECTANGLE);
+                    badgeBg.setCornerRadius(999f * getResources().getDisplayMetrics().density);
+                    badgeBg.setColor(emblemFill);
+                    tvAboutStatusBadge.setBackground(badgeBg);
+                }
+                if (tvAboutStatusSubtitle != null) {
+                    tvAboutStatusSubtitle.setText(xspActive
+                            ? getString(R.string.about_status_sub_active_fmt, getInstalledVersionName())
+                            : getString(R.string.status_sub_inactive));
+                }
             }
 
             String cycleLabel = getString(data.cycleMode == ConfigStore.CYCLE_2WAY
@@ -1615,6 +2467,10 @@ public class MainActivity extends Activity {
             rowOpenPopupMode.setVisibility(modeVis);
             swSuppressNativePairing.setChecked(data.suppressNativePairing);
 
+            if (tvAboutUiStyleVal != null) {
+                tvAboutUiStyleVal.setText(ConfigStore.isLivingFlowUi(this)
+                        ? R.string.ui_style_living_flow : R.string.ui_style_classic);
+            }
             tvAboutLanguageVal.setText(getLanguageLabel(ConfigStore.getAppLanguage(this)));
 
             int dm = ConfigStore.getAppDarkMode(this);
@@ -1701,26 +2557,58 @@ public class MainActivity extends Activity {
                     p.setVisibility(View.VISIBLE);
                     p.setAlpha(0f);
                     p.setTranslationX(dir * dist);
-                    p.animate().translationX(0f).alpha(1f).setDuration(300L).setInterpolator(FLUID_EASE)
-                            .setUpdateListener(anim -> {
-                                if (vTopHeaderBlur != null) {
-                                    vTopHeaderBlur.notifyTargetInvalidated();
-                                }
-                            }).start();
+                    if (livingFlowUi) {
+                        p.setScaleX(0.97f);
+                        p.setScaleY(0.97f);
+                        p.animate().translationX(0f).alpha(1f).scaleX(1f).scaleY(1f)
+                                .setDuration(320L).setInterpolator(FLUID_EASE)
+                                .setUpdateListener(anim -> {
+                                    if (vTopHeaderBlur != null) {
+                                        vTopHeaderBlur.notifyTargetInvalidated();
+                                    }
+                                }).start();
+                    } else {
+                        p.setScaleX(1f);
+                        p.setScaleY(1f);
+                        p.animate().translationX(0f).alpha(1f).setDuration(300L).setInterpolator(FLUID_EASE)
+                                .setUpdateListener(anim -> {
+                                    if (vTopHeaderBlur != null) {
+                                        vTopHeaderBlur.notifyTargetInvalidated();
+                                    }
+                                }).start();
+                    }
                 } else if (i == oldTab) {
                     p.setVisibility(View.VISIBLE);
-                    p.animate().translationX(-dir * dist).alpha(0f).setDuration(270L).setInterpolator(FLUID_EASE)
-                            .withEndAction(() -> {
-                                if (activeTab != idx) {
-                                    p.setVisibility(View.GONE);
-                                    p.setTranslationX(0f);
-                                    p.setAlpha(1f);
-                                }
-                            }).start();
+                    if (livingFlowUi) {
+                        p.animate().translationX(-dir * dist).alpha(0f).scaleX(0.985f).scaleY(0.985f)
+                                .setDuration(280L).setInterpolator(FLUID_EASE)
+                                .withEndAction(() -> {
+                                    if (activeTab != idx) {
+                                        p.setVisibility(View.GONE);
+                                        p.setTranslationX(0f);
+                                        p.setAlpha(1f);
+                                        p.setScaleX(1f);
+                                        p.setScaleY(1f);
+                                    }
+                                }).start();
+                    } else {
+                        p.animate().translationX(-dir * dist).alpha(0f).setDuration(270L).setInterpolator(FLUID_EASE)
+                                .withEndAction(() -> {
+                                    if (activeTab != idx) {
+                                        p.setVisibility(View.GONE);
+                                        p.setTranslationX(0f);
+                                        p.setAlpha(1f);
+                                        p.setScaleX(1f);
+                                        p.setScaleY(1f);
+                                    }
+                                }).start();
+                    }
                 } else {
                     p.setVisibility(View.GONE);
                     p.setTranslationX(0f);
                     p.setAlpha(1f);
+                    p.setScaleX(1f);
+                    p.setScaleY(1f);
                 }
             }
         } else {
@@ -1728,6 +2616,8 @@ public class MainActivity extends Activity {
                 pages[i].animate().cancel();
                 pages[i].setTranslationX(0f);
                 pages[i].setAlpha(1f);
+                pages[i].setScaleX(1f);
+                pages[i].setScaleY(1f);
                 pages[i].setVisibility(i == targetTab ? View.VISIBLE : View.GONE);
             }
             if (vTopHeaderBlur != null) {
@@ -1752,7 +2642,37 @@ public class MainActivity extends Activity {
             subtitleTabFadeAnimator.cancel();
             subtitleTabFadeAnimator = null;
         }
-        if (animHeader) {
+        if (livingFlowUi) {
+            if (animHeader) {
+                tvPageTitle.animate().cancel();
+                tvPageTitle.setTranslationX(dir * dp(12));
+                tvPageTitle.animate().translationX(0f).setDuration(260L).setInterpolator(FLUID_EASE).start();
+
+                tvPageSubtitle.animate().cancel();
+                tvPageSubtitle.setTranslationX(dir * dp(10));
+                tvPageSubtitle.animate().translationX(0f).setDuration(260L).setInterpolator(FLUID_EASE).start();
+
+                headerTitleTabAlpha = 0.25f;
+                subtitleTabAlpha = 0.25f;
+                syncHeaderToScrollY(targetScrollY, true);
+                subtitleTabFadeAnimator = ValueAnimator.ofFloat(0.25f, 1f);
+                subtitleTabFadeAnimator.setDuration(260L);
+                subtitleTabFadeAnimator.setInterpolator(FLUID_EASE);
+                subtitleTabFadeAnimator.addUpdateListener(anim -> {
+                    float a = (Float) anim.getAnimatedValue();
+                    headerTitleTabAlpha = a;
+                    subtitleTabAlpha = a;
+                    applyHeaderCollapseProgress(headerCollapseProgress);
+                });
+                subtitleTabFadeAnimator.start();
+            } else {
+                tvPageTitle.setTranslationX(0f);
+                tvPageSubtitle.setTranslationX(0f);
+                headerTitleTabAlpha = 1f;
+                subtitleTabAlpha = 1f;
+                syncHeaderToScrollY(targetScrollY, false);
+            }
+        } else if (animHeader) {
             tvPageTitle.animate().cancel();
             tvPageTitle.setTranslationX(dir * dp(18));
             tvPageTitle.setAlpha(0.25f);
@@ -1782,6 +2702,37 @@ public class MainActivity extends Activity {
             syncHeaderToScrollY(targetScrollY, false);
         }
         updateNavIndicator(oldTab, targetTab, dir, animate, fromNavDrag);
+        if (livingFlowUi && vAboutDynamicBg != null) {
+            if (targetTab == TAB_ABOUT) {
+                playAboutHeroEntrance(animate && oldTab != targetTab);
+            } else {
+                vAboutDynamicBg.pausePlayback();
+            }
+        }
+    }
+
+    private void playAboutHeroEntrance(boolean animateLogo) {
+        if (vAboutDynamicBg != null) {
+            vAboutDynamicBg.replayIfIdle();
+        }
+        if (layoutAboutHeroLogo == null) return;
+        layoutAboutHeroLogo.animate().cancel();
+        if (animateLogo) {
+            layoutAboutHeroLogo.setScaleX(0.86f);
+            layoutAboutHeroLogo.setScaleY(0.86f);
+            layoutAboutHeroLogo.setAlpha(0.25f);
+            layoutAboutHeroLogo.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .alpha(1f)
+                    .setDuration(650L)
+                    .setInterpolator(new android.view.animation.PathInterpolator(0.30f, 0f, 0.10f, 1f))
+                    .start();
+        } else {
+            layoutAboutHeroLogo.setScaleX(1f);
+            layoutAboutHeroLogo.setScaleY(1f);
+            layoutAboutHeroLogo.setAlpha(1f);
+        }
     }
 
     private void ensureNavPillWidth(int tabIdx) {
@@ -1799,39 +2750,121 @@ public class MainActivity extends Activity {
     private void setupBottomNavTouch() {
         if (layoutBottomNav == null) return;
         layoutBottomNav.setOnTouchListener((v, ev) -> {
-            if (layoutNavItems == null || vNavSlidingPill == null || navTabs[0] == null || navTabs[2] == null) {
+            if (layoutNavItems == null || (!livingFlowUi && vNavSlidingPill == null)
+                    || navTabs[0] == null || navTabs[2] == null) {
+                return false;
+            }
+            if (livingFlowUi) {
+                switch (ev.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN: {
+                        if (navSpotLight != null) {
+                            navSpotLight.onPress(ev.getX(), ev.getY());
+                        }
+                        if (navElasticController != null) {
+                            navElasticController.onDown();
+                        }
+                        ColorOsLivingFlowEngine.performHaptic(layoutBottomNav, ColorOsLivingFlowEngine.HapticKind.TAP);
+                        navDownRawX = ev.getRawX();
+                        navDownRawY = ev.getRawY();
+                        navDragging = false;
+                        return true;
+                    }
+                    case MotionEvent.ACTION_MOVE: {
+                        if (navSpotLight != null) {
+                            navSpotLight.onMove(ev.getX(), ev.getY());
+                        }
+                        float dx = ev.getRawX() - navDownRawX;
+                        float dy = ev.getRawY() - navDownRawY;
+                        if (navElasticController != null) {
+                            navElasticController.onMove(dx, dy);
+                        }
+                        if (!navDragging && Math.hypot(dx, dy) > Math.max(dp(5), touchSlop * 0.5f)) {
+                            navDragging = true;
+                        }
+                        int itemsW = layoutNavItems.getWidth();
+                        if (navDragging && itemsW > 0) {
+                            float localX = Math.max(0f, Math.min(itemsW - 1f, ev.getX() - layoutNavItems.getLeft()));
+                            int hoveredTab = Math.max(0, Math.min(2, (int) (localX / Math.max(1f, itemsW / 3f))));
+                            if (hoveredTab != activeTab) {
+                                ColorOsLivingFlowEngine.performHaptic(
+                                        layoutBottomNav, ColorOsLivingFlowEngine.HapticKind.TICK);
+                                switchTab(hoveredTab, true, true);
+                            }
+                        }
+                        return true;
+                    }
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL: {
+                        if (navSpotLight != null) {
+                            navSpotLight.onRelease();
+                        }
+                        if (navElasticController != null) {
+                            navElasticController.onRelease();
+                        }
+                        int itemsW = layoutNavItems.getWidth();
+                        if (!navDragging && ev.getActionMasked() == MotionEvent.ACTION_UP && itemsW > 0) {
+                            float localX = Math.max(0f, Math.min(itemsW - 1f, ev.getX() - layoutNavItems.getLeft()));
+                            int tappedTab = Math.max(0, Math.min(2, (int) (localX / Math.max(1f, itemsW / 3f))));
+                            if (tappedTab != activeTab) {
+                                ColorOsLivingFlowEngine.performHaptic(
+                                        layoutBottomNav, ColorOsLivingFlowEngine.HapticKind.TICK);
+                            }
+                            switchTab(tappedTab, true, false);
+                        }
+                        navDragging = false;
+                        return true;
+                    }
+                }
                 return false;
             }
             switch (ev.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN: {
-                    vNavSlidingPill.animate().cancel();
+                    if (vNavSlidingPill != null) {
+                        vNavSlidingPill.animate().cancel();
+                    }
                     layoutBottomNav.animate().cancel();
                     if (navPillMorphAnimator != null) {
                         navPillMorphAnimator.cancel();
                         navPillMorphAnimator = null;
                     }
-                    ensureNavPillWidth(0);
+                    if (!livingFlowUi) {
+                        ensureNavPillWidth(0);
+                    }
                     int[] loc = new int[2];
                     layoutNavItems.getLocationOnScreen(loc);
                     navItemsRestLeftScreenX = loc[0] - layoutBottomNav.getTranslationX();
                     navItemsWidth = layoutNavItems.getWidth();
                     int tabW = navTabs[0].getWidth();
-                    navPillWidth = tabW > 0 ? tabW : vNavSlidingPill.getWidth();
+                    navPillWidth = tabW > 0 ? tabW : (vNavSlidingPill != null ? vNavSlidingPill.getWidth() : 0);
                     navMinPillX = navTabs[0].getLeft();
                     navMaxPillX = navTabs[2].getLeft();
                     navDownRawX = ev.getRawX();
                     navDownRawY = ev.getRawY();
+                    lastNavRawX = navDownRawX;
+                    lastNavEventMs = ev.getEventTime();
+                    navDragVx = 0f;
                     navDragging = false;
                     return true;
                 }
                 case MotionEvent.ACTION_MOVE: {
                     float rawX = ev.getRawX();
                     float rawY = ev.getRawY();
+                    long nowMs = ev.getEventTime();
+                    float dtSec = (nowMs - lastNavEventMs) / 1000f;
+                    if (dtSec >= 0.002f && dtSec <= 0.12f) {
+                        float instVx = (rawX - lastNavRawX) / dtSec;
+                        navDragVx = navDragVx * 0.45f + instVx * 0.55f;
+                    }
+                    lastNavRawX = rawX;
+                    lastNavEventMs = nowMs;
+
                     float dxDown = rawX - navDownRawX;
                     float dyDown = rawY - navDownRawY;
                     if (!navDragging && Math.hypot(dxDown, dyDown) > Math.max(dp(5), touchSlop * 0.5f)) {
                         navDragging = true;
-                        vNavSlidingPill.animate().scaleX(1.04f).scaleY(1.04f).setDuration(110L).start();
+                        if (!livingFlowUi && vNavSlidingPill != null) {
+                            vNavSlidingPill.animate().scaleX(1.04f).scaleY(1.04f).setDuration(110L).start();
+                        }
                     }
                     if (navDragging && navItemsWidth > 0f) {
                         float fingerLocalX = rawX - navItemsRestLeftScreenX;
@@ -1842,12 +2875,16 @@ public class MainActivity extends Activity {
                         if (desiredPillX < navMinPillX) {
                             float normX = (navMinPillX - desiredPillX) / resistDenom;
                             pullX = -maxPull * (normX / (1.0f + normX));
-                            vNavSlidingPill.setTranslationX(navMinPillX);
+                            if (!livingFlowUi && vNavSlidingPill != null) {
+                                vNavSlidingPill.setTranslationX(navMinPillX);
+                            }
                         } else if (desiredPillX > navMaxPillX) {
                             float normX = (desiredPillX - navMaxPillX) / resistDenom;
                             pullX = maxPull * (normX / (1.0f + normX));
-                            vNavSlidingPill.setTranslationX(navMaxPillX);
-                        } else {
+                            if (!livingFlowUi && vNavSlidingPill != null) {
+                                vNavSlidingPill.setTranslationX(navMaxPillX);
+                            }
+                        } else if (!livingFlowUi && vNavSlidingPill != null) {
                             vNavSlidingPill.setTranslationX(desiredPillX);
                         }
                         float normY = Math.abs(dyDown) / resistDenom;
@@ -1878,10 +2915,12 @@ public class MainActivity extends Activity {
                         }
                     } else {
                         navDragging = false;
-                        ensureNavPillWidth(activeTab);
-                        float targetX = navTabs[activeTab].getLeft();
-                        vNavSlidingPill.animate().translationX(targetX).translationY(0f)
-                                .scaleX(1.0f).scaleY(1.0f).setDuration(240L).setInterpolator(FLUID_EASE).start();
+                        if (!livingFlowUi && vNavSlidingPill != null) {
+                            ensureNavPillWidth(activeTab);
+                            float targetX = navTabs[activeTab].getLeft();
+                            vNavSlidingPill.animate().translationX(targetX).translationY(0f)
+                                    .scaleX(1.0f).scaleY(1.0f).setDuration(240L).setInterpolator(FLUID_EASE).start();
+                        }
                         layoutBottomNav.animate().translationX(0f).translationY(0f)
                                 .scaleX(1.0f).scaleY(1.0f).setDuration(280L).setInterpolator(NAV_SPRING_BACK).start();
                     }
@@ -1892,15 +2931,43 @@ public class MainActivity extends Activity {
         });
     }
 
+    private static int getLivingFlowNavIconRes(int index, boolean selected) {
+        if (index == TAB_HEADSET) {
+            return selected ? R.drawable.ic_lf_nav_headset_filled : R.drawable.ic_lf_nav_headset_outline;
+        } else if (index == TAB_INTEGRATION) {
+            return selected ? R.drawable.ic_lf_nav_integration_filled : R.drawable.ic_lf_nav_integration_outline;
+        }
+        return selected ? R.drawable.ic_lf_nav_about_filled : R.drawable.ic_lf_nav_about_outline;
+    }
+
     private void updateNavIndicator(final int oldTab, final int targetTab, final int dir,
                                     final boolean animate, final boolean fromNavDrag) {
-        int accent = DynamicThemeHelper.getAccent(this);
-        int secondary = ConfigStore.resolveThemeColor(this, R.attr.couiTextSecondary, R.color.coui_text_secondary);
+        int activeColor = livingFlowUi
+                ? getColor(R.color.lf_nav_active)
+                : DynamicThemeHelper.getAccent(this);
+        int secondary = livingFlowUi
+                ? getColor(R.color.lf_nav_inactive)
+                : ConfigStore.resolveThemeColor(this, R.attr.couiTextSecondary, R.color.coui_text_secondary);
 
         for (int i = 0; i < 3; i++) {
             boolean selected = (i == targetTab);
-            navIcons[i].setColorFilter(selected ? accent : secondary);
-            navLabels[i].setTextColor(selected ? accent : secondary);
+            if (livingFlowUi) {
+                navIcons[i].setImageResource(getLivingFlowNavIconRes(i, selected));
+                navIcons[i].setColorFilter(selected ? activeColor : secondary);
+                navLabels[i].setTextColor(selected ? activeColor : secondary);
+                navLabels[i].setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
+                navIcons[i].animate().cancel();
+                navLabels[i].animate().cancel();
+                navIcons[i].setTranslationX(0f);
+                navIcons[i].setTranslationY(0f);
+                navIcons[i].setScaleX(1.0f);
+                navIcons[i].setScaleY(1.0f);
+                navLabels[i].setTranslationX(0f);
+                navLabels[i].setAlpha(1.0f);
+                continue;
+            }
+            navIcons[i].setColorFilter(selected ? activeColor : secondary);
+            navLabels[i].setTextColor(selected ? activeColor : secondary);
             navLabels[i].setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
             navIcons[i].animate().cancel();
             navLabels[i].animate().cancel();
@@ -1933,7 +3000,7 @@ public class MainActivity extends Activity {
             }
         }
 
-        if (fromNavDrag || vNavSlidingPill == null || navTabs[targetTab] == null) return;
+        if (livingFlowUi || fromNavDrag || vNavSlidingPill == null || navTabs[targetTab] == null) return;
         if (navTabs[targetTab].getWidth() == 0 || vNavSlidingPill.getWidth() == 0) {
             vNavSlidingPill.post(() -> updateNavIndicator(oldTab, targetTab, dir, false, false));
             return;
@@ -2041,6 +3108,10 @@ public class MainActivity extends Activity {
     }
 
     private void showChangelogDialog() {
+        if (livingFlowUi) {
+            LivingFlowUpdatePages.showChangelogPage(this);
+            return;
+        }
         CouiBottomSheet.Palette pal = CouiBottomSheet.Palette.fromModuleTheme(this);
         CouiBottomSheet.SheetHandle sheet = CouiBottomSheet.createCenter(this, pal);
         CouiBottomSheet.addHeader(
@@ -2060,11 +3131,13 @@ public class MainActivity extends Activity {
         sheet.card.addView(scroll, scrollLp);
 
         int[] verTitles = new int[]{
+                R.string.changelog_v103_title,
                 R.string.changelog_v102_title,
                 R.string.changelog_v101_title,
                 R.string.changelog_v100_title
         };
         int[] verBodies = new int[]{
+                R.string.changelog_v103_body,
                 R.string.changelog_v102_body,
                 R.string.changelog_v101_body,
                 R.string.changelog_v100_body
@@ -2108,7 +3181,11 @@ public class MainActivity extends Activity {
         parent.addView(card, cardLp);
     }
 
-    private static final class RepoReleaseInfo {
+    interface UpdateCheckCallback {
+        void onResult(RepoReleaseInfo info);
+    }
+
+    static final class RepoReleaseInfo {
         int versionCode;
         String versionName;
         String changelogRaw;
@@ -2117,7 +3194,21 @@ public class MainActivity extends Activity {
         String repoPageUrl;
     }
 
-    private int getInstalledVersionCode() {
+    static RepoReleaseInfo getCachedLatestRelease() {
+        return sCachedLatestRelease;
+    }
+
+    void openRepoOrUrl(String url) {
+        openUrl(url);
+    }
+
+    void openRepoPage(RepoReleaseInfo info) {
+        String targetUrl = (info != null && info.repoPageUrl != null && !info.repoPageUrl.isEmpty())
+                ? info.repoPageUrl : LSPOSED_REPO_PAGE_URL;
+        openUrl(targetUrl);
+    }
+
+    int getInstalledVersionCode() {
         try {
             PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
             if (Build.VERSION.SDK_INT >= 28) {
@@ -2126,11 +3217,11 @@ public class MainActivity extends Activity {
             //noinspection deprecation
             return pi.versionCode;
         } catch (Throwable ignored) {
-            return 1002;
+            return 1003;
         }
     }
 
-    private String getInstalledVersionName() {
+    String getInstalledVersionName() {
         try {
             PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
             if (pi.versionName != null && !pi.versionName.trim().isEmpty()) {
@@ -2138,12 +3229,12 @@ public class MainActivity extends Activity {
             }
         } catch (Throwable ignored) {
         }
-        return "1.0.2";
+        return "1.0.3";
     }
 
-    private static String formatVerLabel(String ver) {
+    static String formatVerLabel(String ver) {
         if (ver == null || ver.trim().isEmpty()) {
-            return "v1.0.2";
+            return "v1.0.3";
         }
         String t = ver.trim();
         if (t.startsWith("v") || t.startsWith("V")) {
@@ -2180,7 +3271,7 @@ public class MainActivity extends Activity {
         return 0;
     }
 
-    private boolean isNewerRelease(RepoReleaseInfo info) {
+    boolean isNewerRelease(RepoReleaseInfo info) {
         if (info == null) {
             return false;
         }
@@ -2192,17 +3283,74 @@ public class MainActivity extends Activity {
     }
 
     private void applyUpdateChipState(RepoReleaseInfo info) {
-        if (tvAboutUpdateChip == null || info == null) {
+        if (info == null) {
             return;
         }
-        tvAboutUpdateChip.setVisibility(View.VISIBLE);
-        if (isNewerRelease(info)) {
-            tvAboutUpdateChip.setText(getString(
-                    R.string.chip_update_available_fmt, formatVerLabel(info.versionName)));
-        } else {
-            tvAboutUpdateChip.setText(R.string.chip_update_latest);
+        boolean newer = isNewerRelease(info);
+        if (tvAboutUpdateChip != null) {
+            tvAboutUpdateChip.setVisibility(View.VISIBLE);
+            if (newer) {
+                tvAboutUpdateChip.setText(getString(
+                        R.string.chip_update_available_fmt, formatVerLabel(info.versionName)));
+            } else {
+                tvAboutUpdateChip.setText(R.string.chip_update_latest);
+            }
+            styleUpdateChip(newer);
         }
-        DynamicThemeHelper.applyAccent(tvAboutUpdateChip, this);
+        if (tvAboutHeroUpdateStatus != null) {
+            if (newer) {
+                tvAboutHeroUpdateStatus.setText(getString(
+                        R.string.about_hero_new_ver_fmt, formatVerLabel(info.versionName)));
+                android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
+                pill.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+                pill.setCornerRadius(999f * getResources().getDisplayMetrics().density);
+                pill.setColor(0x34FFFFFF);
+                pill.setStroke(Math.max(1, dp(1)), 0x55FFFFFF);
+                tvAboutHeroUpdateStatus.setBackground(pill);
+            } else {
+                tvAboutHeroUpdateStatus.setText(R.string.dialog_update_latest_title);
+                tvAboutHeroUpdateStatus.setBackground(null);
+            }
+        }
+    }
+
+    private void styleUpdateChip(boolean highlightAccent) {
+        if (tvAboutUpdateChip == null) return;
+        if (livingFlowUi) {
+            tvAboutUpdateChip.setBackground(null);
+            tvAboutUpdateChip.setTextColor(highlightAccent
+                    ? DynamicThemeHelper.getAccent(this)
+                    : getColor(R.color.lf_text_secondary));
+        } else {
+            DynamicThemeHelper.applyAccent(tvAboutUpdateChip, this);
+        }
+    }
+
+    void runRepoUpdateCheck(final UpdateCheckCallback callback) {
+        if (tvAboutUpdateChip != null) {
+            tvAboutUpdateChip.setVisibility(View.VISIBLE);
+            tvAboutUpdateChip.setText(R.string.chip_update_checking);
+            styleUpdateChip(false);
+        }
+        new Thread(() -> {
+            final RepoReleaseInfo info = fetchLatestReleaseFromRepo();
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                if (info != null) {
+                    sCachedLatestRelease = info;
+                    applyUpdateChipState(info);
+                } else if (sCachedLatestRelease != null) {
+                    applyUpdateChipState(sCachedLatestRelease);
+                } else if (tvAboutUpdateChip != null) {
+                    tvAboutUpdateChip.setVisibility(View.GONE);
+                }
+                if (callback != null) {
+                    callback.onResult(info);
+                }
+            });
+        }, "SonyPods-UpdateCheckUi").start();
     }
 
     private void checkUpdateFromLsposedRepo(final boolean manual) {
@@ -2213,7 +3361,7 @@ public class MainActivity extends Activity {
         if (tvAboutUpdateChip != null) {
             tvAboutUpdateChip.setVisibility(View.VISIBLE);
             tvAboutUpdateChip.setText(R.string.chip_update_checking);
-            DynamicThemeHelper.applyAccent(tvAboutUpdateChip, this);
+            styleUpdateChip(false);
         }
         if (manual) {
             Toast.makeText(this, R.string.toast_update_checking, Toast.LENGTH_SHORT).show();
@@ -2423,7 +3571,7 @@ public class MainActivity extends Activity {
         return null;
     }
 
-    private CharSequence formatLocalizedChangelog(RepoReleaseInfo info, CouiBottomSheet.Palette pal) {
+    CharSequence formatLocalizedChangelog(RepoReleaseInfo info, CouiBottomSheet.Palette pal) {
         if (info == null || info.changelogRaw == null || info.changelogRaw.trim().isEmpty()) {
             return "";
         }
@@ -2593,5 +3741,21 @@ public class MainActivity extends Activity {
                     closeText, 1, v -> sheet.dialog.dismiss());
         }
         sheet.dialog.show();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onBackPressed() {
+        if (LivingFlowUpdatePages.popActiveStage(this)) {
+            return;
+        }
+        if (LivingFlowDiagnosticsPage.popActiveStage(this)) {
+            return;
+        }
+        if (SoundConnectSheets.hasActiveStage(this)
+                && SoundConnectSheets.popStagePage(SoundConnectSheets.HostStage.fromContext(this))) {
+            return;
+        }
+        super.onBackPressed();
     }
 }

@@ -2,6 +2,7 @@ package io.github.nicochanyo.sonypods;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.ScanSettings;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -54,7 +55,7 @@ public final class ColorOsNativeAirPodsBridge {
     private static final Map<String, ConfigStore.HeadsetState> STATES_BY_MAC = new ConcurrentHashMap<>();
     private static final Map<String, BluetoothDevice> DEVICES_BY_MAC = new ConcurrentHashMap<>();
     private static final Map<String, Long> FIRST_PARTIAL_BAT_MS_BY_MAC = new ConcurrentHashMap<>();
-    private static final long DUAL_EAR_SYNC_GRACE_MS = 1400L;
+    private static final long DUAL_EAR_SYNC_GRACE_MS = 350L;
     private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
     private static final AtomicBoolean EXT_HOOKS_INSTALLED = new AtomicBoolean(false);
 
@@ -155,8 +156,10 @@ public final class ColorOsNativeAirPodsBridge {
                 "com.oplus.bluetooth.btservice.OplusRemoteDevicesExtImpl$OplusDeviceProperties", extCl);
         Class<?> extCls = XposedCompat.findClassIfExists(
                 "com.oplus.bluetooth.btservice.OplusRemoteDevicesExtImpl", extCl);
+        Class<?> scanStrategyCls = XposedCompat.findClassIfExists(
+                "com.oplus.bluetooth.feature.lescan.CustomScanStrategy", extCl);
 
-        if (mgrCls == null && propsCls == null && extCls == null) {
+        if (mgrCls == null && propsCls == null && extCls == null && scanStrategyCls == null) {
             return;
         }
         if (!EXT_HOOKS_INSTALLED.compareAndSet(false, true)) {
@@ -166,9 +169,68 @@ public final class ColorOsNativeAirPodsBridge {
         int hAirpods = mgrCls != null ? hookAirPodsManager(mgrCls) : 0;
         int hProps = propsCls != null ? hookOplusDeviceProperties(propsCls) : 0;
         int hExt = extCls != null ? hookOplusRemoteDevicesExt(extCls) : 0;
+        int hScan = scanStrategyCls != null ? hookCustomScanStrategy(scanStrategyCls) : 0;
 
         XposedCompat.log("ColorOsNativeAirPodsBridge ext hooks active (airpods=" + hAirpods
-                + ", props=" + hProps + ", remoteExt=" + hExt + ")");
+                + ", props=" + hProps + ", remoteExt=" + hExt + ", scanStrategy=" + hScan + ")");
+    }
+
+    private static int hookCustomScanStrategy(Class<?> scanStrategyCls) {
+        int count = 0;
+        try {
+            XposedCompat.hookAllMethods(scanStrategyCls, "getScanIntervalMillisCustom", new XposedCompat.XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
+                    if (!BluetoothHook.isPairingScanActive()) {
+                        return;
+                    }
+                    if (param.args == null || param.args.length < 2
+                            || !(param.args[1] instanceof ScanSettings)) {
+                        return;
+                    }
+                    ScanSettings ss = (ScanSettings) param.args[1];
+                    if (ss.getScanMode() != ScanSettings.SCAN_MODE_LOW_LATENCY) {
+                        return;
+                    }
+                    Object res = param.getResult();
+                    if (res instanceof Integer && ((Integer) res) > 360) {
+                        param.setResult(360);
+                    }
+                }
+            });
+            count++;
+        } catch (Throwable t) {
+            XposedCompat.debug("hook getScanIntervalMillisCustom failed: " + t.getMessage());
+        }
+        try {
+            XposedCompat.hookAllMethods(scanStrategyCls, "getScanWindowMillisCustom", new XposedCompat.XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(XposedCompat.MethodHookParam param) {
+                    if (!BluetoothHook.isPairingScanActive()) {
+                        return;
+                    }
+                    if (param.args == null || param.args.length < 2
+                            || !(param.args[1] instanceof ScanSettings)) {
+                        return;
+                    }
+                    ScanSettings ss = (ScanSettings) param.args[1];
+                    if (ss.getScanMode() != ScanSettings.SCAN_MODE_LOW_LATENCY) {
+                        return;
+                    }
+                    Object res = param.getResult();
+                    if (res instanceof Integer) {
+                        int val = (Integer) res;
+                        if (val > 0 && val < 160) {
+                            param.setResult(160);
+                        }
+                    }
+                }
+            });
+            count++;
+        } catch (Throwable t) {
+            XposedCompat.debug("hook getScanWindowMillisCustom failed: " + t.getMessage());
+        }
+        return count;
     }
 
     public static void updateDeviceState(BluetoothDevice device, ConfigStore.HeadsetState state) {

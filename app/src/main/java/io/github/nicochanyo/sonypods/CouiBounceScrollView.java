@@ -45,6 +45,7 @@ public class CouiBounceScrollView extends ScrollView {
 
     private float overscrollRawY;
     private float overscrollVisualY;
+    private boolean overscrollHapticArmed = true;
 
     // Analytical critically damped spring state: x(t) = exp(-w*t) * (x0 + (v0 + w*x0)*t)
     private boolean springRunning;
@@ -484,6 +485,15 @@ public class CouiBounceScrollView extends ScrollView {
 
     private void setOverscrollVisualY(float visualY) {
         overscrollVisualY = visualY;
+        float d = getResources().getDisplayMetrics().density;
+        float absY = Math.abs(visualY);
+        if (absY <= 2f * d) {
+            overscrollHapticArmed = true;
+        } else if (isDragging && overscrollHapticArmed && absY > 6f * d
+                && ConfigStore.isLivingFlowUi(getContext())) {
+            overscrollHapticArmed = false;
+            ColorOsLivingFlowEngine.performHaptic(this, ColorOsLivingFlowEngine.HapticKind.TICK);
+        }
         View child = getChildCount() > 0 ? getChildAt(0) : null;
         if (child != null) {
             child.setTranslationY(visualY);

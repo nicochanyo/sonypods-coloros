@@ -13,6 +13,8 @@ import java.util.WeakHashMap;
 public final class SonyTandemProtocol {
     private static final Map<ConfigStore.HeadsetState, Integer> CONFIRMED_NC_ASM_TYPES =
             Collections.synchronizedMap(new WeakHashMap<>());
+    private static final Map<ConfigStore.HeadsetState, int[]> V1_NC_ASM_TYPES =
+            Collections.synchronizedMap(new WeakHashMap<>());
     public static final int PROTOCOL_V1 = 1;
     public static final int PROTOCOL_V2 = 2;
 
@@ -54,6 +56,7 @@ public final class SonyTandemProtocol {
     public static final int CMD_EQEBB_RET_PARAM = 0x57;
     public static final int CMD_EQEBB_SET_PARAM = 0x58;
     public static final int CMD_EQEBB_NTFY_PARAM = 0x59;
+    public static final int V1_EQ_INQ_PRESET_EQ = 0x01;
 
     // Noise Cancelling / Ambient Sound Mode
     public static final int CMD_NCASM_GET_PARAM = 0x66;
@@ -116,6 +119,10 @@ public final class SonyTandemProtocol {
     public static final int SYS_INQ_WEARING_STATUS_DETECTOR = 0x06;
     public static final int SYS_INQ_SMART_TALKING_V2 = 0x0C;
     public static final int SYS_INQ_ASSIGNABLE_SETTINGS_LIMITED = 0x0E;
+    public static final int V1_SYS_INQ_CONTROL_BY_WEARING = 0x03;
+    public static final int V1_SYS_INQ_AUTO_POWER_OFF = 0x04;
+    public static final int V1_SYS_INQ_SMART_TALKING = 0x05;
+    public static final int V1_SYS_INQ_ASSIGNABLE_SETTINGS = 0x06;
 
     // Power Param (Auto Power Off: 0x26..0x29)
     public static final int CMD_POWER_GET_PARAM = 0x26;
@@ -130,6 +137,8 @@ public final class SonyTandemProtocol {
     public static final int AUDIO_INQ_UPSCALING = 0x01;
     public static final int AUDIO_INQ_CONNECTION_MODE_LDAC = 0x02;
     public static final int AUDIO_INQ_UPSCALING_WITH_REASON = 0x0B;
+    public static final int V1_AUDIO_INQ_CONNECTION_MODE = 0x01;
+    public static final int V1_AUDIO_INQ_UPSCALING = 0x02;
 
     // Touch Sensor Presets
     public static final int TOUCH_PRESET_AMBIENT = 0x00;
@@ -200,6 +209,17 @@ public final class SonyTandemProtocol {
         sGsWearPauseActive = false;
         sGsMultipointSlot = 0;
         sGsWearPauseSlot = 0;
+        V1_NC_ASM_TYPES.clear();
+    }
+
+    public static int getObservedV1NcSettingType(ConfigStore.HeadsetState state) {
+        int[] pair = (state != null) ? V1_NC_ASM_TYPES.get(state) : null;
+        return (pair != null && pair.length >= 2 && pair[0] >= 0) ? pair[0] : 0x02;
+    }
+
+    public static int getObservedV1AsmSettingType(ConfigStore.HeadsetState state) {
+        int[] pair = (state != null) ? V1_NC_ASM_TYPES.get(state) : null;
+        return (pair != null && pair.length >= 2 && pair[1] >= 0) ? pair[1] : 0x01;
     }
 
     public static int getGsMultipointSlot() {
@@ -326,8 +346,19 @@ public final class SonyTandemProtocol {
     }
 
     public static byte[] buildSetSpeakToChatDetail(int inquiredType, int sensitivity, int modeOutTime) {
+        return buildSetSpeakToChatDetail(PROTOCOL_V2, inquiredType, sensitivity, modeOutTime, false);
+    }
+
+    public static byte[] buildSetSpeakToChatDetail(
+            int protocolVersion, int inquiredType, int sensitivity, int modeOutTime, boolean focusOnVoice) {
         int sens = Math.max(0, Math.min(2, sensitivity));
         int out = Math.max(0, Math.min(3, modeOutTime));
+        if (protocolVersion == PROTOCOL_V1) {
+            return new byte[] {
+                    (byte) CMD_SYSTEM_SET_EXT_PARAM, (byte) V1_SYS_INQ_SMART_TALKING,
+                    0x00, (byte) sens, (byte) (focusOnVoice ? 0x01 : 0x00), (byte) out
+            };
+        }
         if (inquiredType == SYS_INQ_SMART_TALKING_V2) {
             return new byte[] {
                     (byte) CMD_SYSTEM_SET_EXT_PARAM, (byte) SYS_INQ_SMART_TALKING_V2,
@@ -341,6 +372,16 @@ public final class SonyTandemProtocol {
     }
 
     public static byte[] buildSetWearDetect(boolean enabled) {
+        return buildSetWearDetect(PROTOCOL_V2, enabled);
+    }
+
+    public static byte[] buildSetWearDetect(int protocolVersion, boolean enabled) {
+        if (protocolVersion == PROTOCOL_V1) {
+            return new byte[] {
+                    (byte) CMD_SYSTEM_SET_PARAM, (byte) V1_SYS_INQ_CONTROL_BY_WEARING,
+                    0x00, (byte) (enabled ? 0x01 : 0x00)
+            };
+        }
         if (sGsWearPauseSlot != 0) {
             return buildSetGsBooleanParam(sGsWearPauseSlot, enabled);
         }
@@ -351,6 +392,17 @@ public final class SonyTandemProtocol {
     }
 
     public static byte[] buildSetConnectionMode(int inquiredType, int priorMode) {
+        return buildSetConnectionMode(PROTOCOL_V2, inquiredType, priorMode);
+    }
+
+    public static byte[] buildSetConnectionMode(int protocolVersion, int inquiredType, int priorMode) {
+        if (protocolVersion == PROTOCOL_V1) {
+            int val = (priorMode == 1) ? 0x01 : 0x00;
+            return new byte[] {
+                    (byte) CMD_AUDIO_SET_PARAM, (byte) V1_AUDIO_INQ_CONNECTION_MODE,
+                    0x00, (byte) val
+            };
+        }
         int inq = (inquiredType == AUDIO_INQ_CONNECTION_MODE_LDAC)
                 ? AUDIO_INQ_CONNECTION_MODE_LDAC
                 : AUDIO_INQ_CONNECTION_MODE;
@@ -359,6 +411,17 @@ public final class SonyTandemProtocol {
     }
 
     public static byte[] buildSetAutoPowerOff(int inquiredType, int element) {
+        return buildSetAutoPowerOff(PROTOCOL_V2, inquiredType, element);
+    }
+
+    public static byte[] buildSetAutoPowerOff(int protocolVersion, int inquiredType, int element) {
+        if (protocolVersion == PROTOCOL_V1) {
+            int selectElem = (element == 0x11 || element == 0x10) ? 0x00 : element;
+            return new byte[] {
+                    (byte) CMD_SYSTEM_SET_PARAM, (byte) V1_SYS_INQ_AUTO_POWER_OFF,
+                    0x01, (byte) element, (byte) selectElem
+            };
+        }
         int inq = (inquiredType == POWER_INQ_AUTO_POWER_OFF)
                 ? POWER_INQ_AUTO_POWER_OFF
                 : POWER_INQ_AUTO_POWER_OFF_WEARING;
@@ -391,6 +454,19 @@ public final class SonyTandemProtocol {
     }
 
     public static byte[] buildSetTouchSensor(int inquiredType, int leftPreset, int rightPreset) {
+        return buildSetTouchSensor(PROTOCOL_V2, inquiredType, leftPreset, rightPreset);
+    }
+
+    public static byte[] buildSetTouchSensor(int protocolVersion, int inquiredType, int leftPreset, int rightPreset) {
+        if (protocolVersion == PROTOCOL_V1) {
+            return new byte[] {
+                    (byte) CMD_SYSTEM_SET_PARAM,
+                    (byte) V1_SYS_INQ_ASSIGNABLE_SETTINGS,
+                    0x02,
+                    (byte) (leftPreset & 0xFF),
+                    (byte) (rightPreset & 0xFF)
+            };
+        }
         int inq = (inquiredType == SYS_INQ_ASSIGNABLE_SETTINGS_LIMITED)
                 ? SYS_INQ_ASSIGNABLE_SETTINGS_LIMITED
                 : SYS_INQ_ASSIGNABLE_SETTINGS;
@@ -410,7 +486,18 @@ public final class SonyTandemProtocol {
             int ambientLevel,
             boolean focusOnVoice
     ) {
-        return buildSetNcAsm(protocolVersion, inquiredType, ancMode, ambientLevel, focusOnVoice, -1);
+        return buildSetNcAsm(protocolVersion, inquiredType, ancMode, ambientLevel, focusOnVoice, -1, 0x02, 0x01);
+    }
+
+    public static byte[] buildSetNcAsm(
+            int protocolVersion,
+            int inquiredType,
+            int ancMode,
+            int ambientLevel,
+            boolean focusOnVoice,
+            int observedNcValue
+    ) {
+        return buildSetNcAsm(protocolVersion, inquiredType, ancMode, ambientLevel, focusOnVoice, observedNcValue, 0x02, 0x01);
     }
 
     /**
@@ -422,7 +509,9 @@ public final class SonyTandemProtocol {
             int ancMode,
             int ambientLevel,
             boolean focusOnVoice,
-            int observedNcValue
+            int observedNcValue,
+            int v1NcSettingType,
+            int v1AsmSettingType
     ) {
         int lvl = ConfigStore.clampAsmLevel(ambientLevel);
         int effect = (ancMode == ANC_OFF) ? 0x00 : 0x01;
@@ -433,16 +522,23 @@ public final class SonyTandemProtocol {
         int ncVal = (ancMode == ANC_ON) ? 0x02 : 0x00;
 
         if (protocolVersion == PROTOCOL_V1) {
-            int inq = (inquiredType > 0) ? inquiredType : V1_INQ_NC_ASM;
+            int inq = (inquiredType == V1_INQ_NC || inquiredType == V1_INQ_NC_ASM || inquiredType == V1_INQ_ASM)
+                    ? inquiredType : V1_INQ_NC_ASM;
             if (inq == V1_INQ_NC) {
                 return new byte[] { CMD_NCASM_SET_PARAM, (byte) inq, (byte) ncOn, (byte) ncOn };
             }
             if (inq == V1_INQ_ASM) {
                 return new byte[] { CMD_NCASM_SET_PARAM, (byte) inq, (byte) asmOn, (byte) asmMode, (byte) lvl };
             }
+            byte eff = (ancMode == ANC_OFF) ? (byte) 0x00 : (byte) 0x11;
+            int ncType = (v1NcSettingType >= 0) ? v1NcSettingType : 0x02;
+            int v1NcVal = (ancMode == ANC_ON) ? (ncType == 0x02 ? 0x02 : 0x01) : 0x00;
+            int asmType = (v1AsmSettingType >= 0) ? v1AsmSettingType : 0x01;
+            int asmId = focusOnVoice ? 0x01 : 0x00;
+            int asmAmt = (ancMode == ANC_AMBIENT) ? (asmType == 0x00 ? 0x01 : lvl) : 0x00;
             return new byte[] {
                     CMD_NCASM_SET_PARAM, V1_INQ_NC_ASM,
-                    (byte) effect, (byte) mode, (byte) asmMode, (byte) lvl
+                    eff, (byte) ncType, (byte) v1NcVal, (byte) asmType, (byte) asmId, (byte) asmAmt
             };
         }
 
@@ -527,8 +623,20 @@ public final class SonyTandemProtocol {
         }
     }
 
-    /** Speak-to-Chat (0xF8): value is inverted (0x00=ON, 0x01=OFF), trailing 0x01 fixed. */
+    /** Speak-to-Chat (0xF8): V2 uses inverted 0x00=ON, V1 uses 0xF8 0x05 0x01 <00/01>. */
     public static byte[] buildSetSpeakToChat(int inquiredType, boolean enabled) {
+        return buildSetSpeakToChat(PROTOCOL_V2, inquiredType, enabled);
+    }
+
+    public static byte[] buildSetSpeakToChat(int protocolVersion, int inquiredType, boolean enabled) {
+        if (protocolVersion == PROTOCOL_V1) {
+            return new byte[] {
+                    (byte) CMD_SYSTEM_SET_PARAM,
+                    (byte) V1_SYS_INQ_SMART_TALKING,
+                    0x01,
+                    (byte) (enabled ? 0x01 : 0x00)
+            };
+        }
         int inq = (inquiredType == SYS_INQ_SMART_TALKING_V1 || inquiredType == SYS_INQ_SMART_TALKING_V2)
                 ? inquiredType
                 : SYS_INQ_SMART_TALKING_V1;
@@ -540,8 +648,20 @@ public final class SonyTandemProtocol {
         };
     }
 
-    /** DSEE / Upscaling (0xE8): [0xE8, inq(0x01 or 0x0B), 0x01=AUTO / 0x00=OFF]. */
+    /** DSEE / Upscaling (0xE8): V2 [0xE8, 0x01/0x0B, 0x01/0x00], V1 [0xE8, 0x02, 0x00, 0x01/0x00]. */
     public static byte[] buildSetDsee(int inquiredType, boolean enabled) {
+        return buildSetDsee(PROTOCOL_V2, inquiredType, enabled);
+    }
+
+    public static byte[] buildSetDsee(int protocolVersion, int inquiredType, boolean enabled) {
+        if (protocolVersion == PROTOCOL_V1) {
+            return new byte[] {
+                    (byte) CMD_AUDIO_SET_PARAM,
+                    (byte) V1_AUDIO_INQ_UPSCALING,
+                    0x00,
+                    (byte) (enabled ? 0x01 : 0x00)
+            };
+        }
         int inq = (inquiredType == AUDIO_INQ_UPSCALING_WITH_REASON)
                 ? AUDIO_INQ_UPSCALING_WITH_REASON
                 : AUDIO_INQ_UPSCALING;
@@ -553,7 +673,7 @@ public final class SonyTandemProtocol {
     }
 
     public static byte[] buildSetDsee(boolean enabled) {
-        return buildSetDsee(AUDIO_INQ_UPSCALING, enabled);
+        return buildSetDsee(PROTOCOL_V2, AUDIO_INQ_UPSCALING, enabled);
     }
 
     /** Decodes a Tandem DATA_MDR / DATA_MDR_NO2 payload into {@link ConfigStore.HeadsetState}. */
@@ -571,9 +691,10 @@ public final class SonyTandemProtocol {
                 return parseDeviceInfo(payload, state);
             case CMD_V1_RET_BATTERY:
             case CMD_V1_NTFY_BATTERY:
+                return (state.protocolVersion == PROTOCOL_V1) && parseBattery(payload, state);
             case CMD_V2_POWER_RET_STATUS:
             case CMD_V2_POWER_NTFY_STATUS:
-                return parseBattery(payload, state);
+                return (state.protocolVersion == PROTOCOL_V2) && parseBattery(payload, state);
             case CMD_NCASM_RET_PARAM:
             case CMD_NCASM_NTFY_PARAM:
                 return parseNcAsm(payload, state);
@@ -591,7 +712,7 @@ public final class SonyTandemProtocol {
                 return parseEqEbb(payload, state);
             case CMD_POWER_RET_PARAM:
             case CMD_POWER_NTFY_PARAM:
-                return parsePowerParam(payload, state);
+                return (state.protocolVersion != PROTOCOL_V1) && parsePowerParam(payload, state);
             case CMD_GS_RET_CAPABILITY:
                 return parseGsCapability(payload, state);
             case CMD_GS_RET_PARAM:
@@ -677,38 +798,64 @@ public final class SonyTandemProtocol {
     }
 
     private static boolean parseProtocolInfo(byte[] payload, ConfigStore.HeadsetState state) {
-        if (payload.length >= 4) {
-            int vHi = payload[2] & 0xFF;
-            int version = (vHi >= 2) ? PROTOCOL_V2 : PROTOCOL_V1;
-            if (state.protocolVersion != version) {
-                state.protocolVersion = version;
-                state.lastEvent = "proto=V" + version;
-                state.updatedAtMs = System.currentTimeMillis();
-                return true;
-            }
+        final int version;
+        if (payload.length == 4) {
+            // Sony Tandem V1 returns 4 bytes: [0x01, 0x00, vHi, vLo], e.g. 01 00 60 00 on WF-1000XM3
+            version = PROTOCOL_V1;
+        } else if (payload.length >= 6) {
+            // Sony Tandem V2 returns 8 bytes: [0x01, 0x00, vHi, vLo, table1Mask(2B), table2Mask(2B)]
+            version = PROTOCOL_V2;
+        } else {
+            return false;
+        }
+        if (state.protocolVersion != version) {
+            state.protocolVersion = version;
+            state.lastEvent = "proto=V" + version;
+            state.updatedAtMs = System.currentTimeMillis();
+            return true;
         }
         return false;
     }
 
     private static boolean parseSupportFunction(byte[] payload, ConfigStore.HeadsetState state) {
         boolean changed = false;
+        boolean isV1 = (state.protocolVersion == PROTOCOL_V1);
         if (payload.length >= 3) {
             for (int i = 3; i < payload.length; i++) {
                 int fn = payload[i] & 0xFF;
-                if (fn == 0x61 || fn == 0x62 || fn == 0x63 || fn == 0x68) {
-                    if (!state.supportsNcAsm) {
-                        state.supportsNcAsm = true;
-                        changed = true;
+                if (isV1) {
+                    if (fn == 0x61 || fn == 0x62 || fn == 0x63) {
+                        if (!state.supportsNcAsm) {
+                            state.supportsNcAsm = true;
+                            changed = true;
+                        }
+                    } else if (fn == 0xE2) {
+                        if (!state.supportsDsee) {
+                            state.supportsDsee = true;
+                            changed = true;
+                        }
+                    } else if (fn == 0xF5) {
+                        if (!state.supportsSpeakToChat) {
+                            state.supportsSpeakToChat = true;
+                            changed = true;
+                        }
                     }
-                } else if (fn == 0x98 || fn == 0x9B || fn == 0xF8) {
-                    if (!state.supportsSpeakToChat) {
-                        state.supportsSpeakToChat = true;
-                        changed = true;
-                    }
-                } else if (fn == 0x78 || fn == 0xE8) {
-                    if (!state.supportsDsee) {
-                        state.supportsDsee = true;
-                        changed = true;
+                } else {
+                    if (fn == 0x61 || fn == 0x62 || fn == 0x63 || fn == 0x68) {
+                        if (!state.supportsNcAsm) {
+                            state.supportsNcAsm = true;
+                            changed = true;
+                        }
+                    } else if (fn == 0x98 || fn == 0x9B || fn == 0xF8) {
+                        if (!state.supportsSpeakToChat) {
+                            state.supportsSpeakToChat = true;
+                            changed = true;
+                        }
+                    } else if (fn == 0x78 || fn == 0xE8) {
+                        if (!state.supportsDsee) {
+                            state.supportsDsee = true;
+                            changed = true;
+                        }
                     }
                 }
             }
@@ -835,6 +982,9 @@ public final class SonyTandemProtocol {
 
     private static boolean parseNcAsm(byte[] payload, ConfigStore.HeadsetState state) {
         int inq = payload[1] & 0xFF;
+        if (state.protocolVersion == PROTOCOL_V1 && inq > V1_INQ_ASM) {
+            return false;
+        }
         if (payload.length < minNcAsmPayloadLength(state.protocolVersion, inq)) {
             return false;
         }
@@ -858,7 +1008,7 @@ public final class SonyTandemProtocol {
         int newAsmLevel = state.asmLevel;
         boolean newVoice = state.voiceFocus;
 
-        if (state.protocolVersion == PROTOCOL_V1 && inq <= 0x03 && payload.length >= 4 && payload.length <= 6) {
+        if (state.protocolVersion == PROTOCOL_V1 && inq <= 0x03 && payload.length >= 4) {
             if (inq == V1_INQ_NC) {
                 newAncMode = ((payload[2] & 0xFF) != 0) ? ANC_ON : ANC_OFF;
             } else if (inq == V1_INQ_ASM && payload.length >= 5) {
@@ -866,6 +1016,19 @@ public final class SonyTandemProtocol {
                 newAncMode = on ? ANC_AMBIENT : ANC_OFF;
                 newVoice = (payload[3] & 0xFF) != 0;
                 newAsmLevel = clampLevel(payload[4] & 0xFF, newAsmLevel);
+            } else if (inq == V1_INQ_NC_ASM && payload.length >= 8) {
+                int effect = payload[2] & 0xFF;
+                int ncType = payload[3] & 0xFF;
+                int ncVal = payload[4] & 0xFF;
+                int asmType = payload[5] & 0xFF;
+                newVoice = (payload[6] & 0xFF) == 0x01;
+                int rawAsm = payload[7] & 0xFF;
+                V1_NC_ASM_TYPES.put(state, new int[] { ncType, asmType });
+                state.lastNcValue = ncVal;
+                newAncMode = (effect == 0x00) ? ANC_OFF : (ncVal != 0 ? ANC_ON : ANC_AMBIENT);
+                if (newAncMode == ANC_AMBIENT && asmType == 0x01) {
+                    newAsmLevel = clampLevel(rawAsm, newAsmLevel);
+                }
             } else if (inq == V1_INQ_NC_ASM && payload.length >= 6) {
                 boolean on = (payload[2] & 0xFF) != 0;
                 int mode = payload[3] & 0xFF;
@@ -978,6 +1141,83 @@ public final class SonyTandemProtocol {
 
     private static boolean parseSystemParam(byte[] payload, ConfigStore.HeadsetState state) {
         int inq = payload[1] & 0xFF;
+        if (state.protocolVersion == PROTOCOL_V1) {
+            if (inq == V1_SYS_INQ_CONTROL_BY_WEARING && payload.length == 4) {
+                int raw = payload[3] & 0xFF;
+                if (raw > 0x01) {
+                    return false;
+                }
+                boolean enabled = (raw == 0x01);
+                boolean changed = !state.supportsWearDetect || enabled != state.wearAutoPause;
+                state.supportsWearDetect = true;
+                state.wearAutoPause = enabled;
+                if (changed) {
+                    state.lastEvent = "wearDetectV1=" + enabled;
+                    state.updatedAtMs = System.currentTimeMillis();
+                }
+                return changed;
+            }
+            if (inq == V1_SYS_INQ_AUTO_POWER_OFF && payload.length == 5) {
+                int elem = payload[3] & 0xFF;
+                int resolvedInq = (elem == 0x10 || !SonyDeviceDetector.isOverEarModel(state.effectiveModelName()))
+                        ? POWER_INQ_AUTO_POWER_OFF_WEARING
+                        : POWER_INQ_AUTO_POWER_OFF;
+                boolean changed = !state.supportsAutoPowerOff
+                        || state.autoPowerOffInquiredType != resolvedInq
+                        || elem != state.autoPowerOffElement;
+                state.supportsAutoPowerOff = true;
+                state.autoPowerOffInquiredType = resolvedInq;
+                state.autoPowerOffElement = elem;
+                if (changed) {
+                    state.lastEvent = String.format(Locale.US, "autoOffV1=0x%02X", elem);
+                    state.updatedAtMs = System.currentTimeMillis();
+                }
+                return changed;
+            }
+            if (inq == V1_SYS_INQ_SMART_TALKING && payload.length == 4 && (payload[2] & 0xFF) == 0x01) {
+                int raw = payload[3] & 0xFF;
+                if (raw > 0x01) {
+                    return false;
+                }
+                boolean enabled = (raw == 0x01);
+                boolean newlyBound = !state.supportsSpeakToChat
+                        || state.speakToChatInquiredType != V1_SYS_INQ_SMART_TALKING;
+                state.supportsSpeakToChat = true;
+                state.speakToChatInquiredType = V1_SYS_INQ_SMART_TALKING;
+                boolean changed = newlyBound || enabled != state.speakToChat;
+                state.speakToChat = enabled;
+                state.lastEvent = "speakV1=" + enabled;
+                if (changed) {
+                    state.updatedAtMs = System.currentTimeMillis();
+                }
+                return changed;
+            }
+            if (inq == V1_SYS_INQ_ASSIGNABLE_SETTINGS && payload.length >= 5) {
+                int count = payload[2] & 0xFF;
+                if (count != 2 || payload.length != 3 + count) {
+                    return false;
+                }
+                int leftP = payload[3] & 0xFF;
+                int rightP = payload[4] & 0xFF;
+                if (leftP == 0xFE || rightP == 0xFE) {
+                    return false;
+                }
+                boolean changed = !state.supportsTouchSensor
+                        || state.touchInquiredType != V1_SYS_INQ_ASSIGNABLE_SETTINGS
+                        || leftP != state.touchLeftPreset
+                        || rightP != state.touchRightPreset;
+                state.supportsTouchSensor = true;
+                state.touchInquiredType = V1_SYS_INQ_ASSIGNABLE_SETTINGS;
+                state.touchLeftPreset = leftP;
+                state.touchRightPreset = rightP;
+                if (changed) {
+                    state.lastEvent = String.format(Locale.US, "touchV1=0x%02X/0x%02X", leftP, rightP);
+                    state.updatedAtMs = System.currentTimeMillis();
+                }
+                return changed;
+            }
+            return false;
+        }
         if ((inq == SYS_INQ_SMART_TALKING_V1 || inq == SYS_INQ_SMART_TALKING_V2) && payload.length >= 3) {
             if (state.supportsSpeakToChat
                     && state.speakToChatInquiredType == SYS_INQ_SMART_TALKING_V2
@@ -1051,6 +1291,29 @@ public final class SonyTandemProtocol {
 
     private static boolean parseSystemExtParam(byte[] payload, ConfigStore.HeadsetState state) {
         int inq = payload[1] & 0xFF;
+        if (state.protocolVersion == PROTOCOL_V1) {
+            if (inq == V1_SYS_INQ_SMART_TALKING && payload.length >= 6) {
+                int sens = payload[3] & 0xFF;
+                int out = payload[5] & 0xFF;
+                if (sens > 2 || out > 3) {
+                    return false;
+                }
+                boolean changed = !state.supportsSpeakToChat
+                        || state.speakToChatInquiredType != inq
+                        || sens != state.speakSensitivity
+                        || out != state.speakTimeout;
+                state.speakToChatInquiredType = inq;
+                state.supportsSpeakToChat = true;
+                state.speakSensitivity = sens;
+                state.speakTimeout = out;
+                if (changed) {
+                    state.lastEvent = "speakExtV1=" + sens + "/" + out;
+                    state.updatedAtMs = System.currentTimeMillis();
+                }
+                return changed;
+            }
+            return false;
+        }
         if (inq == SYS_INQ_SMART_TALKING_V2 && payload.length >= 4) {
             int sens = payload[2] & 0xFF;
             int out = payload[3] & 0xFF;
@@ -1094,6 +1357,42 @@ public final class SonyTandemProtocol {
 
     private static boolean parseAudioParam(byte[] payload, ConfigStore.HeadsetState state) {
         int inq = payload[1] & 0xFF;
+        if (state.protocolVersion == PROTOCOL_V1) {
+            if (inq == V1_AUDIO_INQ_UPSCALING && payload.length == 4) {
+                int raw = payload[3] & 0xFF;
+                if (raw > 0x01) {
+                    return false;
+                }
+                boolean newlyBound = !state.supportsDsee;
+                state.supportsDsee = true;
+                boolean enabled = (raw == 0x01);
+                boolean changed = newlyBound || enabled != state.dsee;
+                state.dsee = enabled;
+                state.lastEvent = String.format(Locale.US, "dseeV1(0x%02X)=%s", inq, enabled);
+                if (changed) {
+                    state.updatedAtMs = System.currentTimeMillis();
+                }
+                return changed;
+            }
+            if (inq == V1_AUDIO_INQ_CONNECTION_MODE && payload.length == 4) {
+                int prior = payload[3] & 0xFF;
+                if (prior > 0x01) {
+                    return false;
+                }
+                boolean changed = !state.supportsConnectionMode
+                        || state.connectionModeInquiredType != V1_AUDIO_INQ_CONNECTION_MODE
+                        || prior != state.connectionPriorMode;
+                state.supportsConnectionMode = true;
+                state.connectionModeInquiredType = V1_AUDIO_INQ_CONNECTION_MODE;
+                state.connectionPriorMode = prior;
+                if (changed) {
+                    state.lastEvent = "priorModeV1=" + prior;
+                    state.updatedAtMs = System.currentTimeMillis();
+                }
+                return changed;
+            }
+            return false;
+        }
         if ((inq == AUDIO_INQ_UPSCALING || inq == AUDIO_INQ_UPSCALING_WITH_REASON) && payload.length >= 3) {
             int raw = payload[2] & 0xFF;
             if (raw > 0x01) {
@@ -1237,7 +1536,7 @@ public final class SonyTandemProtocol {
 
     private static boolean parseEqEbb(byte[] payload, ConfigStore.HeadsetState state) {
         int inq = payload[1] & 0xFF;
-        if ((inq == 0x00 || inq == 0x02 || inq == 0x04) && payload.length >= 3) {
+        if ((inq == 0x00 || inq == V1_EQ_INQ_PRESET_EQ || inq == 0x02 || inq == 0x04) && payload.length >= 3) {
             int presetId = payload[2] & 0xFF;
             String name = mapEqPresetName(presetId);
             boolean changed = !state.supportsEq

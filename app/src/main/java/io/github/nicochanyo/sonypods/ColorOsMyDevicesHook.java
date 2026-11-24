@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * Native ColorOS 16/17 integration hook inside {@code com.heytap.mydevices}.
@@ -66,6 +67,7 @@ public final class ColorOsMyDevicesHook {
     private static volatile boolean sOpenPopupReceiverRegistered;
     private static volatile String sLastLaunchedPopupMac = "";
     private static volatile String sLastLaunchedPopupModel = "";
+    private static volatile boolean sLastLaunchedPopupConnected;
     private static volatile long sLastLaunchedPopupMs;
     private static volatile Object sLastCapsuleHelper;
     private static volatile String sLastCapsuleMac = "";
@@ -75,6 +77,7 @@ public final class ColorOsMyDevicesHook {
     private static volatile boolean sLastCapsuleBothEars;
     private static final Map<Object, BroadcastReceiver> POPUP_RECEIVERS =
             Collections.synchronizedMap(new IdentityHashMap<>());
+    private static final Map<ImageView, String> LAST_APPLIED_ART_TAG = new WeakHashMap<>();
 
     private ColorOsMyDevicesHook() {
     }
@@ -999,24 +1002,39 @@ public final class ColorOsMyDevicesHook {
                     XposedCompat.log("Open-case popup ignored: no Sony BluetoothDevice resolved");
                     return;
                 }
-                SonyCtx sc = buildSonyCtx(context, dev, safeAddress(dev), model);
-                String finalModel = sanitizeModel(
-                        (model != null && !model.trim().isEmpty()) ? model : sc.model,
-                        sc.model);
                 String devMac = safeAddress(dev);
-                int defaultBond = BluetoothDevice.BOND_NONE;
-                try {
-                    defaultBond = dev.getBondState();
-                } catch (Throwable ignored) {
+                boolean isConnected;
+                if (hasExplicitConn) {
+                    isConnected = explicitConn;
+                } else {
+                    ConfigStore.HeadsetState st = ConfigStore.readGlobalState(context);
+                    isConnected = st.connected && !devMac.isEmpty()
+                            && devMac.equalsIgnoreCase(st.mac);
                 }
-                int bondState = intent.getIntExtra(ConfigStore.EXTRA_BOND_STATE, defaultBond);
-                ConfigStore.HeadsetState st = ConfigStore.readGlobalState(context);
-                boolean defaultConn = st.connected && !devMac.isEmpty()
-                        && devMac.equalsIgnoreCase(st.mac);
-                boolean isConnected = hasExplicitConn ? explicitConn : defaultConn;
+                int bondState;
+                if (intent.hasExtra(ConfigStore.EXTRA_BOND_STATE)) {
+                    bondState = intent.getIntExtra(ConfigStore.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE);
+                } else {
+                    int defaultBond = BluetoothDevice.BOND_NONE;
+                    try {
+                        defaultBond = dev.getBondState();
+                    } catch (Throwable ignored) {
+                    }
+                    bondState = defaultBond;
+                }
+                String finalModel;
+                if (model != null && !model.trim().isEmpty() && !isConnected) {
+                    finalModel = sanitizeModel(model, "Sony");
+                } else {
+                    SonyCtx sc = buildSonyCtx(context, dev, devMac, model);
+                    finalModel = sanitizeModel(
+                            (model != null && !model.trim().isEmpty()) ? model : sc.model,
+                            sc.model);
+                }
 
                 sLastLaunchedPopupMac = devMac;
                 sLastLaunchedPopupModel = finalModel;
+                sLastLaunchedPopupConnected = isConnected;
                 sLastLaunchedPopupMs = SystemClock.elapsedRealtime();
 
                 Intent launch = new Intent();
@@ -1099,6 +1117,20 @@ public final class ColorOsMyDevicesHook {
                         if (!modelName.isEmpty()) {
                             param.setResult(modelName);
                         }
+                    }
+                }
+            });
+            XposedCompat.hookAllMethods(vmCls, "startGetDeviceInfo", new XposedCompat.XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(XposedCompat.MethodHookParam param) {
+                    if (!isPanelEnabled()) return;
+                    BluetoothDevice dev = getPopupBluetoothDevice(param.thisObject);
+                    String devMac = safeAddress(dev);
+                    if (!devMac.isEmpty() && sLastLaunchedPopupMs != 0L
+                            && (SystemClock.elapsedRealtime() - sLastLaunchedPopupMs) <= POPUP_LAUNCH_CACHE_TTL_MS
+                            && devMac.equalsIgnoreCase(sLastLaunchedPopupMac)
+                            && !sLastLaunchedPopupConnected) {
+                        param.setResult(null);
                     }
                 }
             });
@@ -1412,7 +1444,14 @@ public final class ColorOsMyDevicesHook {
                     unregisterPopupReceiver(fragment);
                     return;
                 }
-                applyInstantPopupBattery(fragment, sony);
+                ConfigStore.HeadsetState parsed = null;
+                if (intent != null) {
+                    String raw = intent.getStringExtra(ConfigStore.EXTRA_STATE_SERIALIZED);
+                    if (raw != null && !raw.isEmpty()) {
+                        parsed = ConfigStore.HeadsetState.deserialize(raw);
+                    }
+                }
+                applyInstantPopupBattery(fragment, sony, parsed);
             }
         };
         try {
@@ -1962,10 +2001,18 @@ public final class ColorOsMyDevicesHook {
     }
 
     private static void applyInstantPopupBattery(Object fragment, SonyCtx sony) {
+        applyInstantPopupBattery(fragment, sony, null);
+    }
+
+    private static void applyInstantPopupBattery(
+            Object fragment,
+            SonyCtx sony,
+            ConfigStore.HeadsetState preParsed
+    ) {
         if (fragment == null) return;
         Context ctx = resolveFragmentContext(fragment);
         if (ctx == null) return;
-        ConfigStore.HeadsetState st = ConfigStore.readGlobalState(ctx);
+        ConfigStore.HeadsetState st = (preParsed != null) ? preParsed : ConfigStore.readGlobalState(ctx);
         if (!st.connected) return;
         if (st.leftBattery < 0 && st.rightBattery < 0 && st.singleBattery < 0) return;
 
@@ -2133,6 +2180,10 @@ public final class ColorOsMyDevicesHook {
             Object ivObj = ivField != null ? ivField.get(fragment) : null;
             if (ivObj instanceof ImageView) {
                 ImageView iv = (ImageView) ivObj;
+                String artTag = sony.model + "|" + sony.colorCode + "|" + System.identityHashCode(bmp);
+                if (artTag.equals(LAST_APPLIED_ART_TAG.get(iv)) && iv.getVisibility() == View.VISIBLE) {
+                    return true;
+                }
                 float density = ctx.getResources().getDisplayMetrics().density;
                 ViewGroup.LayoutParams rawLp = iv.getLayoutParams();
                 if (rawLp instanceof ViewGroup.MarginLayoutParams) {
@@ -2150,6 +2201,7 @@ public final class ColorOsMyDevicesHook {
                 iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
                 iv.setVisibility(View.VISIBLE);
                 iv.setImageBitmap(bmp);
+                LAST_APPLIED_ART_TAG.put(iv, artTag);
                 iv.requestLayout();
                 return true;
             }

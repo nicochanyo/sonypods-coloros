@@ -20,6 +20,11 @@ public class CouiPillSeekBar extends SeekBar {
     private int customAccentColor;
     private int customDotColor;
 
+    private boolean lastPressedState;
+    private int lastHapticProgress = Integer.MIN_VALUE;
+    private float dotScale = 1.0f;
+    private final LivingFlowEffects.FluidSpring dotSpring = LivingFlowEffects.FluidSpring.touchPress();
+
     public void setCustomPalette(int trackColor, int accentColor, int dotColor) {
         this.hasCustomPalette = true;
         this.customTrackColor = trackColor;
@@ -50,6 +55,17 @@ public class CouiPillSeekBar extends SeekBar {
         setSplitTrack(false);
         int rPx = Math.round(10f * getResources().getDisplayMetrics().density);
         setPadding(rPx, 0, rPx, 0);
+        dotSpring.setValue(1.0f);
+        dotSpring.setListener(v -> {
+            dotScale = v;
+            invalidate();
+        }, null);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        dotSpring.cancel();
+        super.onDetachedFromWindow();
     }
 
     @Override
@@ -63,6 +79,17 @@ public class CouiPillSeekBar extends SeekBar {
     @Override
     protected void drawableStateChanged() {
         super.drawableStateChanged();
+        boolean pressed = isPressed();
+        if (pressed != lastPressedState) {
+            lastPressedState = pressed;
+            if (pressed && ConfigStore.isLivingFlowUi(getContext())) {
+                lastHapticProgress = getProgress();
+                dotSpring.animateTo(1.10f);
+            } else {
+                lastHapticProgress = Integer.MIN_VALUE;
+                dotSpring.animateTo(1.0f);
+            }
+        }
         invalidate();
     }
 
@@ -72,6 +99,15 @@ public class CouiPillSeekBar extends SeekBar {
         int h = getHeight();
         if (w <= 0 || h <= 0) {
             return;
+        }
+
+        boolean livingFlow = ConfigStore.isLivingFlowUi(getContext());
+        if (livingFlow && lastPressedState) {
+            int curP = getProgress();
+            if (curP != lastHapticProgress) {
+                lastHapticProgress = curP;
+                ColorOsLivingFlowEngine.performHaptic(this, ColorOsLivingFlowEngine.HapticKind.TICK);
+            }
         }
 
         float d = getResources().getDisplayMetrics().density;
@@ -88,7 +124,7 @@ public class CouiPillSeekBar extends SeekBar {
                 ? customTrackColor
                 : ConfigStore.resolveThemeColor(ctx, R.attr.couiSeekbarTrack, R.color.coui_seekbar_track);
         int accentColor = hasCustomPalette ? customAccentColor : DynamicThemeHelper.getAccent(ctx);
-        int dotColor = hasCustomPalette ? customDotColor : DynamicThemeHelper.getOnAccent(ctx);
+        int dotColor = hasCustomPalette ? customDotColor : 0xFFFFFFFF;
         if (!isEnabled()) {
             accentColor = (Math.round(Color.alpha(accentColor) * 0.42f) << 24)
                     | (accentColor & 0x00FFFFFF);
@@ -101,7 +137,7 @@ public class CouiPillSeekBar extends SeekBar {
         rect.set(0f, top, w, bottom);
         canvas.drawRoundRect(rect, r, r, paint);
 
-        // Active accent capsule + circular thumb dot
+        // Active accent capsule + crisp circular white thumb dot (COUI volume slider style)
         float travel = Math.max(0f, (w - r) - r);
         float cx;
         if (getLayoutDirection() == LAYOUT_DIRECTION_RTL) {
@@ -115,7 +151,8 @@ public class CouiPillSeekBar extends SeekBar {
         paint.setColor(accentColor);
         canvas.drawRoundRect(rect, r, r, paint);
 
+        float dotR = r * 0.58f * (livingFlow ? dotScale : 1.0f);
         paint.setColor(dotColor);
-        canvas.drawCircle(cx, cy, r * 0.55f, paint);
+        canvas.drawCircle(cx, cy, dotR, paint);
     }
 }

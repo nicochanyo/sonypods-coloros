@@ -2481,6 +2481,80 @@
                         android:orientation="vertical">
 
                         <LinearLayout
+                            android:id="@+id/rowAboutUiStyle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_coui_item_ripple"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="18dp"
+                            android:paddingTop="15dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="15dp">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_row_glass"
+                                android:tag="accent_icon" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/about_ui_style_title"
+                                    android:textColor="?attr/couiTextPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/about_ui_style_summary"
+                                    android:textColor="?attr/couiTextSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvAboutUiStyleVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_coui_chip"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="9dp"
+                                android:paddingTop="3dp"
+                                android:paddingEnd="9dp"
+                                android:paddingBottom="3dp"
+                                android:singleLine="true"
+                                android:tag="accent_chip"
+                                android:textColor="?attr/couiAccent"
+                                android:textSize="12sp" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_coui_selector" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="54dp"
+                            android:layout_marginEnd="18dp"
+                            android:background="?attr/couiDivider" />
+
+                        <LinearLayout
                             android:id="@+id/rowAboutLanguage"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

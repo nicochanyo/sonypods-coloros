@@ -1,0 +1,3405 @@
+<?xml version="1.0" encoding="utf-8"?>
+<io.github.nicochanyo.sonypods.ProgressiveBlurFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layoutRootBlur"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/lf_bg"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <FrameLayout
+        android:id="@+id/layoutPageContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- ======================= TAB 0: HEADSET ======================= -->
+        <io.github.nicochanyo.sonypods.CouiBounceScrollView
+            android:id="@+id/pageHeadset"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="112dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="104dp">
+
+                <!-- Prominent Warning Banner shown ONLY when module is inactive -->
+                <LinearLayout
+                    android:id="@+id/bannerModuleInactive"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:visibility="gone">
+
+                    <FrameLayout
+                        android:id="@+id/vBannerWarnEmblem"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="12dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_status_warn" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/status_title_inactive"
+                            android:textColor="@color/coui_status_warn_fg"
+                            android:textSize="15.5sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:text="@string/status_sub_inactive"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="12.5sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@drawable/ic_lf_chevron_right" />
+                </LinearLayout>
+
+                <!-- Hero Headset Card -->
+                <LinearLayout
+                    android:id="@+id/cardHeadsetHero"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:background="@drawable/bg_lf_hero_card"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="16dp">
+
+                    <FrameLayout
+                        android:id="@+id/layoutHeroPedestal"
+                        android:layout_width="match_parent"
+                        android:layout_height="156dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <View
+                            android:id="@+id/vHeroGlowAura"
+                            android:layout_width="184dp"
+                            android:layout_height="184dp"
+                            android:layout_gravity="center" />
+
+                        <ImageView
+                            android:id="@+id/ivArtworkPreview"
+                            android:layout_width="132dp"
+                            android:layout_height="132dp"
+                            android:layout_gravity="center"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_nav_headset" />
+
+                        <TextView
+                            android:id="@+id/tvProtocolBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|end"
+                            android:singleLine="true"
+                            android:text="@string/badge_proto_none"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="12sp" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvHeadsetName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:ellipsize="end"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:singleLine="true"
+                        android:text="@string/headset_disconnected_title"
+                        android:textColor="@color/lf_text_primary"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/tvHeadsetMac"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:singleLine="true"
+                        android:text="@string/headset_disconnected_sub"
+                        android:textColor="@color/lf_text_secondary"
+                        android:textSize="13sp" />
+
+                    <!-- 3-Column Battery Readout -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="4dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/battery_left"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvBatteryLeft"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/battery_unknown"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="19sp" />
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="4dp"
+                                android:layout_marginTop="6dp"
+                                android:background="@drawable/bg_lf_anc_track">
+
+                                <View
+                                    android:id="@+id/vBatBarLeft"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="start" />
+                            </FrameLayout>
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="0.5dp"
+                            android:layout_height="28dp"
+                            android:background="@color/lf_divider" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/battery_right"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvBatteryRight"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/battery_unknown"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="19sp" />
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="4dp"
+                                android:layout_marginTop="6dp"
+                                android:background="@drawable/bg_lf_anc_track">
+
+                                <View
+                                    android:id="@+id/vBatBarRight"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="start" />
+                            </FrameLayout>
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="0.5dp"
+                            android:layout_height="28dp"
+                            android:background="@color/lf_divider" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/battery_case"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvBatteryCase"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/battery_unknown"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="19sp" />
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="4dp"
+                                android:layout_marginTop="6dp"
+                                android:background="@drawable/bg_lf_anc_track">
+
+                                <View
+                                    android:id="@+id/vBatBarCase"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="start" />
+                            </FrameLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Action Buttons -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/btnRefreshState"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_lf_btn_secondary"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:fontFamily="sans-serif-medium"
+                            android:gravity="center"
+                            android:singleLine="true"
+                            android:text="@string/btn_refresh_state"
+                            android:textColor="@color/lf_text_primary"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/btnOpenNativePanel"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_coui_btn_primary"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:fontFamily="sans-serif-medium"
+                            android:gravity="center"
+                            android:singleLine="true"
+                            android:tag="accent_btn"
+                            android:text="@string/btn_open_native_panel"
+                            android:textColor="@android:color/white"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 3-Column ColorOS 17 Donut-Radio ANC Selector Card -->
+                <LinearLayout
+                    android:id="@+id/layoutQuickAncCapsule"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:background="@drawable/bg_lf_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/btnAncNc"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingTop="18dp"
+                        android:paddingBottom="18dp">
+
+                        <ImageView
+                            android:id="@+id/ivAncIconNc"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_lf_anc_nc"
+                            android:tint="@color/lf_nav_inactive" />
+
+                        <TextView
+                            android:id="@+id/tvAncLabelNc"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:singleLine="true"
+                            android:text="@string/mode_anc"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="13sp" />
+
+                        <View
+                            android:id="@+id/ivAncRadioNc"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginTop="14dp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="0.5dp"
+                        android:layout_height="48dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/btnAncAmbient"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingTop="18dp"
+                        android:paddingBottom="18dp">
+
+                        <ImageView
+                            android:id="@+id/ivAncIconAmbient"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_lf_anc_ambient"
+                            android:tint="@color/lf_nav_inactive" />
+
+                        <TextView
+                            android:id="@+id/tvAncLabelAmbient"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:singleLine="true"
+                            android:text="@string/mode_ambient"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="13sp" />
+
+                        <View
+                            android:id="@+id/ivAncRadioAmbient"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginTop="14dp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="0.5dp"
+                        android:layout_height="48dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/btnAncOff"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingTop="18dp"
+                        android:paddingBottom="18dp">
+
+                        <ImageView
+                            android:id="@+id/ivAncIconOff"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_lf_anc_off"
+                            android:tint="@color/lf_nav_inactive" />
+
+                        <TextView
+                            android:id="@+id/tvAncLabelOff"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:singleLine="true"
+                            android:text="@string/mode_off"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="13sp" />
+
+                        <View
+                            android:id="@+id/ivAncRadioOff"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginTop="14dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvCurrentAncBadge"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- Unboxed Extra Controls Section (No outer card box) -->
+                <LinearLayout
+                    android:id="@+id/layoutHeadsetControls"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:orientation="vertical"
+                    android:padding="0dp">
+
+                    <!-- Standalone Ambient Fine-Tuning Card -->
+                    <LinearLayout
+                        android:id="@+id/layoutAmbientSub"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:background="@drawable/bg_lf_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="vertical"
+                            android:paddingStart="16dp"
+                            android:paddingTop="14dp"
+                            android:paddingEnd="16dp"
+                            android:paddingBottom="12dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_asm_level_title"
+                                    android:textColor="@color/lf_text_primary"
+                                    android:textSize="16sp" />
+
+                                <TextView
+                                    android:id="@+id/tvAsmLevelVal"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="15"
+                                    android:textColor="@color/lf_text_secondary"
+                                    android:textSize="14sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_marginEnd="12dp"
+                                    android:src="@drawable/ic_row_ambient"
+                                    android:tint="@color/lf_text_primary" />
+
+                                <io.github.nicochanyo.sonypods.CouiPillSeekBar
+                                    android:id="@+id/sbAsmLevel"
+                                    android:layout_width="0dp"
+                                    android:layout_height="34dp"
+                                    android:layout_weight="1"
+                                    android:max="19"
+                                    android:progress="14" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="16dp"
+                            android:background="@color/lf_divider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowVoiceFocus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_lf_list_item_press"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:minHeight="58dp"
+                            android:orientation="horizontal"
+                            android:paddingStart="16dp"
+                            android:paddingTop="13dp"
+                            android:paddingEnd="16dp"
+                            android:paddingBottom="13dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/pref_voice_focus_title"
+                                    android:textColor="@color/lf_text_primary"
+                                    android:textSize="16sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/pref_voice_focus_summary"
+                                    android:textColor="@color/lf_text_secondary"
+                                    android:textSize="13sp" />
+                            </LinearLayout>
+
+                            <Switch
+                                android:id="@+id/swVoiceFocus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="16dp"
+                        android:paddingTop="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="8dp"
+                        android:text="@string/section_extra_params"
+                        android:textColor="@color/lf_text_secondary"
+                        android:textSize="13sp" />
+
+                    <!-- Sound Connect 4-Category Standalone Card (Bare 24dp Duotone Icons + Plain Status) -->
+                    <LinearLayout
+                        android:id="@+id/cardSoundConnectCategories"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_card"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/rowScSound"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_lf_list_item_press"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:orientation="horizontal"
+                            android:paddingStart="16dp"
+                            android:paddingTop="14dp"
+                            android:paddingEnd="16dp"
+                            android:paddingBottom="14dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="16dp"
+                                android:src="@drawable/ic_lf_cat_sound" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:fontFamily="sans-serif-medium"
+                                android:singleLine="true"
+                                android:text="@string/sc_cat_sound_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvScSoundVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:ellipsize="end"
+                                android:maxWidth="148dp"
+                                android:singleLine="true"
+                                android:text="@string/sc_status_offline"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:layout_width="12dp"
+                                android:layout_height="24dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_lf_chevron_right" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="56dp"
+                            android:layout_marginEnd="16dp"
+                            android:background="@color/lf_divider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowScInteraction"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_lf_list_item_press"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:orientation="horizontal"
+                            android:paddingStart="16dp"
+                            android:paddingTop="14dp"
+                            android:paddingEnd="16dp"
+                            android:paddingBottom="14dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="16dp"
+                                android:src="@drawable/ic_lf_cat_touch" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:fontFamily="sans-serif-medium"
+                                android:singleLine="true"
+                                android:text="@string/sc_cat_interaction_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvScInteractionVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:ellipsize="end"
+                                android:maxWidth="148dp"
+                                android:singleLine="true"
+                                android:text="@string/sc_status_offline"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:layout_width="12dp"
+                                android:layout_height="24dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_lf_chevron_right" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="56dp"
+                            android:layout_marginEnd="16dp"
+                            android:background="@color/lf_divider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowScConnection"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_lf_list_item_press"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:orientation="horizontal"
+                            android:paddingStart="16dp"
+                            android:paddingTop="14dp"
+                            android:paddingEnd="16dp"
+                            android:paddingBottom="14dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="16dp"
+                                android:src="@drawable/ic_lf_cat_connect" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:fontFamily="sans-serif-medium"
+                                android:singleLine="true"
+                                android:text="@string/sc_cat_connection_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvScConnectionVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:ellipsize="end"
+                                android:maxWidth="148dp"
+                                android:singleLine="true"
+                                android:text="@string/sc_status_offline"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:layout_width="12dp"
+                                android:layout_height="24dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_lf_chevron_right" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="56dp"
+                            android:layout_marginEnd="16dp"
+                            android:background="@color/lf_divider" />
+
+                        <LinearLayout
+                            android:id="@+id/rowScPower"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_lf_list_item_press"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:orientation="horizontal"
+                            android:paddingStart="16dp"
+                            android:paddingTop="14dp"
+                            android:paddingEnd="16dp"
+                            android:paddingBottom="14dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="16dp"
+                                android:src="@drawable/ic_lf_cat_power" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:fontFamily="sans-serif-medium"
+                                android:singleLine="true"
+                                android:text="@string/sc_cat_power_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvScPowerVal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:ellipsize="end"
+                                android:maxWidth="148dp"
+                                android:singleLine="true"
+                                android:text="@string/sc_status_offline"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:layout_width="12dp"
+                                android:layout_height="24dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_lf_chevron_right" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Section: Control & Handover -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/section_control_prefs"
+                    android:textColor="@color/lf_text_secondary"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowCycleMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_cycle_mode_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/pref_cycle_mode_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvCycleModeVal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:ellipsize="end"
+                            android:maxWidth="140dp"
+                            android:singleLine="true"
+                            android:text="@string/cycle_mode_3way"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:src="@drawable/ic_lf_popup_indicator" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowHandover"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_handover_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_handover_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swHandover"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Section: Device Artwork -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/section_artwork"
+                    android:textColor="@color/lf_text_secondary"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowSyncCatalog"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_sync_catalog_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvCatalogStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_sync_catalog_sub_empty"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowPickCustomArtwork"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_custom_artwork_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvCustomArtworkStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_custom_artwork_sub_none"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowClearCustomArtwork"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_clear_artwork_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_clear_artwork_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowModelOverride"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="56dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="14dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="14dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/pref_model_override_title"
+                            android:textColor="@color/lf_text_primary"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/tvModelOverrideVal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:ellipsize="end"
+                            android:maxWidth="148dp"
+                            android:singleLine="true"
+                            android:text="@string/model_override_auto"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btnApplyDefaults"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_lf_btn_secondary"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"
+                    android:text="@string/btn_apply_defaults"
+                    android:textColor="@color/lf_text_primary"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </io.github.nicochanyo.sonypods.CouiBounceScrollView>
+
+        <!-- ======================= TAB 1: SYSTEM INTEGRATION ======================= -->
+        <io.github.nicochanyo.sonypods.CouiBounceScrollView
+            android:id="@+id/pageIntegration"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="112dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="104dp">
+
+                <!-- Section: Bluetooth Integration -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/section_bt_bridge"
+                    android:textColor="@color/lf_text_secondary"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowBridgeEnabled"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_bridge_enabled_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_bridge_v2_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swBridgeEnabled"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowVendorBypass"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_vendor_bypass_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_vendor_bypass_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swVendorBypass"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowSuppressNativePairing"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_suppress_pairing_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_suppress_pairing_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swSuppressNativePairing"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Section: UI & Popups -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/section_settings_ui"
+                    android:textColor="@color/lf_text_secondary"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowMyDevicesPanel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_mydevices_panel_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_mydevices_v2_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swMyDevicesPanel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowNativeArtwork"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_native_artwork_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_native_artwork_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swNativeArtwork"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowMelodyChannel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_melody_channel_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_melody_channel_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swMelodyChannel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowOpenCasePopup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_open_popup_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_open_popup_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swOpenCasePopup"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+
+                    <View
+                        android:id="@+id/divOpenPopupMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowOpenPopupMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_open_popup_mode_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_open_popup_mode_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvOpenPopupModeVal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:ellipsize="end"
+                            android:maxWidth="136dp"
+                            android:singleLine="true"
+                            android:text="@string/popup_mode_pairing_only"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:src="@drawable/ic_lf_popup_indicator" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowFluidCloudCapsule"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_fluid_capsule_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_fluid_capsule_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swFluidCloudCapsule"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Section: Control Center -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/section_systemui_notif"
+                    android:textColor="@color/lf_text_secondary"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowQsTile"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_qs_tile_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_qs_tile_v2_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swQsTile"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                                android:background="@null"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:showText="false"
+                                android:splitTrack="false"
+                                android:switchMinWidth="44dp"
+                                android:thumb="@drawable/coui_switch_thumb"
+                                android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Section: Scope & Quick Actions -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/section_restart_scope"
+                    android:textColor="@color/lf_text_secondary"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowRootStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="52dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <ImageView
+                            android:id="@+id/ivRootIcon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="12dp"
+                            android:src="@drawable/ic_status_active" />
+
+                        <TextView
+                            android:id="@+id/tvRootStatus"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/root_status_checking"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowRestartCore"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_restart_core_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_restart_core_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowRestartCustom"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_restart_custom_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_restart_custom_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowClearArtworkCache"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_clear_md_cache_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_clear_md_cache_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowPreviewOpenPopup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/pref_preview_open_popup_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_preview_open_popup_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/btnResetIntegration"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_lf_btn_secondary"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:singleLine="true"
+                        android:text="@string/btn_reset_page"
+                        android:textColor="@color/lf_text_primary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/btnOpenNativePanelTab2"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_coui_btn_primary"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:singleLine="true"
+                        android:tag="accent_btn"
+                        android:text="@string/btn_open_native_panel"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </io.github.nicochanyo.sonypods.CouiBounceScrollView>
+
+        <!-- ======================= TAB 2: ABOUT & APPEARANCE (Official 關於本機) ======================= -->
+        <io.github.nicochanyo.sonypods.CouiBounceScrollView
+            android:id="@+id/pageAbout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="112dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="104dp">
+
+                <!-- Dynamic Animated 328dp ColorOS Hero Card (matching AboutDeviceOtaUpdatePreference) -->
+                <FrameLayout
+                    android:id="@+id/cardAboutDynamicHero"
+                    android:layout_width="match_parent"
+                    android:layout_height="328dp"
+                    android:background="@drawable/bg_lf_about_hero_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:longClickable="true">
+
+                    <io.github.nicochanyo.sonypods.ColorOsDynamicBackdropView
+                        android:id="@+id/vAboutDynamicBg"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutAboutHeroLogo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal|top"
+                        android:layout_marginTop="94dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:includeFontPadding="false"
+                            android:letterSpacing="-0.025"
+                            android:shadowColor="#28000000"
+                            android:shadowDy="2"
+                            android:shadowRadius="8"
+                            android:text="SonyPods"
+                            android:textColor="#FFFFFFFF"
+                            android:textSize="42sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvAboutHeroVer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:shadowColor="#20000000"
+                            android:shadowDy="1"
+                            android:shadowRadius="4"
+                            android:text="ColorOS · 1.0.3"
+                            android:textColor="#F0FFFFFF"
+                            android:textSize="16.5sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvAboutHeroUpdateStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal|bottom"
+                        android:layout_marginBottom="34dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingTop="6dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="6dp"
+                        android:shadowColor="#28000000"
+                        android:shadowDy="1"
+                        android:shadowRadius="4"
+                        android:singleLine="true"
+                        android:text="@string/dialog_update_latest_title"
+                        android:textColor="#EEFFFFFF"
+                        android:textSize="15sp" />
+                </FrameLayout>
+
+                <!-- Card 1: Redesigned ColorOS 17 Module Status Card -->
+                <LinearLayout
+                    android:id="@+id/cardAboutModuleStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_lf_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="@drawable/bg_lf_list_item_press"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="15dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="15dp">
+
+                    <FrameLayout
+                        android:id="@+id/vAboutStatusEmblem"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="14dp">
+
+                        <ImageView
+                            android:id="@+id/ivAboutStatusIcon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_status_active" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvAboutStatusTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:singleLine="true"
+                                android:text="@string/status_title_active"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvAboutStatusBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="8dp"
+                                android:paddingTop="2dp"
+                                android:paddingEnd="8dp"
+                                android:paddingBottom="2dp"
+                                android:singleLine="true"
+                                android:text="@string/badge_api_102"
+                                android:textSize="11.5sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvAboutStatusSubtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:text="@string/status_sub_active"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@drawable/ic_lf_chevron_right" />
+                </LinearLayout>
+
+                <!-- Card 2: Official ColorOS 17 Single-Column Vertical Spec Card (Separated Phone / App + Collapsible Scope) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="20dp">
+
+                    <!-- Top Phone Info Header Block -->
+                    <TextView
+                        android:id="@+id/tvDeviceModel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="--"
+                        android:textColor="@color/lf_text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvSysVersion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="--"
+                        android:textColor="@color/lf_text_secondary"
+                        android:textSize="13.5sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="18dp"
+                        android:background="@color/lf_divider" />
+
+                    <!-- Block 1: App Version -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/about_app_ver_title"
+                        android:textColor="@color/lf_text_secondary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvAboutBuildSub"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="v1.0.3 (1003)"
+                        android:textColor="@color/lf_text_primary"
+                        android:textSize="15.5sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="LibXposed API 102"
+                        android:textColor="@color/lf_text_primary"
+                        android:textSize="13.5sp" />
+
+                    <!-- Block 2: Config Sync -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/about_env_channel_title"
+                        android:textColor="@color/lf_text_secondary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvAboutChannel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/channel_xsp"
+                        android:textColor="@color/lf_text_primary"
+                        android:textSize="15.5sp" />
+
+                    <!-- Block 3: Collapsible Recommended Scope -->
+                    <LinearLayout
+                        android:id="@+id/rowAboutScopeToggle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/about_scope_title"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+
+                            <ImageView
+                                android:id="@+id/ivAboutScopeChevron"
+                                android:layout_width="10dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:rotation="90"
+                                android:src="@drawable/ic_lf_chevron_right" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvAboutScopeCount"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textColor="@color/lf_text_primary"
+                            android:textSize="15.5sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutAboutScopeBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingTop="8dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/tvAboutScopeList"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:lineSpacingMultiplier="1.38"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textIsSelectable="true"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Card 3: Appearance & Personalization -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutUiStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_ui_style_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/about_ui_style_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvAboutUiStyleVal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:ellipsize="end"
+                            android:maxWidth="136dp"
+                            android:singleLine="true"
+                            android:text="@string/ui_style_living_flow"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:src="@drawable/ic_lf_popup_indicator" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutLanguage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_language_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/about_language_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvAboutLanguageVal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:ellipsize="end"
+                            android:maxWidth="136dp"
+                            android:singleLine="true"
+                            android:text="@string/lang_system"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:src="@drawable/ic_lf_popup_indicator" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutDarkMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_dark_mode_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/about_dark_mode_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvAboutDarkModeVal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:ellipsize="end"
+                            android:maxWidth="136dp"
+                            android:singleLine="true"
+                            android:text="@string/dark_mode_system"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:src="@drawable/ic_lf_popup_indicator" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutMonet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_monet_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/about_monet_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swAboutMonet"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:background="@null"
+                            android:clickable="false"
+                            android:focusable="false"
+                            android:showText="false"
+                            android:splitTrack="false"
+                            android:switchMinWidth="44dp"
+                            android:thumb="@drawable/coui_switch_thumb"
+                            android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Card 4: Updates, Diagnostics & Reset (matching 官方保固 / 版本資訊 / 狀態 / 使用說明) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutCheckUpdate"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="14dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="14dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/lf_software_update_title"
+                            android:textColor="@color/lf_text_primary"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/tvAboutUpdateChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:ellipsize="end"
+                            android:maxWidth="136dp"
+                            android:singleLine="true"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="14sp"
+                            android:visibility="gone" />
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutChangelog"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="14dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="14dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/lf_update_notes_title"
+                            android:textColor="@color/lf_text_primary"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:singleLine="true"
+                            android:text="@string/chip_version"
+                            android:textColor="@color/lf_text_secondary"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutViewLogs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="14dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="14dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/dialog_logs_title"
+                            android:textColor="@color/lf_text_primary"
+                            android:textSize="16sp" />
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutDebugMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_debug_mode_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/about_debug_mode_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/swAboutDebugMode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:background="@null"
+                            android:clickable="false"
+                            android:focusable="false"
+                            android:showText="false"
+                            android:splitTrack="false"
+                            android:switchMinWidth="44dp"
+                            android:thumb="@drawable/coui_switch_thumb"
+                            android:track="@drawable/coui_switch_track" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutResetAll"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="14dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="14dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/about_reset_all_title"
+                            android:textColor="@color/lf_destructive"
+                            android:textSize="16sp" />
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Card 5: Credits & Open Source -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_lf_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowAboutAuthor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/about_author_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/about_author_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowCreditSonyPods"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/credit_sonypods_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/credit_sonypods_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@color/lf_divider" />
+
+                    <LinearLayout
+                        android:id="@+id/rowCreditHuaweiPods"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_lf_list_item_press"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="58dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="13dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="13dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/credit_huaweipods_title"
+                                android:textColor="@color/lf_text_primary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/credit_huaweipods_summary"
+                                android:textColor="@color/lf_text_secondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_lf_chevron_right" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </io.github.nicochanyo.sonypods.CouiBounceScrollView>
+    </FrameLayout>
+
+    <!-- Top Progressive Gradient Blur -->
+    <io.github.nicochanyo.sonypods.TopGradientBlurView
+        android:id="@+id/vTopHeaderBlur"
+        android:layout_width="match_parent"
+        android:layout_height="116dp"
+        android:layout_gravity="top"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <!-- Top Collapsible Header (Clock.apk AppBar spacing & collapse geometry) -->
+    <FrameLayout
+        android:id="@+id/layoutHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingStart="22dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="12dp">
+
+        <LinearLayout
+            android:id="@+id/layoutHeaderTitleBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_marginTop="54dp"
+            android:layout_marginEnd="54dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvPageTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:letterSpacing="-0.02"
+                android:singleLine="true"
+                android:text="@string/page_title_headset"
+                android:textColor="@color/lf_text_primary"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvPageSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="@string/page_subtitle_headset"
+                android:textColor="@color/lf_text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/btnTopQuickAppearance"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="5dp"
+            android:clickable="true"
+            android:contentDescription="@string/section_restart_scope"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_lf_quick_action"
+                android:tint="@color/lf_text_primary" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- Bottom Floating Glass Navigation Bar (Compact 3-Tab Pill matching Clock.apk) -->
+    <View
+        android:id="@+id/vBottomNavShadow"
+        android:layout_width="match_parent"
+        android:layout_height="128dp"
+        android:layout_gravity="bottom"
+        android:alpha="1.0"
+        android:background="@drawable/bg_lf_bottom_scrim"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no" />
+
+    <FrameLayout
+        android:id="@+id/layoutBottomNavContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <FrameLayout
+            android:id="@+id/layoutBottomNav"
+            android:layout_width="252dp"
+            android:layout_height="56dp"
+            android:layout_gravity="center_horizontal|bottom"
+            android:clickable="true"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:focusable="true"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="4dp">
+
+            <View
+                android:id="@+id/vNavSlidingPill"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layoutNavItems"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/navHeadset"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/ivNavHeadset"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_lf_nav_headset_filled"
+                        android:tint="@color/lf_nav_active" />
+
+                    <TextView
+                        android:id="@+id/tvNavHeadset"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:includeFontPadding="false"
+                        android:singleLine="true"
+                        android:text="@string/nav_headset"
+                        android:textColor="@color/lf_nav_active"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/navIntegration"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/ivNavIntegration"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_lf_nav_integration_outline"
+                        android:tint="@color/lf_nav_inactive" />
+
+                    <TextView
+                        android:id="@+id/tvNavIntegration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:includeFontPadding="false"
+                        android:singleLine="true"
+                        android:text="@string/nav_integration_short"
+                        android:textColor="@color/lf_nav_inactive"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/navAbout"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/ivNavAbout"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_lf_nav_about_outline"
+                        android:tint="@color/lf_nav_inactive" />
+
+                    <TextView
+                        android:id="@+id/tvNavAbout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:includeFontPadding="false"
+                        android:singleLine="true"
+                        android:text="@string/nav_about"
+                        android:textColor="@color/lf_nav_inactive"
+                        android:textSize="10sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+    </FrameLayout>
+</io.github.nicochanyo.sonypods.ProgressiveBlurFrameLayout>
