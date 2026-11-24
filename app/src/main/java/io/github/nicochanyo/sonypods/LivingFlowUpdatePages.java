@@ -254,50 +254,38 @@ public final class LivingFlowUpdatePages {
         final LinearLayout heroBox = new LinearLayout(activity);
         heroBox.setOrientation(LinearLayout.VERTICAL);
         heroBox.setGravity(Gravity.CENTER);
-        heroBox.setPadding(Math.round(24f * d), Math.round(8f * d),
-                Math.round(24f * d), Math.round(24f * d));
+        heroBox.setClipChildren(false);
+        heroBox.setClipToPadding(false);
+        heroBox.setPadding(Math.round(12f * d), Math.round(8f * d),
+                Math.round(12f * d), Math.round(24f * d));
 
-        final TextView tvHeroTitle = new TextView(activity);
-        tvHeroTitle.setText(R.string.app_name);
-        tvHeroTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36f);
-        tvHeroTitle.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-        tvHeroTitle.setLetterSpacing(-0.025f);
-        tvHeroTitle.setSingleLine(true);
-        tvHeroTitle.setMaxLines(1);
-        tvHeroTitle.setAutoSizeTextTypeUniformWithConfiguration(24, 36, 1, TypedValue.COMPLEX_UNIT_SP);
-        tvHeroTitle.setIncludeFontPadding(false);
-        tvHeroTitle.setGravity(Gravity.CENTER);
-        tvHeroTitle.setTextColor(0xFFFFFFFF);
-        tvHeroTitle.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
-            int h = b - t;
-            if (h > 0 && h != (ob - ot)) {
-                tvHeroTitle.getPaint().setShader(new LinearGradient(
-                        0f, 0f, 0f, h,
-                        new int[]{0xFFFFFFFF, 0xFFFCEEFF, 0xFFF3DCFF},
-                        new float[]{0f, 0.65f, 1f},
-                        Shader.TileMode.CLAMP));
-                tvHeroTitle.invalidate();
-            }
-        });
-        heroBox.addView(tvHeroTitle, new LinearLayout.LayoutParams(
+        ColorOsBrandWordmarkView heroWordmark = new ColorOsBrandWordmarkView(activity);
+        heroWordmark.setBrandStyle(ColorOsBrandWordmarkView.STYLE_OTA_HERO);
+        heroBox.addView(heroWordmark, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView tvHeroVer = new TextView(activity);
-        tvHeroVer.setText(MainActivity.formatVerLabel(activity.getInstalledVersionName()));
-        tvHeroVer.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
-        tvHeroVer.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        tvHeroVer.setText(activity.getInstalledVersionName());
+        tvHeroVer.setTypeface(ColorOsBrandWordmarkView.getDisplayDigitTypeface(450));
+        tvHeroVer.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f);
+        tvHeroVer.setLetterSpacing(0.03f);
+        tvHeroVer.setIncludeFontPadding(false);
         tvHeroVer.setTextColor(0xF2FFFFFF);
         tvHeroVer.setGravity(Gravity.CENTER);
+        tvHeroVer.setShadowLayer(6f * d, 0f, 1.5f * d, 0x4214082C);
         LinearLayout.LayoutParams verLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        verLp.topMargin = Math.round(8f * d);
+        verLp.topMargin = Math.round(-4f * d);
         heroBox.addView(tvHeroVer, verLp);
 
         TextView tvHeroDevice = new TextView(activity);
-        tvHeroDevice.setText(Build.MANUFACTURER + " " + Build.MODEL + " · API 102");
-        tvHeroDevice.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
-        tvHeroDevice.setTextColor(0xBEFFFFFF);
+        tvHeroDevice.setText(ColorOsBrandWordmarkView.resolveDeviceMarketName(activity));
+        tvHeroDevice.setTypeface(ColorOsBrandWordmarkView.getUiSubtitleTypeface(430));
+        tvHeroDevice.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f);
+        tvHeroDevice.setLetterSpacing(0.015f);
+        tvHeroDevice.setTextColor(0xDEFFFFFF);
         tvHeroDevice.setGravity(Gravity.CENTER);
+        tvHeroDevice.setShadowLayer(5.5f * d, 0f, 1.5f * d, 0x3C14082C);
         LinearLayout.LayoutParams devLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         devLp.topMargin = Math.round(6f * d);
@@ -321,7 +309,7 @@ public final class LivingFlowUpdatePages {
 
         LinearLayout.LayoutParams hcrLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        hcrLp.topMargin = Math.round(20f * d);
+        hcrLp.topMargin = Math.round(22f * d);
         heroCheckRow.setVisibility(initialShowNotes ? View.GONE : View.VISIBLE);
         heroBox.addView(heroCheckRow, hcrLp);
 

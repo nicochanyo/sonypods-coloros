@@ -242,6 +242,7 @@ public class MainActivity extends Activity {
     private View cardAboutDynamicHero;
     private ColorOsDynamicBackdropView vAboutDynamicBg;
     private View layoutAboutHeroLogo;
+    private ColorOsBrandWordmarkView vAboutHeroWordmark;
     private TextView tvAboutHeroVer;
     private TextView tvAboutHeroUpdateStatus;
     private TextView tvAboutBuildSub;
@@ -1078,6 +1079,7 @@ public class MainActivity extends Activity {
         cardAboutDynamicHero = findViewById(R.id.cardAboutDynamicHero);
         vAboutDynamicBg = findViewById(R.id.vAboutDynamicBg);
         layoutAboutHeroLogo = findViewById(R.id.layoutAboutHeroLogo);
+        vAboutHeroWordmark = findViewById(R.id.vAboutHeroWordmark);
         tvAboutHeroVer = findViewById(R.id.tvAboutHeroVer);
         tvAboutHeroUpdateStatus = findViewById(R.id.tvAboutHeroUpdateStatus);
         tvAboutBuildSub = findViewById(R.id.tvAboutBuildSub);
@@ -1970,8 +1972,15 @@ public class MainActivity extends Activity {
             LivingFlowEffects.TouchFeedback.attach(cardAboutDynamicHero,
                     LivingFlowEffects.TouchFeedback.Profile.HERO_CARD, dark, 24f, false, false);
         }
+        if (vAboutHeroWordmark != null) {
+            vAboutHeroWordmark.setBrandStyle(ColorOsBrandWordmarkView.STYLE_ABOUT_HERO);
+        }
         if (tvAboutHeroVer != null) {
-            tvAboutHeroVer.setText("ColorOS · " + getInstalledVersionName());
+            tvAboutHeroVer.setText(getInstalledVersionName());
+            tvAboutHeroVer.setTypeface(ColorOsBrandWordmarkView.getDisplayDigitTypeface(430));
+        }
+        if (tvAboutHeroUpdateStatus != null) {
+            tvAboutHeroUpdateStatus.setTypeface(ColorOsBrandWordmarkView.getUiSubtitleTypeface(450));
         }
         if (tvAboutBuildSub != null) {
             tvAboutBuildSub.setText("v" + getInstalledVersionName() + " (" + getInstalledVersionCode() + ")");
