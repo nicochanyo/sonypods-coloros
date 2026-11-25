@@ -3140,12 +3140,14 @@ public class MainActivity extends Activity {
         sheet.card.addView(scroll, scrollLp);
 
         int[] verTitles = new int[]{
+                R.string.changelog_v104_title,
                 R.string.changelog_v103_title,
                 R.string.changelog_v102_title,
                 R.string.changelog_v101_title,
                 R.string.changelog_v100_title
         };
         int[] verBodies = new int[]{
+                R.string.changelog_v104_body,
                 R.string.changelog_v103_body,
                 R.string.changelog_v102_body,
                 R.string.changelog_v101_body,
@@ -3226,7 +3228,7 @@ public class MainActivity extends Activity {
             //noinspection deprecation
             return pi.versionCode;
         } catch (Throwable ignored) {
-            return 1003;
+            return 1004;
         }
     }
 
@@ -3238,12 +3240,12 @@ public class MainActivity extends Activity {
             }
         } catch (Throwable ignored) {
         }
-        return "1.0.3";
+        return "1.0.4";
     }
 
     static String formatVerLabel(String ver) {
         if (ver == null || ver.trim().isEmpty()) {
-            return "v1.0.3";
+            return "v1.0.4";
         }
         String t = ver.trim();
         if (t.startsWith("v") || t.startsWith("V")) {

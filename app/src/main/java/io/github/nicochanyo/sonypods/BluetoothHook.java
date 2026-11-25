@@ -73,7 +73,14 @@ public final class BluetoothHook {
             "android.bluetooth.a2dp.profile.action.CODEC_CONFIG_CHANGED";
     private static final Object POPUP_LOCK = new Object();
     private static final Object SCAN_LOCK = new Object();
-    private static final long PAIRING_SCAN_REFRESH_MS = 15L * 60_000L;
+    private static final int SCAN_TIER_OFF = 0;
+    private static final int SCAN_TIER_LOW_POWER = 1;
+    private static final int SCAN_TIER_BALANCED = 2;
+    private static final int SCAN_TIER_BURST = 3;
+    private static final long PAIRING_SCAN_BURST_MS = 12_000L;
+    private static final long PAIRING_SCAN_BALANCED_MS = 45_000L;
+    private static final long PAIRING_SCAN_LOW_POWER_REFRESH_MS = 25L * 60_000L;
+    private static final long REACTIVE_BOOST_COOLDOWN_MS = 60_000L;
 
     private static volatile Context sBtContext;
     private static volatile ConfigStore.HookConfig sConfig;
@@ -92,7 +99,8 @@ public final class BluetoothHook {
 
     private static volatile ScanCallback sPairingScannerCallback;
     private static volatile boolean sPairingScanActive;
-    private static volatile boolean sPairingScanLowLatency;
+    private static volatile int sPairingScanTier = SCAN_TIER_OFF;
+    private static volatile long sLastReactiveBoostMs;
     private static volatile Runnable sPairingScanStepDownTask;
 
     private static final Object PAIR_LOCK = new Object();
@@ -419,13 +427,36 @@ public final class BluetoothHook {
                 stopSonyPairingBleScan();
             }
         } else if (Intent.ACTION_USER_PRESENT.equals(action) || Intent.ACTION_SCREEN_ON.equals(action)) {
+            notifySessionsScreenState(true);
             updateSonyPairingBleScan(true);
         } else if (Intent.ACTION_SCREEN_OFF.equals(action)) {
+            notifySessionsScreenState(false);
             stopSonyPairingBleScan();
         } else if (ConfigStore.ACTION_COMMAND.equals(action)) {
             handleModuleCommand(intent);
         } else if (ConfigStore.ACTION_HANDOVER.equals(action)) {
             handleHandover(intent.getBooleanExtra(ConfigStore.EXTRA_HANDOVER_ACTIVE, false));
+        }
+    }
+
+    private static boolean isScreenInteractiveNow() {
+        Context ctx = sBtContext;
+        if (ctx == null) {
+            return true;
+        }
+        try {
+            PowerManager pm = ctx.getSystemService(PowerManager.class);
+            return pm == null || pm.isInteractive();
+        } catch (Throwable ignored) {
+            return true;
+        }
+    }
+
+    private static void notifySessionsScreenState(boolean interactive) {
+        for (SonyTandemSession session : SESSIONS.values()) {
+            if (session != null) {
+                session.setScreenInteractive(interactive);
+            }
         }
     }
 
@@ -466,6 +497,7 @@ public final class BluetoothHook {
         SESSIONS.put(mac, session);
         stopSonyPairingBleScan();
         XposedCompat.log("Starting SonyTandemSession for " + mac + " (" + stName(device) + ")");
+        session.setScreenInteractive(isScreenInteractiveNow());
         session.start();
         onSessionStateUpdated(device, session.getStateSnapshot());
         syncA2dpCodecState(device);
@@ -850,8 +882,17 @@ public final class BluetoothHook {
                     if (!SESSIONS.isEmpty() || isPairingOrConnecting()) {
                         return;
                     }
-                    if ((isSonyBle || parsed.hasFastPair) && !sPairingScanLowLatency) {
-                        MAIN_HANDLER.post(() -> updateSonyPairingBleScan(true));
+                    if (isSonyBle && rssi >= OPEN_CASE_MIN_RSSI && sPairingScanTier != SCAN_TIER_BURST) {
+                        long nowBoost = SystemClock.elapsedRealtime();
+                        boolean suppressed;
+                        synchronized (POPUP_LOCK) {
+                            suppressed = nowBoost < sDismissSuppressUntilMs
+                                    || (sLastPopupMs != 0L && (nowBoost - sLastPopupMs) < REACTIVE_BOOST_COOLDOWN_MS);
+                        }
+                        if (!suppressed && (nowBoost - sLastReactiveBoostMs) >= REACTIVE_BOOST_COOLDOWN_MS) {
+                            sLastReactiveBoostMs = nowBoost;
+                            MAIN_HANDLER.post(() -> updateSonyPairingBleScanTier(SCAN_TIER_BURST));
+                        }
                     }
                     ConfigStore.HookConfig cfg = sConfig;
                     if (cfg != null) {
@@ -2264,7 +2305,20 @@ public final class BluetoothHook {
     }
 
     static boolean isPairingScanActive() {
-        return sPairingScanActive && sPairingScanLowLatency;
+        return sPairingScanActive && sPairingScanTier == SCAN_TIER_BURST;
+    }
+
+    private static String scanTierName(int tier) {
+        switch (tier) {
+            case SCAN_TIER_BURST:
+                return "BURST(LOW_LATENCY)";
+            case SCAN_TIER_BALANCED:
+                return "BALANCED";
+            case SCAN_TIER_LOW_POWER:
+                return "LOW_POWER";
+            default:
+                return "OFF";
+        }
     }
 
     private static boolean canRunPairingBleScan(BluetoothAdapter adapter) {
@@ -2298,16 +2352,22 @@ public final class BluetoothHook {
     }
 
     private static void updateSonyPairingBleScan(boolean burstLowLatency) {
+        updateSonyPairingBleScanTier(burstLowLatency ? SCAN_TIER_BURST : SCAN_TIER_BALANCED);
+    }
+
+    private static void updateSonyPairingBleScanTier(int targetTier) {
+        if (targetTier <= SCAN_TIER_OFF) {
+            stopSonyPairingBleScan();
+            return;
+        }
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         if (!canRunPairingBleScan(adapter)) {
             stopSonyPairingBleScan();
             return;
         }
         synchronized (SCAN_LOCK) {
-            if (sPairingScanActive && sPairingScanLowLatency == burstLowLatency) {
-                if (burstLowLatency) {
-                    scheduleStepDownLocked();
-                }
+            if (sPairingScanActive && sPairingScanTier == targetTier) {
+                scheduleStepDownLocked(targetTier);
                 return;
             }
             stopSonyPairingBleScanLocked(adapter);
@@ -2323,17 +2383,26 @@ public final class BluetoothHook {
                 filters.add(new ScanFilter.Builder()
                         .setServiceData(SonyDeviceDetector.FAST_PAIR_SERVICE_UUID, new byte[]{0}, new byte[]{0})
                         .build());
+                int scanMode;
+                if (targetTier == SCAN_TIER_BURST) {
+                    scanMode = ScanSettings.SCAN_MODE_LOW_LATENCY;
+                } else if (targetTier == SCAN_TIER_BALANCED) {
+                    scanMode = ScanSettings.SCAN_MODE_BALANCED;
+                } else {
+                    scanMode = ScanSettings.SCAN_MODE_LOW_POWER;
+                }
+                int matchMode = (targetTier == SCAN_TIER_BURST)
+                        ? ScanSettings.MATCH_MODE_AGGRESSIVE
+                        : ScanSettings.MATCH_MODE_STICKY;
                 ScanSettings.Builder sb = new ScanSettings.Builder()
-                        .setScanMode(burstLowLatency
-                                ? ScanSettings.SCAN_MODE_LOW_LATENCY
-                                : ScanSettings.SCAN_MODE_BALANCED)
+                        .setScanMode(scanMode)
                         .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                        .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
+                        .setMatchMode(matchMode)
                         .setNumOfMatches(ScanSettings.MATCH_NUM_FEW_ADVERTISEMENT)
                         .setReportDelay(0L);
                 if (Build.VERSION.SDK_INT >= 26) {
-                    sb.setLegacy(false);
-                    sb.setPhy(ScanSettings.PHY_LE_ALL_SUPPORTED);
+                    sb.setLegacy(true);
+                    sb.setPhy(BluetoothDevice.PHY_LE_1M);
                 }
                 ScanSettings settings = sb.build();
                 ScanCallback cb = new ScanCallback() {
@@ -2341,20 +2410,16 @@ public final class BluetoothHook {
                 sPairingScannerCallback = cb;
                 // Mark active before startScan() so ColorOS CustomScanStrategy hooks apply on initial setup
                 sPairingScanActive = true;
-                sPairingScanLowLatency = burstLowLatency;
+                sPairingScanTier = targetTier;
                 scanner.startScan(filters, settings, cb);
-                if (burstLowLatency) {
-                    scheduleStepDownLocked();
-                } else {
-                    cancelStepDownLocked();
-                }
-                XposedCompat.log("Sony pairing BLE scan active (lowLatency=" + burstLowLatency + ")");
+                scheduleStepDownLocked(targetTier);
+                XposedCompat.debug("Sony pairing BLE scan -> tier=" + scanTierName(targetTier));
             } catch (Throwable t) {
                 sPairingScanActive = false;
-                sPairingScanLowLatency = false;
+                sPairingScanTier = SCAN_TIER_OFF;
                 sPairingScannerCallback = null;
                 cancelStepDownLocked();
-                XposedCompat.debug("updateSonyPairingBleScan failed: " + t.getMessage());
+                XposedCompat.debug("updateSonyPairingBleScanTier failed: " + t.getMessage());
             }
         }
     }
@@ -2369,10 +2434,11 @@ public final class BluetoothHook {
     private static void stopSonyPairingBleScanLocked(BluetoothAdapter adapter) {
         cancelStepDownLocked();
         if (!sPairingScanActive) {
+            sPairingScanTier = SCAN_TIER_OFF;
             return;
         }
         sPairingScanActive = false;
-        sPairingScanLowLatency = false;
+        sPairingScanTier = SCAN_TIER_OFF;
         ScanCallback cb = sPairingScannerCallback;
         sPairingScannerCallback = null;
         if (cb != null && adapter != null) {
@@ -2388,20 +2454,55 @@ public final class BluetoothHook {
         }
     }
 
-    private static void scheduleStepDownLocked() {
+    private static void scheduleStepDownLocked(int currentTier) {
         cancelStepDownLocked();
-        Runnable task = () -> {
-            synchronized (SCAN_LOCK) {
-                stopSonyPairingBleScanLocked(BluetoothAdapter.getDefaultAdapter());
-            }
-            MAIN_HANDLER.postDelayed(() -> {
-                if (canRunPairingBleScan(BluetoothAdapter.getDefaultAdapter())) {
-                    updateSonyPairingBleScan(true);
+        Runnable task;
+        long delayMs;
+        if (currentTier == SCAN_TIER_BURST) {
+            delayMs = PAIRING_SCAN_BURST_MS;
+            task = () -> {
+                boolean shouldStep;
+                synchronized (SCAN_LOCK) {
+                    shouldStep = sPairingScanActive && sPairingScanTier == SCAN_TIER_BURST;
                 }
-            }, 80L);
-        };
+                if (shouldStep) {
+                    updateSonyPairingBleScanTier(SCAN_TIER_BALANCED);
+                }
+            };
+        } else if (currentTier == SCAN_TIER_BALANCED) {
+            delayMs = PAIRING_SCAN_BALANCED_MS;
+            task = () -> {
+                boolean shouldStep;
+                synchronized (SCAN_LOCK) {
+                    shouldStep = sPairingScanActive && sPairingScanTier == SCAN_TIER_BALANCED;
+                }
+                if (shouldStep) {
+                    updateSonyPairingBleScanTier(SCAN_TIER_LOW_POWER);
+                }
+            };
+        } else if (currentTier == SCAN_TIER_LOW_POWER) {
+            delayMs = PAIRING_SCAN_LOW_POWER_REFRESH_MS;
+            task = () -> {
+                boolean shouldRefresh;
+                synchronized (SCAN_LOCK) {
+                    shouldRefresh = sPairingScanActive && sPairingScanTier == SCAN_TIER_LOW_POWER;
+                    if (shouldRefresh) {
+                        stopSonyPairingBleScanLocked(BluetoothAdapter.getDefaultAdapter());
+                    }
+                }
+                if (shouldRefresh) {
+                    MAIN_HANDLER.postDelayed(() -> {
+                        if (canRunPairingBleScan(BluetoothAdapter.getDefaultAdapter())) {
+                            updateSonyPairingBleScanTier(SCAN_TIER_LOW_POWER);
+                        }
+                    }, 80L);
+                }
+            };
+        } else {
+            return;
+        }
         sPairingScanStepDownTask = task;
-        MAIN_HANDLER.postDelayed(task, PAIRING_SCAN_REFRESH_MS);
+        MAIN_HANDLER.postDelayed(task, delayMs);
     }
 
     private static void cancelStepDownLocked() {

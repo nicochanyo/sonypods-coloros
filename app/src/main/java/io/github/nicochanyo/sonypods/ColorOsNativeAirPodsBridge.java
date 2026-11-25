@@ -193,8 +193,8 @@ public final class ColorOsNativeAirPodsBridge {
                         return;
                     }
                     Object res = param.getResult();
-                    if (res instanceof Integer && ((Integer) res) > 360) {
-                        param.setResult(360);
+                    if (res instanceof Integer && ((Integer) res) > 300) {
+                        param.setResult(300);
                     }
                 }
             });
@@ -220,8 +220,8 @@ public final class ColorOsNativeAirPodsBridge {
                     Object res = param.getResult();
                     if (res instanceof Integer) {
                         int val = (Integer) res;
-                        if (val > 0 && val < 160) {
-                            param.setResult(160);
+                        if (val > 0 && val < 80) {
+                            param.setResult(80);
                         }
                     }
                 }

@@ -28,11 +28,11 @@
     <!-- Top Status Card -->
     <string name="status_title_active">Module Active</string>
     <string name="status_title_inactive">Module Inactive</string>
-    <string name="status_sub_active">v1.0.3 · API 102</string>
+    <string name="status_sub_active">v1.0.4 · API 102</string>
     <string name="status_sub_inactive">Enable module in LSPosed and restart Bluetooth</string>
     <string name="badge_api_102">API 102</string>
 
-    <string name="chip_version">v1.0.3</string>
+    <string name="chip_version">v1.0.4</string>
     <string name="chip_coloros">ColorOS 16/17</string>
     <string name="chip_lsposed">API 102</string>
 
@@ -231,6 +231,8 @@
     <string name="btn_update_download">Download Update APK</string>
     <string name="btn_update_open_repo">Open Repo</string>
     <string name="dialog_changelog_title">Changelog</string>
+    <string name="changelog_v104_title">v1.0.4</string>
+    <string name="changelog_v104_body" formatted="false">• Optimized Bluetooth scanning for battery life with 3-tier automatic step-down and low-power standby while preserving fast open-case popups\n• Reduced connected headset polling overhead by removing idle thread wakeups and extending screen-off intervals\n• Silenced verbose background logs when Debug Mode is off to cut unnecessary wakeups</string>
     <string name="changelog_v103_title">v1.0.3</string>
     <string name="changelog_v103_body" formatted="false">• Added ColorOS 17 Living Flow UI alongside live Classic UI switching with auto OS-version defaults (Living Flow on ColorOS 17+, Classic on ColorOS 16 &amp; below) and full ColorOS 15–17 compatibility\n• Refined ColorOS 17 anchored popup menus, circular glass back buttons, Update Notes page, and dark-mode visuals\n• Fixed WF-1000XM3 &amp; Tandem V1 auto power-off bug (fixed protocol version detection and blocked unsafe 0x22 frames) and adapted full V1 controls (NC/ASM, DSEE HX, connection mode, wear pause, auto power off, touch sensors, and EQ)\n• Significantly sped up pairing and open-case popups: fixed BLE hardware APCF ScanFilter and ColorOS scan throttling, added cross-RPA correlation and BR/EDR pre-discovery\n• Prioritized initial battery probes with faster RFCOMM backoff, lower dual-ear sync delay, and async foreground state broadcasts\n• Eliminated main-thread UI stalls with in-memory artwork caching, async IPC/CDN artwork loading, and skipping idle battery polling on unpaired popups</string>
     <string name="changelog_v102_title">v1.0.2</string>

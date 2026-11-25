@@ -28,11 +28,11 @@
     <!-- Top Status Card -->
     <string name="status_title_active">模块已启用</string>
     <string name="status_title_inactive">模块未启用</string>
-    <string name="status_sub_active">v1.0.3 · API 102</string>
+    <string name="status_sub_active">v1.0.4 · API 102</string>
     <string name="status_sub_inactive">请在 LSPosed 勾选作用域并重启蓝牙</string>
     <string name="badge_api_102">API 102</string>
 
-    <string name="chip_version">v1.0.3</string>
+    <string name="chip_version">v1.0.4</string>
     <string name="chip_coloros">ColorOS 16/17</string>
     <string name="chip_lsposed">API 102</string>
 
@@ -231,6 +231,8 @@
     <string name="btn_update_download">下载更新 APK</string>
     <string name="btn_update_open_repo">打开仓库页面</string>
     <string name="dialog_changelog_title">更新日志</string>
+    <string name="changelog_v104_title">v1.0.4</string>
+    <string name="changelog_v104_body" formatted="false">• 大幅优化蓝牙扫描省电策略：改为三段式自动降频与单频低功耗待机，兼顾开盖秒弹速度并显著降低待机耗电\n• 优化耳机连接后的后台轮询机制，消除线程高频空转并拉长熄屏轮询间隔\n• 精简非调试模式下的后台日志输出，进一步减少系统唤醒</string>
     <string name="changelog_v103_title">v1.0.3</string>
     <string name="changelog_v103_body" formatted="false">• 新增 ColorOS 17 Living Flow 光影新界面并保留经典界面实时切换，按系统版本自动默认（ColorOS 17 默认 Living Flow，16 及以下默认经典），完整兼容 ColorOS 15 ~ 17\n• 优化 ColorOS 17 锚点弹出菜单、毛玻璃返回键、更新说明页与深色模式视觉体验\n• 修复 WF-1000XM3 等 Tandem V1 耳机连接后自动关机问题（修正协议版本判断并拦截误发关机指令），完整适配 V1 降噪／环境音、DSEE HX、连接质量、佩戴自动暂停、自动关机、触控分配与均衡器\n• 大幅优化配对与已配对开盖弹窗速度：修复 BLE 硬件 APCF ScanFilter 与 ColorOS 扫描限频、新增跨 RPA 关联及后台预扫描\n• 优先查询耳机电量并缩短连接等待、RFCOMM 重连退避与双耳电量同步延迟，状态广播改为后台异步发送\n• 弹窗图标全面异步加载并加入内存缓存，消除主线程卡顿与未连接状态无效轮询</string>
     <string name="changelog_v102_title">v1.0.2</string>

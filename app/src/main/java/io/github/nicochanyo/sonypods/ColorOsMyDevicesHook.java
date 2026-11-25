@@ -358,7 +358,7 @@ public final class ColorOsMyDevicesHook {
                                 Object singleInfo = batteryInfoCtor.newInstance(
                                         singleTypeEnum, minPair[0], minPair[1] != 0);
                                 param.setResult(Collections.singletonList(singleInfo));
-                                XposedCompat.log("a.f -> SINGLE battery=" + minPair[0] + "% for " + sc.model);
+                                XposedCompat.debug("a.f -> SINGLE battery=" + minPair[0] + "% for " + sc.model);
                             }
                             return;
                         }
@@ -373,7 +373,7 @@ public final class ColorOsMyDevicesHook {
                         }
                         if (!twsList.isEmpty()) {
                             param.setResult(twsList);
-                            XposedCompat.log("a.f -> TWS battery L=" + (hasL ? bat[0] : -1)
+                            XposedCompat.debug("a.f -> TWS battery L=" + (hasL ? bat[0] : -1)
                                     + " R=" + (hasR ? bat[1] : -1) + " (BOX stripped) for " + sc.model);
                         }
                     } catch (Throwable t) {

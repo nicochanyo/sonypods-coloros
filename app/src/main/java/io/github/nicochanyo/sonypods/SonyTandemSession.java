@@ -3,6 +3,7 @@ package io.github.nicochanyo.sonypods;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.ParcelUuid;
+import android.os.SystemClock;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,6 +50,10 @@ public final class SonyTandemSession {
     private static final Map<String, CachedRfcommEndpoint> LAST_WORKING_RFCOMM_BY_MAC =
             new ConcurrentHashMap<>();
     private static final long[] RFCOMM_CONNECT_BACKOFF_MS = { 300L, 600L, 1200L, 2500L };
+    private static final long POLL_INTERVAL_SCREEN_ON_MS = 60_000L;
+    private static final long POLL_INTERVAL_SCREEN_OFF_MS = 300_000L;
+    private static final long SCREEN_ON_STALE_REFRESH_MS = 20_000L;
+    private static final OutboundFrame WAKE_SENTINEL = new OutboundFrame(false, null);
 
     private final BluetoothDevice device;
     private final Listener listener;
@@ -57,6 +62,8 @@ public final class SonyTandemSession {
 
     private volatile boolean running;
     private volatile boolean yielded;
+    private volatile boolean screenInteractive = true;
+    private volatile long lastPollMs = 0L;
     private volatile boolean ncAsmDiscovered;
     private volatile int rfcommLockedProtocolVersion = 0;
     private volatile int dseeInquiredType = SonyTandemProtocol.AUDIO_INQ_UPSCALING;
@@ -128,6 +135,20 @@ public final class SonyTandemSession {
             closeSocket();
         } else if (running && sessionThread != null) {
             sessionThread.interrupt();
+        }
+    }
+
+    public void setScreenInteractive(boolean interactive) {
+        boolean wasInteractive = this.screenInteractive;
+        this.screenInteractive = interactive;
+        if (!wasInteractive && interactive && running && !yielded && socket != null) {
+            long now = SystemClock.elapsedRealtime();
+            if (now - lastPollMs >= SCREEN_ON_STALE_REFRESH_MS && outboundQueue.isEmpty()) {
+                lastPollMs = now;
+                enqueueRefresh();
+            } else {
+                outboundQueue.offer(WAKE_SENTINEL);
+            }
         }
     }
 
@@ -248,7 +269,7 @@ public final class SonyTandemSession {
         }
         notifyListener();
         byte[] pkt = SonyTandemProtocol.buildSetSpeakToChat(ver, inq, enabled);
-        XposedCompat.log("TX setSpeakToChat: " + SonyTandemProtocol.toHex(pkt));
+        XposedCompat.debug("TX setSpeakToChat: " + SonyTandemProtocol.toHex(pkt));
         enqueueRaw(pkt);
         enqueueRaw(SonyTandemProtocol.buildGetSystemParam(
                 ver == SonyTandemProtocol.PROTOCOL_V1 ? SonyTandemProtocol.V1_SYS_INQ_SMART_TALKING : inq));
@@ -314,7 +335,7 @@ public final class SonyTandemSession {
         }
         notifyListener();
         byte[] pkt = SonyTandemProtocol.buildSetSpeakToChatDetail(ver, inq, sens, out, voice);
-        XposedCompat.log("TX setSpeakToChatDetail: " + SonyTandemProtocol.toHex(pkt));
+        XposedCompat.debug("TX setSpeakToChatDetail: " + SonyTandemProtocol.toHex(pkt));
         enqueueRaw(pkt);
         enqueueRaw(SonyTandemProtocol.buildGetSystemExtParam(
                 ver == SonyTandemProtocol.PROTOCOL_V1 ? SonyTandemProtocol.V1_SYS_INQ_SMART_TALKING : inq));
@@ -333,7 +354,7 @@ public final class SonyTandemSession {
         }
         notifyListener();
         byte[] pkt = SonyTandemProtocol.buildSetTouchSensor(ver, inq, leftPreset, rightPreset);
-        XposedCompat.log("TX setTouchSensor: " + SonyTandemProtocol.toHex(pkt));
+        XposedCompat.debug("TX setTouchSensor: " + SonyTandemProtocol.toHex(pkt));
         enqueueRaw(pkt);
         enqueueRaw(SonyTandemProtocol.buildGetSystemParam(
                 ver == SonyTandemProtocol.PROTOCOL_V1 ? SonyTandemProtocol.V1_SYS_INQ_ASSIGNABLE_SETTINGS : inq));
@@ -350,7 +371,7 @@ public final class SonyTandemSession {
         notifyListener();
         int slot = SonyTandemProtocol.getGsMultipointSlot();
         byte[] pkt = SonyTandemProtocol.buildSetGsBooleanParam(slot, enabled);
-        XposedCompat.log("TX setMultipoint: " + SonyTandemProtocol.toHex(pkt));
+        XposedCompat.debug("TX setMultipoint: " + SonyTandemProtocol.toHex(pkt));
         enqueueRaw(pkt);
         enqueueRaw(SonyTandemProtocol.buildGetGsParam(slot));
         enqueueRaw(true, SonyTandemProtocol.buildT2GetPeripheralStatus(inq));
@@ -365,7 +386,7 @@ public final class SonyTandemSession {
         }
         byte[] pkt = SonyTandemProtocol.buildT2PeripheralAction(inq, actionType, targetMac);
         if (pkt != null) {
-            XposedCompat.log("TX sendMultipointAction: " + SonyTandemProtocol.toHex(pkt));
+            XposedCompat.debug("TX sendMultipointAction: " + SonyTandemProtocol.toHex(pkt));
             enqueueRaw(true, pkt);
             enqueueRaw(true, SonyTandemProtocol.buildT2GetPeripheralParam(inq));
         }
@@ -399,19 +420,19 @@ public final class SonyTandemSession {
         notifyListener();
         if (ver == SonyTandemProtocol.PROTOCOL_V1) {
             byte[] pkt = SonyTandemProtocol.buildSetWearDetect(ver, enabled);
-            XposedCompat.log("TX setWearDetect(V1): " + SonyTandemProtocol.toHex(pkt));
+            XposedCompat.debug("TX setWearDetect(V1): " + SonyTandemProtocol.toHex(pkt));
             enqueueRaw(pkt);
             enqueueRaw(SonyTandemProtocol.buildGetSystemParam(SonyTandemProtocol.V1_SYS_INQ_CONTROL_BY_WEARING));
         } else {
             int wearSlot = SonyTandemProtocol.getGsWearPauseSlot();
             if (wearSlot != 0) {
                 byte[] pkt = SonyTandemProtocol.buildSetGsBooleanParam(wearSlot, enabled);
-                XposedCompat.log("TX setWearDetect(GS): " + SonyTandemProtocol.toHex(pkt));
+                XposedCompat.debug("TX setWearDetect(GS): " + SonyTandemProtocol.toHex(pkt));
                 enqueueRaw(pkt);
                 enqueueRaw(SonyTandemProtocol.buildGetGsParam(wearSlot));
             } else {
                 byte[] pkt = SonyTandemProtocol.buildSetWearDetect(ver, enabled);
-                XposedCompat.log("TX setWearDetect: " + SonyTandemProtocol.toHex(pkt));
+                XposedCompat.debug("TX setWearDetect: " + SonyTandemProtocol.toHex(pkt));
                 enqueueRaw(pkt);
                 enqueueRaw(SonyTandemProtocol.buildGetSystemParam(SonyTandemProtocol.SYS_INQ_PLAYBACK_CONTROL_BY_WEARING));
             }
@@ -430,7 +451,7 @@ public final class SonyTandemSession {
         }
         notifyListener();
         byte[] pkt = SonyTandemProtocol.buildSetAutoPowerOff(ver, inq, element);
-        XposedCompat.log("TX setAutoPowerOff: " + SonyTandemProtocol.toHex(pkt));
+        XposedCompat.debug("TX setAutoPowerOff: " + SonyTandemProtocol.toHex(pkt));
         enqueueRaw(pkt);
         enqueueRaw(ver == SonyTandemProtocol.PROTOCOL_V1
                 ? SonyTandemProtocol.buildGetSystemParam(SonyTandemProtocol.V1_SYS_INQ_AUTO_POWER_OFF)
@@ -639,15 +660,22 @@ public final class SonyTandemSession {
     private void startWriterThread() {
         stopWriterThread();
         writerThread = new Thread(() -> {
-            long lastPollMs = System.currentTimeMillis();
+            lastPollMs = SystemClock.elapsedRealtime();
             while (running && !yielded && socket != null) {
                 try {
-                    OutboundFrame frame = outboundQueue.poll(1500L, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    long intervalMs = screenInteractive ? POLL_INTERVAL_SCREEN_ON_MS : POLL_INTERVAL_SCREEN_OFF_MS;
+                    long elapsed = SystemClock.elapsedRealtime() - lastPollMs;
+                    long waitMs = Math.max(100L, intervalMs - elapsed);
+                    OutboundFrame frame = outboundQueue.poll(waitMs, java.util.concurrent.TimeUnit.MILLISECONDS);
                     if (frame != null) {
-                        sendReliableFrame(frame.table2, frame.payload);
+                        if (frame != WAKE_SENTINEL && frame.payload != null) {
+                            sendReliableFrame(frame.table2, frame.payload);
+                        }
+                        continue;
                     }
-                    long now = System.currentTimeMillis();
-                    if (now - lastPollMs >= 20_000L && outboundQueue.isEmpty()) {
+                    long now = SystemClock.elapsedRealtime();
+                    long activeInterval = screenInteractive ? POLL_INTERVAL_SCREEN_ON_MS : POLL_INTERVAL_SCREEN_OFF_MS;
+                    if (now - lastPollMs >= activeInterval && outboundQueue.isEmpty()) {
                         lastPollMs = now;
                         enqueueRefresh();
                     }
@@ -884,28 +912,13 @@ public final class SonyTandemSession {
                 && frame.payload != null && frame.payload.length >= 2) {
             boolean isTable2 = (frame.dataType == SonyTandemFraming.DATA_TYPE_DATA_MDR_NO2);
             int cmd = frame.payload[0] & 0xFF;
-            if (isTable2
-                    || cmd == SonyTandemProtocol.CMD_CONNECT_RET_DEVICE_INFO
-                    || cmd == SonyTandemProtocol.CMD_V1_NTFY_BATTERY
+            if (!isTable2 && (cmd == SonyTandemProtocol.CMD_V1_NTFY_BATTERY
                     || cmd == SonyTandemProtocol.CMD_V2_POWER_NTFY_STATUS
-                    || cmd == SonyTandemProtocol.CMD_POWER_RET_PARAM
-                    || cmd == SonyTandemProtocol.CMD_EQEBB_RET_PARAM
-                    || cmd == SonyTandemProtocol.CMD_SYSTEM_RET_PARAM
-                    || cmd == SonyTandemProtocol.CMD_SYSTEM_NTFY_PARAM
-                    || cmd == SonyTandemProtocol.CMD_SYSTEM_RET_EXT_PARAM
-                    || cmd == SonyTandemProtocol.CMD_SYSTEM_NTFY_EXT_PARAM
-                    || cmd == SonyTandemProtocol.CMD_AUDIO_RET_PARAM
-                    || cmd == SonyTandemProtocol.CMD_GS_RET_CAPABILITY
-                    || cmd == SonyTandemProtocol.CMD_GS_RET_PARAM
-                    || cmd == SonyTandemProtocol.CMD_GS_NTFY_PARAM
-                    || cmd == SonyTandemProtocol.CMD_ALERT_NTFY_PARAM
-                    || cmd == SonyTandemProtocol.CMD_NCASM_RET_PARAM
-                    || cmd == SonyTandemProtocol.CMD_NCASM_NTFY_PARAM) {
-                XposedCompat.log((isTable2 ? "RX2" : "RX") + " cmd=0x" + Integer.toHexString(cmd)
-                        + " hex=" + SonyTandemProtocol.toHex(frame.payload));
-            } else {
-                XposedCompat.debug("RX cmd=0x" + Integer.toHexString(cmd) + " hex=" + SonyTandemProtocol.toHex(frame.payload));
+                    || cmd == SonyTandemProtocol.CMD_POWER_RET_PARAM)) {
+                lastPollMs = SystemClock.elapsedRealtime();
             }
+            XposedCompat.debug((isTable2 ? "RX2" : "RX") + " cmd=0x" + Integer.toHexString(cmd)
+                    + " hex=" + SonyTandemProtocol.toHex(frame.payload));
             if (!isTable2 && cmd == SonyTandemProtocol.CMD_ALERT_NTFY_PARAM && frame.payload.length >= 3
                     && activeProtocolVersion() == SonyTandemProtocol.PROTOCOL_V2) {
                 int alertInq = frame.payload[1] & 0xFF;

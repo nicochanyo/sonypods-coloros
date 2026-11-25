@@ -849,12 +849,14 @@ public final class LivingFlowUpdatePages {
         }
 
         int[] verTitles = new int[]{
+                R.string.changelog_v104_title,
                 R.string.changelog_v103_title,
                 R.string.changelog_v102_title,
                 R.string.changelog_v101_title,
                 R.string.changelog_v100_title
         };
         int[] verBodies = new int[]{
+                R.string.changelog_v104_body,
                 R.string.changelog_v103_body,
                 R.string.changelog_v102_body,
                 R.string.changelog_v101_body,
