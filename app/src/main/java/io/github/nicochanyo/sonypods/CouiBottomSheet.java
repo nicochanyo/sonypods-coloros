@@ -414,8 +414,8 @@ public final class CouiBottomSheet {
         card.setOrientation(LinearLayout.VERTICAL);
         card.setClickable(true);
         card.setFocusable(true);
-        card.setClipChildren(true);
-        card.setClipToPadding(!lfDocked);
+        card.setClipChildren(false);
+        card.setClipToPadding(false);
         GradientDrawable cardBg = new GradientDrawable();
         cardBg.setShape(GradientDrawable.RECTANGLE);
         if (lfDocked) {
@@ -786,7 +786,7 @@ public final class CouiBottomSheet {
             LivingFlowEffects.TouchFeedback.attach(btnAction,
                     LivingFlowEffects.TouchFeedback.Profile.PRIMARY_BUTTON, pal.dark, 19f, false, true, false);
             ColorOsLivingFlowEngine.applyLuminousPillButton(
-                    btnAction, actionStyle == 1, actionStyle == 2 ? pal.destructive : pal.accent, pal.dark, true);
+                    btnAction, actionStyle != 0, actionStyle == 2 ? pal.destructive : pal.accent, pal.dark, true);
             btnAction.setOnClickListener(onAction);
 
             bar.addView(btnAction, new LinearLayout.LayoutParams(
@@ -1276,7 +1276,7 @@ public final class CouiBottomSheet {
             LivingFlowEffects.TouchFeedback.attach(
                     btn, LivingFlowEffects.TouchFeedback.Profile.PRIMARY_BUTTON, pal.dark, 24f, false, true);
             ColorOsLivingFlowEngine.applyLuminousPillButton(
-                    btn, styleMode == 1, pal.accent, pal.dark, true);
+                    btn, styleMode != 0, styleMode == 2 ? pal.destructive : pal.accent, pal.dark, true);
         }
         return btn;
     }
@@ -1287,6 +1287,8 @@ public final class CouiBottomSheet {
         float d = ctx.getResources().getDisplayMetrics().density;
         LinearLayout row = new LinearLayout(ctx);
         row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setClipChildren(false);
+        row.setClipToPadding(false);
         int h = Math.round(46f * d);
 
         Button leftBtn = createPillButton(ctx, pal, leftText, leftStyle, leftClick);

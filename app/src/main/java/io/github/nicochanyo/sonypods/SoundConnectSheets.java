@@ -1052,9 +1052,9 @@ public final class SoundConnectSheets {
             root.setClipToOutline(true);
         } else {
             root.setBackgroundColor(resolveFullScreenPageBg(uiCtx, pal));
-            root.setClipChildren(false);
-            root.setClipToPadding(false);
         }
+        root.setClipChildren(false);
+        root.setClipToPadding(false);
 
         int statusInset = embedded ? 0 : resolveStatusBarFallbackPx(uiCtx);
         int headerPadH = Math.round(16f * d);
